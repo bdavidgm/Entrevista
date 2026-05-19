@@ -1,6 +1,7 @@
 package com.bdavidgm.entrevista.ui.screens
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -8,8 +9,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -32,6 +36,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.bdavidgm.entrevista.R
 import com.bdavidgm.entrevista.data.QuestionSummary
@@ -71,22 +76,36 @@ fun QuestionDetailScreen(
             )
         },
         bottomBar = {
+            val buttonMinHeight = 52.dp
+            val bottomBarBottomPadding = 40.dp + buttonMinHeight / 2
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                    .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = bottomBarBottomPadding),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                val buttonPadding = PaddingValues(horizontal = 10.dp, vertical = 16.dp)
                 Button(
                     onClick = onPrevious,
                     enabled = hasPrevious,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier
+                        .weight(1f)
+                        .defaultMinSize(minHeight = buttonMinHeight),
+                    contentPadding = buttonPadding
                 ) {
-                    Text(stringResource(R.string.previous))
+                    Text(
+                        text = stringResource(R.string.previous),
+                        style = MaterialTheme.typography.labelSmall,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
                 }
                 Button(
                     onClick = onViewLater,
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier
+                        .weight(1f)
+                        .defaultMinSize(minHeight = buttonMinHeight),
+                    contentPadding = buttonPadding,
                     colors = if (isSaved) {
                         ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.secondaryContainer,
@@ -96,14 +115,27 @@ fun QuestionDetailScreen(
                         ButtonDefaults.buttonColors()
                     }
                 ) {
-                    Text(stringResource(R.string.view_later))
+                    Text(
+                        text = stringResource(R.string.view_later),
+                        style = MaterialTheme.typography.labelSmall,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
                 }
                 Button(
                     onClick = onNext,
                     enabled = hasNext,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier
+                        .weight(1f)
+                        .defaultMinSize(minHeight = buttonMinHeight),
+                    contentPadding = buttonPadding
                 ) {
-                    Text(stringResource(R.string.next))
+                    Text(
+                        text = stringResource(R.string.next),
+                        style = MaterialTheme.typography.labelSmall,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
                 }
             }
         },
@@ -123,18 +155,42 @@ fun QuestionDetailScreen(
                 ),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = summary.category.displayName,
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = summary.question,
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.Top
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .background(
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+                                RoundedCornerShape(8.dp)
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "${summary.id}",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(start = 12.dp)
+                    ) {
+                        Text(
+                            text = summary.category.displayName,
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = summary.question,
+                            style = MaterialTheme.typography.titleLarge,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
                 }
             }
             Spacer(modifier = Modifier.height(16.dp))

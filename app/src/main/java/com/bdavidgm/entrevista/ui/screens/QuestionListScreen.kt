@@ -1,6 +1,5 @@
 package com.bdavidgm.entrevista.ui.screens
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -14,7 +13,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -37,7 +36,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.bdavidgm.entrevista.R
 import androidx.paging.LoadState
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
@@ -51,10 +52,9 @@ import com.bdavidgm.entrevista.ui.components.QuestionCard
 @Composable
 fun QuestionListScreen(
     onQuestionClick: (Int) -> Unit,
-    onBack: () -> Unit,
+    onMenuClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    BackHandler(onBack = onBack)
     var searchQuery by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf<Category?>(null) }
     var filteredSummaries by remember {
@@ -87,12 +87,12 @@ fun QuestionListScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Todas las preguntas") },
+                title = { Text(stringResource(R.string.all_questions)) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = onMenuClick) {
                         Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Volver"
+                            Icons.Default.Menu,
+                            contentDescription = stringResource(R.string.open_menu)
                         )
                     }
                 },
