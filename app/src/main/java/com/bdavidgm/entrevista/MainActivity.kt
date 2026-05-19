@@ -68,18 +68,25 @@ private fun EntrevistaApp() {
         scope.launch { drawerState.open() }
     }
 
-    fun navigateToQuestion(questionId: Int) {
-        userPreferences.setLastQuestionId(questionId)
+    fun showQuestionDetail(questionId: Int) {
         screen = AppScreen.Detail(questionId)
     }
 
-    fun openQuestion(questionId: Int, from: AppScreen) {
+    fun openQuestion(questionId: Int, from: AppScreen, updateContinuePosition: Boolean) {
         returnScreen = from
-        navigateToQuestion(questionId)
+        if (updateContinuePosition) {
+            userPreferences.setLastQuestionId(questionId)
+        }
+        showQuestionDetail(questionId)
+    }
+
+    fun navigateAdjacentQuestion(questionId: Int) {
+        userPreferences.setLastQuestionId(questionId)
+        showQuestionDetail(questionId)
     }
 
     fun continueWhereLeft(from: AppScreen) {
-        lastQuestionId?.let { openQuestion(it, from) }
+        lastQuestionId?.let { openQuestion(it, from, updateContinuePosition = false) }
     }
 
     fun selectMainDestination(destination: MainDestination) {
@@ -104,7 +111,7 @@ private fun EntrevistaApp() {
                 DetailRoute(
                     questionId = current.questionId,
                     userPreferences = userPreferences,
-                    onNavigateToQuestion = ::navigateToQuestion,
+                    onNavigateToQuestion = ::navigateAdjacentQuestion,
                     onBack = { screen = returnScreen },
                     modifier = Modifier.fillMaxSize()
                 )
@@ -119,7 +126,7 @@ private fun EntrevistaApp() {
                     onDestinationSelected = ::selectMainDestination
                 ) {
                     QuestionListScreen(
-                        onQuestionClick = { openQuestion(it, AppScreen.List) },
+                        onQuestionClick = { openQuestion(it, AppScreen.List, updateContinuePosition = true) },
                         onMenuClick = ::openDrawer,
                         modifier = Modifier.fillMaxSize()
                     )
@@ -137,7 +144,7 @@ private fun EntrevistaApp() {
                 ) {
                     SavedRoute(
                         userPreferences = userPreferences,
-                        onQuestionClick = { openQuestion(it, AppScreen.Saved) },
+                        onQuestionClick = { openQuestion(it, AppScreen.Saved, updateContinuePosition = false) },
                         onMenuClick = ::openDrawer,
                         modifier = Modifier.fillMaxSize()
                     )
@@ -207,7 +214,6 @@ private fun DetailRoute(
     }
 
     LaunchedEffect(questionId) {
-        userPreferences.setLastQuestionId(questionId)
         isLoadingAnswer = true
         answer = withContext(Dispatchers.IO) {
             InterviewRepository.getAnswer(questionId)

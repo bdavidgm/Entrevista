@@ -1,0 +1,20 @@
+Concepto:
+Fastboot es un protocolo y modo de arranque del bootloader que permite flashear particiones, desbloquear OEM y ejecutar comandos de bajo nivel cuando Android no está cargado.
+
+Explicación detallada:
+Se accede con adb reboot bootloader o combinación de teclas (varía por marca). fastboot devices lista equipos. Comandos típicos: fastboot flash boot/recovery/system/vbmeta imagen.img, fastboot erase, fastboot oem unlock (según fabricante), fastboot reboot.
+
+A diferencia de ADB, no necesita sistema Android completo ni depuración USB en sentido de app debugging; necesita bootloader desbloqueado o comandos permitidos por el OEM.
+
+Riesgos: flashear imagen incorrecta puede dejar el teléfono en bootloop (brick soft, a veces recuperable). Algunos fabricantes usan herramientas propietarias (Samsung Odin, MediaTek SP Flash, Qualcomm EDL) además o en lugar de fastboot estándar.
+
+Cuándo usarlo:
+Flasheo de ROM oficial, desbloqueo, reparación de particiones boot/recovery, desarrollo de kernels.
+
+Ejemplo:
+fastboot devices
+fastboot flash boot boot.img
+fastboot reboot
+
+Consejo para entrevista:
+Contrasta con ADB: Fastboot = bootloader, particiones. Menciona riesgo de brick y herramientas OEM.

@@ -1,0 +1,19 @@
+Concepto:
+Android clasifica permisos en normal, peligroso (dangerous/runtime), firma (signature) y especial (special/appop). La protección depende del nivel de riesgo para privacidad e integridad.
+
+Explicación detallada:
+Normal (INTERNET, VIBRATE): concedidos en instalación sin diálogo. Dangerous (CAMERA, LOCATION, READ_CONTACTS): declarados en manifest y solicitados en runtime; el usuario puede denegar. Signature: solo apps firmadas con la misma clave que el sistema o el OEM. Special: permisos de alto impacto gestionados en Ajustes (WRITE_SETTINGS, MANAGE_EXTERNAL_STORAGE, SYSTEM_ALERT_WINDOW).
+
+Desde Android 6 (API 23) los dangerous requieren requestPermissions o Activity Result API. Android 13+ granularidad: POST_NOTIFICATIONS, READ_MEDIA_* en lugar de READ_EXTERNAL_STORAGE único.
+
+Principio de mínimo privilegio: declarar solo lo necesario; usar maxSdkVersion para permisos legacy que ya no aplican. Revisar declaraciones fusionadas de librerías con merged manifest.
+
+Cuándo usarlo:
+Diseño de manifest, code review de privacidad, preparación para Play Console (Data safety).
+
+Ejemplo:
+AndroidManifest.xml uses-permission
+registerForActivityResult(RequestPermission())
+
+Consejo para entrevista:
+Cuatro tipos + runtime desde API 23. Relaciona con pregunta de permisos peligrosos (id 103).

@@ -1,0 +1,21 @@
+Concepto:
+El bootloader es el primer software que ejecuta el teléfono al encender; carga el kernel y arranca Android o recovery. Suele estar bloqueado por el fabricante.
+
+Explicación detallada:
+Bloqueado: solo arranques firmados (verified boot). Desbloquear (OEM unlock) permite flashear particiones custom, instalar recovery alternativo y rootear, pero suele borrar datos (factory reset warning) y anular garantía.
+
+Bootloader bloqueado + verificación activa impide ROMs no firmadas. Algunos fabricantes (Google Pixel, algunos Xiaomi con cuenta) facilitan unlock; otros lo restringen.
+
+Implicaciones legales y de seguridad: dispositivo más vulnerable a malware con privilegios si se compromete el sistema. Empresas MDM pueden detectar bootloader desbloqueado.
+
+Para desarrolladores normales no hace falta desbloquear; para técnico que restaura software o instala ROM oficial vía fastboot a veces sí.
+
+Cuándo usarlo:
+Flasheo oficial, desarrollo de sistema, modding avanzado. No necesario para apps de Play Store estándar.
+
+Ejemplo:
+Ajustes > Opciones desarrollador > Desbloqueo OEM (si existe)
+fastboot oem unlock
+
+Consejo para entrevista:
+Explica verified boot, wipe de datos al unlock y política de garantía.

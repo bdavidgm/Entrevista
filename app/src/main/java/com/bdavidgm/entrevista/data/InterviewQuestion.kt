@@ -23,5 +23,6 @@ enum class Category(val displayName: String) {
     BUILD_GRADLE("Build y Gradle"),
     ANDROID_API("API de Android"),
     RUTA_ANDROID("Ruta Android (roadmap.sh)"),
+    ANDROID_TECH("Técnico Android"),
     GENERAL("General")
 }

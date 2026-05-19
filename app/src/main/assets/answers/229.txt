@@ -1,0 +1,21 @@
+Concepto:
+Recovery es una partición o modo de arranque mínimo para mantenimiento: factory reset, aplicar OTA, sideload, montar /data y a veces backups.
+
+Explicación detallada:
+Stock recovery: limitado, firmado por OEM, wipe data/cache, OTA oficial. Custom recovery (TWRP, OrangeFox): interfaz táctil, backups Nandroid, flash zips, explorador de archivos, adb en recovery.
+
+Se entra con adb reboot recovery o teclas (Vol+ + Power según marca). Sin unlock muchos equipos no permiten recovery custom.
+
+Wipe data/factory reset borra apps y datos de usuario; wipe cache dalvik/ART menos drástico. Formatear /data en TWRP equivale a reset completo.
+
+Técnico usa recovery para desbloquear patrón olvidado solo en dispositivos propios o autorizados; en la práctica legal depende de la jurisdicción y política de la empresa.
+
+Cuándo usarlo:
+Actualizaciones manuales, wipes, flash de Magisk/ROM en entornos controlados.
+
+Ejemplo:
+adb reboot recovery
+# En TWRP: Install > zip de ROM o Magisk
+
+Consejo para entrevista:
+Stock vs TWRP, wipe data vs cache, sideload en recovery oficial.

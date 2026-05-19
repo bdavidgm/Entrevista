@@ -226,6 +226,20 @@ internal object InterviewSummariesData {
         QuestionSummary(220, Category.ANDROID_BASICS, "¿Qué es un Foreground Service y cuándo usarlo?"),
         QuestionSummary(221, Category.ANDROID_BASICS, "¿Cuáles son los callbacks del ciclo de vida de un Service?"),
         QuestionSummary(222, Category.ANDROID_BASICS, "¿Qué restricciones hay para los servicios en segundo plano (Android 8+)?"),
+        QuestionSummary(223, Category.ANDROID_TECH, "¿Qué es ADB (Android Debug Bridge)?"),
+        QuestionSummary(224, Category.ANDROID_TECH, "¿Qué comandos ADB usa un técnico o desarrollador con frecuencia?"),
+        QuestionSummary(225, Category.ANDROID_TECH, "¿Qué es Fastboot y en qué se diferencia de ADB?"),
+        QuestionSummary(226, Category.ANDROID_TECH, "¿Qué es el bootloader y qué implica desbloquearlo?"),
+        QuestionSummary(227, Category.ANDROID_TECH, "¿Qué es rootear un dispositivo Android?"),
+        QuestionSummary(228, Category.ANDROID_TECH, "¿Qué significa flashear un dispositivo Android?"),
+        QuestionSummary(229, Category.ANDROID_TECH, "¿Qué es el modo recovery y qué es un recovery personalizado?"),
+        QuestionSummary(230, Category.ANDROID_TECH, "¿Qué es OEM unlock y verified boot?"),
+        QuestionSummary(231, Category.ANDROID_TECH, "¿Qué otras tareas realiza un técnico Android en taller?"),
+        QuestionSummary(232, Category.SECURITY, "¿Cuáles son los tipos de permisos en Android?"),
+        QuestionSummary(233, Category.SECURITY, "¿Permisos de ubicación: tipos, usos y seguridad?"),
+        QuestionSummary(234, Category.SECURITY, "¿Permisos de almacenamiento y archivos: evolución y seguridad?"),
+        QuestionSummary(235, Category.SECURITY, "¿Permisos de cámara, micrófono y contactos: privacidad y buenas prácticas?"),
+        QuestionSummary(236, Category.SECURITY, "¿Qué permisos especiales existen además de los peligrosos clásicos?"),
         )
     }
 }

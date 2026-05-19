@@ -1,0 +1,20 @@
+Concepto:
+Los permisos de ubicación controlan acceso a GPS, red y Bluetooth (beacons). Incluyen ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION y desde Android 10 ACCESS_BACKGROUND_LOCATION por separado.
+
+Explicación detallada:
+Foreground: suficiente para mapas en uso. Background: tracking continuo; Google Play exige justificación fuerte y formulario; el usuario debe conceder en dos pasos (primero foreground, luego background en Ajustes).
+
+Android 12+: aproximada vs precisa (COARSE vs FINE). Sin permisos, usar solo ubicación aproximada por IP en servidor si la política lo permite.
+
+Seguridad: no loguear coordenadas en producción; almacenar mínimo necesario; informar en política de privacidad; ofrecer desactivar tracking; fuzzing de ubicación en emulador para tests.
+
+FusedLocationProviderClient pausa actualizaciones en onStop si no necesitas background. Geofencing y Activity Recognition tienen APIs propias con reglas similares.
+
+Cuándo usarlo:
+Apps de mapas, delivery, fitness, tiendas cercanas. Evitar background si no es core de la app.
+
+Ejemplo:
+if (hasFineLocation()) fusedClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, token)
+
+Consejo para entrevista:
+Foreground vs background, doble permiso Play, FusedLocationProvider.

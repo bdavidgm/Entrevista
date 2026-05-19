@@ -1,0 +1,24 @@
+Concepto:
+ADB (Android Debug Bridge) es la herramienta de línea de comandos del Android SDK que permite comunicarse con un dispositivo o emulador por USB o red. Actúa como puente entre el PC y el daemon adbd que corre en el dispositivo (modo Android normal, con depuración USB activada).
+
+Explicación detallada:
+El cliente adb en el PC envía órdenes al servidor adb local, que las reenvía al dispositivo. Permite instalar y desinstalar APKs, ver logs, ejecutar shell, reenviar puertos (port forwarding), copiar archivos, capturar pantalla, reiniciar en bootloader/recovery y depurar apps.
+
+Para un desarrollador: depuración con Android Studio, logcat, profiling, tests instrumentados. Para un técnico: diagnóstico de fallos, extracción de logs tras un crash, desbloqueo de pantalla en laboratorio autorizado, sideload de actualizaciones oficiales, reset de caché de app, comprobar si el dispositivo es reconocido.
+
+Requisitos: drivers USB del fabricante (o Google USB Driver), depuración USB activada, y en muchos equipos confirmar la huella RSA del PC. adb kill-server / adb start-server resuelve problemas de conexión frecuentes.
+
+No confundir con Fastboot: ADB opera con Android arrancado (o recovery que expone adbd); Fastboot habla con el bootloader.
+
+Cuándo usarlo:
+Desarrollo diario, QA, soporte técnico y laboratorios de reparación cuando el sistema arranca y acepta depuración.
+
+Ejemplo:
+adb devices
+adb install app-debug.apk
+adb logcat | grep MyApp
+adb shell pm clear com.example.app
+adb reboot bootloader
+
+Consejo para entrevista:
+Define ADB como puente PC-dispositivo con adbd. Menciona depuración USB y diferencia con Fastboot.

@@ -1,0 +1,20 @@
+Concepto:
+El acceso a archivos evolucionó de almacenamiento amplio (READ/WRITE_EXTERNAL_STORAGE) al modelo de sandbox y MediaStore con permisos granulares por tipo de medio.
+
+Explicación detallada:
+Android 10+: scoped storage; apps acceden a su directorio y a URIs compartidos vía SAF (ACTION_OPEN_DOCUMENT, CREATE_DOCUMENT). Android 13+: READ_MEDIA_IMAGES/VIDEO/AUDIO sustituyen lectura amplia de imágenes.
+
+MANAGE_EXTERNAL_STORAGE (All files access): solo para gestores de archivos, backup, antivirus; revisión estricta en Play; pedir en Ajustes, no runtime clásico.
+
+Seguridad: no exponer file:// en Intents (usar FileProvider); validar MIME y tamaño; escanear malware en servidor si suben archivos; no guardar PII en Downloads público.
+
+WRITE_EXTERNAL_STORAGE deprecated en target altos. Para compartir entre apps: content:// con permisos temporales FLAG_GRANT_READ_URI_PERMISSION.
+
+Cuándo usarlo:
+Galería, editor, backup, exportar PDF. Usar SAF para archivos arbitrarios del usuario.
+
+Ejemplo:
+val uri = contentResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
+
+Consejo para entrevista:
+Scoped storage, SAF, READ_MEDIA_* y por qué MANAGE_EXTERNAL_STORAGE es excepcional.

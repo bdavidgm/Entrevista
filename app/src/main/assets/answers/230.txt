@@ -1,0 +1,19 @@
+Concepto:
+OEM unlock es la opción del fabricante que permite desbloquear el bootloader. Verified boot (AVB) comprueba la firma de cada partición en el arranque; dm-verity protege particiones montadas contra modificación.
+
+Explicación detallada:
+Con bootloader bloqueado, solo imágenes firmadas arrancan. Tras unlock, el estado pasa a orange (Google) o advertencia en pantalla de inicio. Magisk puede parchear vbmeta para desactivar verificación en algunos casos (riesgo de seguridad).
+
+Play Integrity / SafetyNet evalúan bootloader, firma y root; apps bancarias pueden negar servicio.
+
+Para técnico: restaurar stock completo y volver a bloquear bootloader (si el OEM lo permite) puede ser necesario para devolver un equipo a garantía o cumplir política corporativa.
+
+Cuándo usarlo:
+Entender por qué root/ROM rompe apps con integridad; soporte avanzado de flasheo.
+
+Ejemplo:
+fastboot flashing unlock
+fastboot getvar unlocked
+
+Consejo para entrevista:
+Orange state, AVB, relación con Magisk y apps bancarias.

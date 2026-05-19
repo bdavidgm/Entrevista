@@ -1,0 +1,21 @@
+Concepto:
+Flashear es escribir una imagen de firmware en particiones del dispositivo (boot, system, vendor, super, recovery, etc.) para instalar, actualizar o reparar el sistema operativo.
+
+Explicación detallada:
+Tipos: OTA oficial (incremental o full), fastboot flash de imágenes sueltas, herramientas OEM (Odin AP/BL/CP/CSC, Mi Flash, QPST), recovery sideload (adb sideload), EDL/QPST en Qualcomm cuando el dispositivo está en modo emergencia.
+
+ROM custom (LineageOS, etc.): requiere unlock, recovery custom, zip de la ROM y a menudo GApps por separado. Siempre usar builds para el modelo exacto (codename).
+
+Precauciones: batería cargada, cable de calidad, backup de datos, verificar checksums, no interrumpir el proceso. Brick duro si se corrompe partición crítica sin modo recuperación.
+
+Técnico restaura software tras fallo de actualización, pantalla rota con ADB activo, o cambio de región en equipos permitidos por el fabricante.
+
+Cuándo usarlo:
+Reparación, downgrade/upgrade oficial, instalación de ROM cuando el usuario lo solicita y es legal.
+
+Ejemplo:
+fastboot flashall -w   # script del fabricante, usar solo paquete correcto
+adb sideload ota.zip   # en recovery oficial
+
+Consejo para entrevista:
+Diferencia OTA vs fastboot vs Odin. Insiste en modelo exacto y riesgo de brick.
