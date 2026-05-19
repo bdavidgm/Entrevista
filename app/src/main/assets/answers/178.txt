@@ -1,0 +1,44 @@
+Concepto:
+getSystemService es el método de Context que devuelve gestores del sistema (ConnectivityManager, AlarmManager, SensorManager, etc.) registrados en el ServiceManager de Android, tipados con extensiones Kotlin o casting.
+
+Explicación detallada:
+Android centraliza servicios del SO en procesos del sistema. La app no instancia estos objetos; los solicita al Context con una clave String (legacy) o Class (API 23+):
+
+val cm = context.getSystemService(ConnectivityManager::class.java)
+
+Equivalente antiguo: getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager.
+
+Servicios frecuentes en entrevistas:
+- CONNECTIVITY_SERVICE → ConnectivityManager
+- ALARM_SERVICE → AlarmManager
+- NOTIFICATION_SERVICE → NotificationManager
+- ACTIVITY_SERVICE → ActivityManager
+- SENSOR_SERVICE → SensorManager
+- LOCATION_SERVICE → LocationManager (preferir FusedLocationProviderClient)
+- CLIPBOARD_SERVICE → ClipboardManager
+- INPUT_METHOD_SERVICE → InputMethodManager
+- WINDOW_SERVICE → WindowManager
+- POWER_SERVICE → PowerManager
+- DOWNLOAD_SERVICE → DownloadManager
+- AUDIO_SERVICE → AudioManager
+- VIBRATOR_SERVICE → Vibrator / VibratorManager (API 31+)
+- BIOMETRIC_SERVICE → BiometricManager
+
+El Context debe ser válido: Application context para servicios sin UI; Activity context para WindowManager o InputMethodManager ligados a ventana. Usar applicationContext donde no necesites tema o display de Activity evita fugas.
+
+Cuándo usarlo:
+- Siempre que integres una API de plataforma documentada como “system service”.
+- En helpers DI puedes envolver getSystemService en providers Hilt (@ApplicationContext).
+
+Ejemplo:
+class SystemServices @Inject constructor(
+    @ApplicationContext private val context: Context
+) {
+    val connectivity: ConnectivityManager
+        get() = context.getSystemService(ConnectivityManager::class.java)
+    val notifications: NotificationManager
+        get() = context.getSystemService(NotificationManager::class.java)
+}
+
+Consejo para entrevista:
+Lista tres servicios que hayas usado con nombres correctos. Aclara Context de Application vs Activity. Menciona que en tests se mockea Context o se usa Robolectric para getSystemService.

@@ -1,0 +1,34 @@
+Concepto:
+El operador :: (callable reference) crea una referencia a una función, propiedad, constructor o miembro bound/unbound sin invocarlo inmediatamente. Permite pasar funciones como valores de primera clase a otras funciones (map, filter, observe) o diferir la ejecución.
+
+Explicación detallada:
+Formas: ::functionName para función de nivel superior; String::length para función miembro; Objeto::metodo para bound reference; Clase::constructor para constructor. Tipo resultante es interfaz funcional KFunction o tipos de función (A) -> B según contexto.
+
+En colecciones: list.filter(::isValid) en lugar de { isValid(it) }. Con métodos de instancia necesitas bound reference si el receptor ya existe: user::name getter property reference.
+
+En Android: referencias a callbacks, adaptadores, Method references en Java interop (@JvmStatic + ::), Navigation args menos común. RxJava y Flow usan lambdas más que references, pero en código funcional puro aparece.
+
+Comparación lambda vs reference: reference cuando solo pasas sin capturar variables locales; lambda cuando necesitas closure con estado. Constructor reference ::MyActivity útil en intents reflexivos raros; normalmente MyActivity::class.java.
+
+En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
+
+En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
+
+Cuándo usarlo:
+Pasar función existente sin envolver, APIs que aceptan (T) -> R y tienes f(T), orden superior declarativo. Evita :: cuando el lambda es más corto o necesitas parámetros extra.
+
+Ejemplo:
+fun isAdult(user: User) = user.age >= 18
+
+val adults = users.filter(::isAdult)
+val lengths = names.map(String::length)
+
+button.setOnClickListener(this::onSubmitClick)
+
+// Constructor reference en factory genérica
+inline fun <reified T> Fragment.factory(): () -> T where T : Fragment {
+    return ::T
+}
+
+Consejo para entrevista:
+Bound vs unbound reference. ::foo vs { foo() }. Preguntan property reference user::name. Interop Java static ::Logger.d si @JvmStatic.

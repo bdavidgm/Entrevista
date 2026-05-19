@@ -1,0 +1,35 @@
+Concepto:
+AccountManager es el framework de cuentas de Android que centraliza identidades (Google, corporativas, custom) con almacenamiento de credenciales, sincronización y autenticación entre apps del mismo account type.
+
+Explicación detallada:
+Una “cuenta” tiene type (String único del proveedor), name (usuario) y userData. AuthenticatorService (AbstractAccountAuthenticator) define flujos addAccount, getAuthToken, confirmCredentials. SyncAdapter puede asociarse para sincronizar contactos o calendario periódicamente.
+
+Apps llaman AccountManager.getAccountsByType, addAccountExplicitly (privilegiado), getAuthToken(account, authTokenType, ...) recibiendo Bundle con KEY_AUTHTOKEN o intent de login.
+
+Casos históricos: contactos Exchange, Twitter legacy, cuentas Google integradas. Hoy muchas apps usan OAuth en navegador/Custom Tabs + tokens en EncryptedDataStore en lugar de crear AccountAuthenticator propio.
+
+Complejidad: permisos GET_ACCOUNTS restringidos, UX del sistema de ajustes de cuentas, mantenimiento de SyncAdapter.
+
+Cuándo usarlo:
+- Integración profunda con sync de contactos/calendario del sistema.
+- Suite enterprise que requiere cuenta visible en Ajustes → Cuentas.
+- Mantenimiento de apps legacy que ya usan AccountManager.
+
+Para login típico Firebase/OAuth: no necesitas AccountManager.
+
+Ejemplo:
+// Obtener token (simplificado; flujo real es async con Callback)
+val am = AccountManager.get(context)
+val accounts = am.getAccountsByType("com.example.account")
+if (accounts.isNotEmpty()) {
+    am.getAuthToken(
+        accounts[0], "api_access", null, activity,
+        { future ->
+            val bundle = future.result
+            val token = bundle.getString(AccountManager.KEY_AUTHTOKEN)
+        }, null
+    )
+}
+
+Consejo para entrevista:
+Demuestra que conoces el concepto pero que en apps modernas OAuth + almacenamiento cifrado es el patrón habitual. Menciona Authenticator, SyncAdapter y que Google Sign-In ya no implica que debas registrar AccountAuthenticator para apps simples.

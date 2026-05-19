@@ -1,0 +1,62 @@
+Concepto:
+Las notificaciones en Android son mensajes del sistema mostrados fuera de la app (status bar, heads-up, wearables), creadas con NotificationCompat y mostradas mediante NotificationManager, obligatoriamente asignadas a un NotificationChannel en API 26+.
+
+Explicación detallada:
+Componentes:
+1) NotificationChannel (API 26+): categoría con importancia, sonido, vibración. El usuario puede silenciarla en ajustes.
+2) NotificationCompat.Builder: título, texto, icono pequeño, estilo, acciones.
+3) NotificationManager.notify(id, notification).
+4) PendingIntent en acciones y al tocar la notificación (abrir Activity).
+
+Permisos:
+- POST_NOTIFICATIONS runtime en Android 13+ (API 33).
+- Foreground service types si la notificación acompaña FGS.
+
+Pasos:
+- Crear canal una vez (Application o primera vez).
+- Construir notificación con Builder.
+- Llamar notify con id único por tipo de notificación.
+
+Foreground:
+- startForeground(id, notification) para servicios en primer plano.
+
+Buenas prácticas:
+- IDs estables por tipo; cancel(id) al resolver.
+- No spamear; respetar importancia.
+- Deep link en contentIntent.
+
+Cuándo usarlo:
+Mensajería, descargas, recordatorios, resultado de tareas en background con WorkManager (también puede mostrar notificación).
+
+Ejemplo:
+private fun createChannel(context: Context) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        val channel = NotificationChannel(
+            CHANNEL_ID,
+            "Mensajes",
+            NotificationManager.IMPORTANCE_DEFAULT
+        )
+        val nm = context.getSystemService(NotificationManager::class.java)
+        nm.createNotificationChannel(channel)
+    }
+}
+
+fun showMessageNotification(context: Context, title: String, body: String) {
+    createChannel(context)
+    val intent = Intent(context, MainActivity::class.java)
+    val pi = PendingIntent.getActivity(
+        context, 0, intent,
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    )
+    val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+        .setSmallIcon(R.drawable.ic_notification)
+        .setContentTitle(title)
+        .setContentText(body)
+        .setContentIntent(pi)
+        .setAutoCancel(true)
+        .build()
+    NotificationManagerCompat.from(context).notify(NOTIF_ID, notification)
+}
+
+Consejo para entrevista:
+Menciona canal obligatorio, permiso API 33 y PendingIntent FLAG_IMMUTABLE. Diferencia notify normal vs startForeground.

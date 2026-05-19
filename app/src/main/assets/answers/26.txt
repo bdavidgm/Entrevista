@@ -1,0 +1,42 @@
+Concepto:
+Una lambda con receptor (function type with receiver) es una función cuyo lambda se ejecuta con un objeto receptor disponible como this dentro del bloque. Se declara con la sintaxis T.() -> Unit en lugar de (T) -> Unit, habilitando DSLs que parecen APIs declarativas anidadas.
+
+Explicación detallada:
+apply, run y with usan lambdas con receptor. El tipo String.() -> Unit puede invocarse como extension: myLambda("hola") o myLambda.invoke("hola"). Dentro del lambda, this es el String receptor sin nombrarlo.
+
+Los DSL de Gradle Kotlin, HTML builders, Compose Modifier chains y configuración de OkHttpClient usan este patrón. El compilador inline muchas de estas llamadas. Restricción: return@label para salir del lambda; return solo permitido si la función externa es inline y no crossinline de forma que rompa semántica.
+
+Contraste (T) -> Unit: recibes T como argumento it o explícito, no como this. Mezclar estilos confunde en code review.
+
+En entrevistas dibujan DSL simple: class HTMLTag { fun div(block: Div.() -> Unit) }. Demuestra poder expresivo y riesgo: APIs DSL mal diseñadas ocultan errores hasta runtime.
+
+En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
+
+En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
+
+Cuándo usarlo:
+Diseñar mini-DSL internas, builders, configuración fluente con múltiples llamadas anidadas. No conviertas toda la app en DSL si el equipo no lo domina.
+
+Ejemplo:
+fun json(block: JsonObjectBuilder.() -> Unit): String {
+    return JsonObjectBuilder().apply(block).build()
+}
+
+class JsonObjectBuilder {
+    private val map = mutableMapOf<String, Any>()
+    fun field(name: String, value: Any) { map[name] = value }
+    fun build() = map.toString()
+}
+
+val payload = json {
+    field("id", orderId)
+    field("total", total)
+}
+
+// Tipo función con receptor
+fun buildNotification(block: NotificationCompat.Builder.() -> Unit) {
+    NotificationCompat.Builder(context, CHANNEL).apply(block).build()
+}
+
+Consejo para entrevista:
+Diferencia T.() -> Unit vs (T) -> Unit. Relaciona con apply/run. Preguntan return@label en lambda con receptor.

@@ -1,0 +1,41 @@
+Concepto:
+El AndroidManifest.xml es el archivo de declaración que describe componentes de la aplicación (activities, services, receivers, providers), permisos, requisitos de hardware, metadatos y configuración global al sistema Android antes de instalar o ejecutar la app.
+
+Explicación detallada:
+Cada Activity publicada debe declararse con nombre, exported, intent-filters, theme, launchMode, etc. Permisos dangerous requieren request en runtime además de declaración. application tag configura nombre de clase Application, icon, backup rules, network security config.
+
+Variantes build (manifest merge) combinan manifests de librerías: conflictos se resuelven con tools:replace o merge rules. exported=true obligatorio explícito desde Android 12 para componentes con intent-filters. queries para visibilidad de paquetes.
+
+En entrevistas preguntan intent-filter para launcher MAIN/LAUNCHER, deep links, permisos normal vs dangerous, y android:process para aislar componentes. También allowBackup y extracción de datos.
+
+En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
+
+En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
+
+Cuándo usarlo:
+Siempre: toda app lo tiene. Modificar al añadir componentes, permisos, features (camera required), metadata para Firebase/Google services.
+
+Ejemplo:
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <application
+        android:name=".MyApplication"
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:theme="@style/Theme.MyApp">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>
+
+Consejo para entrevista:
+Manifest merge en multi-módulo. exported y seguridad. Diferencia uses-permission vs uses-feature.

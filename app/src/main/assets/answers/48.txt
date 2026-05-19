@@ -1,0 +1,30 @@
+Concepto:
+remember es una función de Compose que almacena un valor en el Composition y lo conserva entre recomposiciones del mismo Composable en la misma posición del árbol. Sin remember, valores calculados o state se recrearían en cada recomposition perdiendo estado.
+
+Explicación detallada:
+remember { mutableStateOf(0) } crea estado una vez. remember(key1, key2) { } invalida y recalcula cuando cambian keys (útil al cambiar userId). remember con objetos costosos evita realloc (parser, AnnotatedString).
+
+No sobrevive process death ni rotación fuera de rememberSaveable. rememberCoroutineScope recuerda scope para callbacks UI. Contraste: ViewModel para lógica de pantalla y datos de negocio; remember para estado UI local efímero.
+
+En entrevistas: remember vs rememberSaveable; qué pasa si el Composable sale del árbol (se olvida). Side effects en remember block: permitidos una vez al crear.
+
+En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
+
+En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
+
+Cuándo usarlo:
+Estado UI local, objetos derivados costosos, AnimationState, SnackbarHostState. Keys cuando dependes de parámetros de identidad.
+
+Ejemplo:
+@Composable
+fun UserForm(userId: String) {
+    val repository = remember(userId) { UserRepository(userId) }
+    var name by rememberSaveable { mutableStateOf("") }
+    val scope = rememberCoroutineScope()
+    Button(onClick = {
+        scope.launch { repository.save(name) }
+    }) { Text("Guardar") }
+}
+
+Consejo para entrevista:
+remember sin keys vs con keys. No uses remember para datos de red que deben vivir en ViewModel. rememberSaveable para sobrevivir rotación.

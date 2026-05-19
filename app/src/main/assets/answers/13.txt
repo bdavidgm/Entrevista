@@ -1,0 +1,40 @@
+Concepto:
+La interpolación de strings permite incrustar valores y expresiones dentro de literales de texto en Kotlin mediante $nombre o ${expresión}. El compilador transforma la plantilla en concatenaciones o uso de StringBuilder, ofreciendo sintaxis más legible que la concatenación con + de Java o String.format verboso.
+
+Explicación detallada:
+Con una variable simple escribes "$userName"; para expresiones complejas usas llaves: "${order.total.formatCurrency()}". Funciona dentro de strings de una línea y de raw strings multilínea (triple comillas), donde siguen aplicando las reglas de interpolación salvo que escapes el dólar con \$.
+
+En Android la interpolación aparece en logs de depuración, mensajes de crash reporting internos, tests, URLs de staging y Composables para prototipos. Para textos visibles al usuario en producción, el estándar sigue siendo strings.xml con placeholders (%1$s, %2$d) y quantity strings (plurals) para pluralización e i18n correcta.
+
+Cuidados de seguridad y calidad: nunca construyas consultas SQL concatenando strings; Room usa parámetros enlazados. En logs de release evita PII interpolada (emails, tokens). En bucles muy calientes, muchas interpolaciones crean presión en GC; buildString { append(...) } agrupa mejor.
+
+Comparación con Java 15+ text blocks: Kotlin lleva años con raw strings e interpolación integrada. toString() implícito en interpolación imprime "null" si el valor es null, lo cual puede ser útil en debug o peligroso si no lo esperas.
+
+En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
+
+Cuándo usarlo:
+Depuración, tests, errores internos, etiquetas de desarrollo en Compose. Para UI final traducible, recursos. Para formateo locale-aware de moneda y fechas, usa NumberFormat/DateTimeFormatter o APIs de recursos, no doubles crudos en la cadena.
+
+Ejemplo:
+private const val TAG = "Checkout"
+
+fun logPayment(orderId: String, amount: Double) {
+    Log.d(TAG, "Pago OK order=$orderId amount=$amount")
+}
+
+@Composable
+fun Greeting(user: User?) {
+    Text(
+        text = "Hola, ${user?.name ?: "invitado"}",
+        style = MaterialTheme.typography.headlineSmall
+    )
+}
+
+// Muchas partes: buildString
+val debugSummary = buildString {
+    appendLine("Usuario: $userId")
+    append("Items: ${cart.size}, total=$total")
+}
+
+Consejo para entrevista:
+Diferencia $x vs ${}. Preguntan null → cadena "null". Enfatiza recursos Android para producción. Relaciona con string templates y performance en bucles.

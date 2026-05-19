@@ -1,0 +1,47 @@
+Concepto:
+Vibrator (y VibratorManager en API 31+) produce feedback háptico: vibraciones simples, patrones o efectos predefinidos (VibrationEffect) según capacidades del hardware.
+
+Explicación detallada:
+Obtención:
+- context.getSystemService(Vibrator::class.java)
+- API 31+: vibratorManager.defaultVibrator
+
+Permiso VIBRATE en manifest (normal, concedido en install).
+
+Evolución:
+- vibrate(long milliseconds) — legacy.
+- vibrate(VibrationEffect) API 26+: createOneShot, createWaveform, createPredefined (EFFECT_CLICK, DOUBLE_CLICK, TICK).
+- Android 12+: VibrationAttributes (USAGE_TOUCH, USAGE_NOTIFICATION) para contexto semántico.
+- Compose: LocalHapticFeedback.performHapticFeedback (no siempre usa Vibrator directamente).
+
+hasVibrator() y areEffectsSupported() evitan fallos en tablets sin motor.
+
+Buenas prácticas: vibraciones cortas para confirmación UI; no abusar en listas largas; respetar accesibilidad (algunos usuarios desactivan vibración); en juegos puede usarse más intensidad con patrones.
+
+Cuándo usarlo:
+- Confirmar acción (eliminar, enviar).
+- Alertas silenciosas en wearable companion (limitado).
+- Juegos y simulaciones.
+
+Evitar: vibración continua en background (batería y molestia).
+
+Ejemplo:
+val vibrator = context.getSystemService(Vibrator::class.java)
+if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+    vibrator.vibrate(
+        VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK)
+    )
+} else {
+    @Suppress("DEPRECATION")
+    vibrator.vibrate(50)
+}
+
+// Haptic en Compose
+val haptic = LocalHapticFeedback.current
+Button(onClick = {
+    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+    onConfirm()
+}) { Text("Confirmar") }
+
+Consejo para entrevista:
+Menciona VibrationEffect vs API antigua, permiso VIBRATE, y preferir HapticFeedback en Compose para botones. Di que compruebas hasVibrator() y que vibración larga en background es mala práctica.

@@ -1,0 +1,40 @@
+Concepto:
+El modificador in en tipos genéricos de Kotlin declara contravarianza: el tipo solo aparece en posiciones de entrada (consumidor); puedes tratar Consumer<Animal> como Consumer<Cat> si Cat es subtipo de Animal.
+
+Explicación detallada:
+Contravarianza (in):
+- interface Consumer<in T> { fun accept(item: T) }
+- T solo en parámetros y posiciones in; no puedes devolver T (salvo en posiciones donde no expone T al llamador de forma covariante problemática — el compilador restringe).
+
+Intuición: un consumidor de animales puede aceptar gatos; un Consumer<Animal> puede usarse donde se espera Consumer<Cat>.
+
+Comparación:
+- out T: productor, covariante (List como solo lectura de E).
+- in T: consumidor, contravariante.
+- Sin modificador: invariante (T en in y out), necesario para estructuras mutables como MutableList<T>.
+
+En Android y Kotlin estándar:
+- Comparable<in T> en la biblioteca (simplificado conceptualmente).
+- Observers y listeners que reciben eventos de tipo T.
+- Handlers que procesan mensajes de un tipo base.
+
+Cuándo usarlo:
+Interfaces que solo reciben T y no lo producen como tipo principal de retorno. Menos frecuente que out en APIs de lectura, pero aparece en diseño de frameworks y comparadores.
+
+Ejemplo:
+interface Consumer<in T> {
+    fun consume(item: T)
+}
+
+open class Animal
+class Cat : Animal()
+
+fun registerCatHandler(handler: Consumer<Cat>) { ... }
+
+val animalConsumer: Consumer<Animal> = object : Consumer<Animal> {
+    override fun consume(item: Animal) { println(item) }
+}
+registerCatHandler(animalConsumer) // OK: Consumer<Animal> es Consumer<Cat>
+
+Consejo para entrevista:
+Empareja out (productor) con in (consumidor). PECS en Java: Consumer super (in). Si mezclas in y out en la misma interfaz mutable, suele ser invariante.

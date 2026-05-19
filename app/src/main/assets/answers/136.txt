@@ -1,0 +1,45 @@
+Concepto:
+@Insert en Room es la anotación de un método DAO que inserta una o más filas en una tabla; Room genera la implementación SQL INSERT en tiempo de compilación.
+
+Explicación detallada:
+Variantes:
+- @Insert suspend fun insert(user: User): Long — retorna rowId.
+- @Insert(onConflict = OnConflictStrategy.REPLACE) fun insertAll(users: List<User>)
+- Estrategias: ABORT, REPLACE, IGNORE, FAIL.
+
+Puede insertar:
+- Una entidad, List, array.
+- Múltiples tipos si el DAO define varios @Insert.
+
+Transacciones:
+- Múltiples operaciones atómicas: @Transaction en función que llama varios @Insert/@Update.
+
+Validación en compilación:
+- Room verifica que los campos de la entidad mapean a columnas.
+- TypeConverters aplican para tipos no primitivos.
+
+Comparación:
+- @Update: filas existentes por primary key.
+- @Upsert (Room 2.5+): insert or update en una operación.
+
+Cuándo usarlo:
+Persistir entidades desde Repository en corrutinas (suspend) o Rx (si legacy). Elegir onConflict según reglas de negocio (cache vs error en duplicado).
+
+Ejemplo:
+@Dao
+interface UserDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(user: User): Long
+
+    @Insert
+    suspend fun insertAll(users: List<User>): List<Long>
+}
+
+class UserRepository @Inject constructor(private val dao: UserDao) {
+    suspend fun save(user: User) {
+        dao.insert(user)
+    }
+}
+
+Consejo para entrevista:
+Menciona onConflict, suspend DAO y @Transaction para operaciones compuestas. Contrasta con @Query INSERT manual si necesitas SQL complejo.

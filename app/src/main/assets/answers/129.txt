@@ -1,0 +1,38 @@
+Concepto:
+lifecycleScope es una CoroutineScope vinculada al Lifecycle de un LifecycleOwner (Activity, Fragment) que cancela automáticamente las corrutinas cuando el Lifecycle se destruye (DESTROYED).
+
+Explicación detallada:
+Proporcionado por androidx.lifecycle:lifecycle-runtime-ktx.
+- Extensión val LifecycleOwner.lifecycleScope
+- Dispatcher por defecto Main.immediate para trabajo de UI tras suspend.
+- Cancelación en onDestroy del owner.
+
+Patrones recomendados:
+- lifecycleScope.launch { } para fire-and-forget ligado a pantalla.
+- repeatOnLifecycle(Lifecycle.State.STARTED) { flow.collect { } } para coleccionar Flow solo cuando la UI es visible, evitando trabajo en background y fugas.
+
+Comparación con viewModelScope:
+- lifecycleScope: cancela al destruir Activity/Fragment; ideal para efectos de UI puros (animaciones, collectors de UI).
+- viewModelScope: sobrevive rotación; cancela al limpiar ViewModel (CLEAR del store).
+
+No uses GlobalScope en producción: no respeta lifecycle.
+
+Cuándo usarlo:
+Lanzar corrutinas desde Activity/Fragment que deben morir con la pantalla. Combinar con repeatOnLifecycle para Flows en lugar de collect directo en onCreate sin lifecycle.
+
+Ejemplo:
+class ListActivity : AppCompatActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.items.collect { items ->
+                    adapter.submitList(items)
+                }
+            }
+        }
+    }
+}
+
+Consejo para entrevista:
+Explica cancelación automática y repeatOnLifecycle vs collect en onCreate. Contrasta con viewModelScope para rotación.

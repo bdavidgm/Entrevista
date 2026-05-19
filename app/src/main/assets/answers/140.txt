@@ -1,0 +1,56 @@
+Concepto:
+@HiltViewModel es la anotación que marca un ViewModel para que Hilt inyecte dependencias en su constructor vía el ViewModelFactory generado, integrado con navigation-compose y SavedStateHandle.
+
+Explicación detallada:
+Sin Hilt manual:
+- ViewModelProvider.Factory boilerplate para pasar repos.
+
+Con Hilt:
+@HiltViewModel
+class MyViewModel @Inject constructor(
+    private val repo: UserRepository,
+    savedStateHandle: SavedStateHandle
+) : ViewModel()
+
+En Activity/Fragment:
+- @AndroidEntryPoint en la pantalla.
+- private val vm: MyViewModel by viewModels()
+
+En Compose:
+val vm: MyViewModel = hiltViewModel()
+
+Módulos:
+- Hilt ya provee bindings estándar; si necesitas interfaz -> impl, @Binds en módulo @InstallIn(SingletonComponent::class) o ViewModelComponent según scope.
+
+Scopes:
+- ViewModel vive en ViewModelComponent ligado al NavBackStackEntry o Activity/Fragment owner.
+
+Limitaciones:
+- ViewModel solo debe recibir dependencias de capa de presentación/dominio, no View ni Context de Activity (sí @ApplicationContext si imprescindible con cuidado).
+
+Cuándo usarlo:
+Proyectos con Hilt y arquitectura MVVM/MVI estándar en todas las pantallas.
+
+Ejemplo:
+@HiltViewModel
+class ProfileViewModel @Inject constructor(
+    private val getUser: GetUserUseCase,
+    savedStateHandle: SavedStateHandle
+) : ViewModel() {
+    private val userId: String = checkNotNull(savedStateHandle["userId"])
+    // ...
+}
+
+@AndroidEntryPoint
+class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContent {
+            val vm: ProfileViewModel = hiltViewModel()
+            ProfileScreen(vm)
+        }
+    }
+}
+
+Consejo para entrevista:
+Menciona @AndroidEntryPoint, hiltViewModel() y que elimina Factory manual. No inyectes Activity en ViewModel.

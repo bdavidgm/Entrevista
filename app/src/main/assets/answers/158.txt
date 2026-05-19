@@ -1,0 +1,45 @@
+Concepto:
+Handler y Looper son el mecanismo clásico de Android para encolar y ejecutar mensajes Runnable en un hilo específico; el Looper hace girar la cola de mensajes y el Handler publica trabajo en ese Looper.
+
+Explicación detallada:
+Main Looper:
+- Cada app tiene un hilo principal con Looper.getMainLooper().
+- Toda actualización de UI debe ocurrir en ese hilo.
+
+Handler(Looper):
+- handler.post { textView.text = "Hi" }
+- handler.postDelayed({ }, 3000)
+
+Message y MessageQueue:
+- Internamente Runnable y Messages en cola FIFO por hilo.
+
+Relación con corrutinas:
+- Dispatchers.Main usa el Main Looper bajo el capó.
+- Preferir corrutinas en código nuevo; Handler sigue en APIs legacy y View.post.
+
+Riesgos:
+- Handler con referencia implícita a Activity + mensajes pendientes -> leak (usar static Handler + WeakReference o cancelar en onDestroy).
+- postDelayed sin cancelar tras destruir pantalla.
+
+Cuándo usarlo:
+Integración con APIs que devuelven callbacks en background thread y requieren post al main; código legacy. En código nuevo: withContext(Main) o MainScope.
+
+Ejemplo:
+// Publicar en UI desde callback en background
+val handler = Handler(Looper.getMainLooper())
+api.fetchUser { user ->
+    handler.post {
+        binding.nameText.text = user.name
+    }
+}
+
+// Equivalente moderno
+lifecycleScope.launch(Dispatchers.IO) {
+    val user = api.fetchUserSuspend()
+    withContext(Dispatchers.Main) {
+        binding.nameText.text = user.name
+    }
+}
+
+Consejo para entrevista:
+Explica Looper por hilo y Main thread. Menciona fugas con Handler y que corrutinas son el estándar actual. View.post { } es variante simple.

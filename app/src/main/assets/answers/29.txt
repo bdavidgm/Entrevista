@@ -1,0 +1,35 @@
+Concepto:
+Un inline class (ahora value class en Kotlin 1.5+) es un tipo contenedor ligero que envuelve un único valor subyacente sin, en la mayoría de casos, crear un objeto wrapper en runtime gracias a optimizaciones del compilador. Sirve para modelar unidades de medida, IDs tipados y validaciones en compile time con coste cercano a primitivos.
+
+Explicación detallada:
+Se declara con @JvmInline value class UserId(val value: String). En muchos escenarios JVM usa el tipo subyacente directamente (String), evitando boxing. Con restricciones: una propiedad en el constructor primario; puede implementar interfaces pero con reglas de boxing en ciertos usos (nullable value class, interfaces).
+
+En Android útil para UserId vs OrderId vs String crudo, Email, PhoneNumber validado en init. Reduce bugs de mezclar strings. Interop Java ve el tipo subyacente en muchas firmas.
+
+Comparación con typealias: typealias no crea tipo nuevo, solo alias; value class sí es tipo distinto para type safety. Comparación con data class de un campo: data class alloca objeto normalmente; value class optimiza.
+
+En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
+
+En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
+
+Cuándo usarlo:
+IDs de dominio, wrappers de primitivos con invariantes, unidades. No abuses en cada String; el equipo debe acordar convención.
+
+Ejemplo:
+@JvmInline
+value class UserId(val raw: String) {
+    init { require(raw.isNotBlank()) }
+}
+
+@JvmInline
+value class Percent(val value: Int) {
+    init { require(value in 0..100) }
+}
+
+fun loadProfile(id: UserId) { /* no puedes pasar OrderId por error */ }
+
+val id = UserId("u-42")
+loadProfile(id)
+
+Consejo para entrevista:
+value class vs inline class naming. Preguntan boxing cuando se usa como interface o nullable. Menciona typealias no da safety.

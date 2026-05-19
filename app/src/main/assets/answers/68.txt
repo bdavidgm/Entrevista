@@ -1,0 +1,44 @@
+Concepto:
+LiveData es un contenedor observable de Android Jetpack que expone datos de forma consciente del ciclo de vida: solo notifica a observadores en estado STARTED o superior, evitando crashes por actualizar UI destruida. Fue el estándar pre-coroutines junto a ViewModel.
+
+Explicación detallada:
+MutableLiveData permite setValue (main thread) y postValue (desde background). observe(LifecycleOwner) { } en Activity/Fragment o observeAsState en Compose legacy. Transformations.map y switchMap componen fuentes.
+
+Ventajas históricas: integración simple con XML y ViewModel, sin dependencia explícita de coroutines. Limitaciones: menos operadores que Flow, no es cold stream por defecto de la misma forma, testing algo más incómodo, y recomposición moderna favorece StateFlow con collectAsStateWithLifecycle.
+
+LiveData con Room: @Query que devuelve LiveData o Flow; LiveData re-ejecuta query al invalidarse. Para nuevos proyectos Google recomienda Flow/StateFlow en ViewModel; LiveData sigue válido en código legacy.
+
+Threading: setValue debe ser main; postValue encola. MediatorLiveData combina varias fuentes.
+
+En entrevista 2024-2026: demuestra que conoces LiveData por mantenimiento y migración, pero preferirías StateFlow en código nuevo por integración con suspend y operadores.
+
+En el contexto de proyectos Android reales, combina esta idea con las guías oficiales de Android Developers y con métricas de calidad (crashes, ANR, Vitals) cuando aplique. En code review, pregunta siempre por ciclo de vida, testabilidad y si la solución escala cuando el equipo crece.
+
+Durante la entrevista, estructura la respuesta en definición, ejemplo concreto de tu experiencia o proyecto demo, y trade-offs frente a alternativas. Mencionar versiones recientes de API o biblioteca (Material3, Paging 3, Hilt 2.x) demuestra que sigues el ecosistema, sin necesidad de memorizar números de versión exactos.
+
+Para profundizar tras la entrevista, revisa documentación oficial, codelabs y el código fuente de tu propio proyecto Entrevista aplicando el concepto en un flujo mínimo reproducible. La práctica deliberada con tests unitarios refuerza la confianza al explicar el tema en viva voz.
+
+En el contexto de proyectos Android reales, combina esta idea con las guías oficiales de Android Developers y con métricas de calidad (crashes, ANR, Vitals) cuando aplique. En code review, pregunta siempre por ciclo de vida, testabilidad y si la solución escala cuando el equipo crece.
+
+Durante la entrevista, estructura la respuesta en definición, ejemplo concreto de tu experiencia o proyecto demo, y trade-offs frente a alternativas. Mencionar versiones recientes de API o biblioteca (Material3, Paging 3, Hilt 2.x) demuestra que sigues el ecosistema, sin necesidad de memorizar números de versión exactos.
+
+Para profundizar tras la entrevista, revisa documentación oficial, codelabs y el código fuente de tu propio proyecto Entrevista aplicando el concepto en un flujo mínimo reproducible. La práctica deliberada con tests unitarios refuerza la confianza al explicar el tema en viva voz.
+
+Cuándo usarlo:
+Mantenimiento de apps existentes con LiveData, equipos sin coroutines aún. Código nuevo en Kotlin: StateFlow salvo dependencia que solo expone LiveData.
+
+Ejemplo:
+class UserViewModel(repo: UserRepository) : ViewModel() {
+    private val _user = MutableLiveData<User>()
+    val user: LiveData<User> = _user
+
+    fun refresh() = viewModelScope.launch {
+        _user.postValue(repo.fetchUser())
+    }
+}
+
+// Activity
+viewModel.user.observe(this) { user -> binding.name.text = user.name }
+
+Consejo para entrevista:
+Menciona lifecycle-aware y diferencia con RxJava Observable sin lifecycle. Seguimiento: ¿Migrar a Flow? Sí gradualmente; Room y Retrofit ya soportan Flow.

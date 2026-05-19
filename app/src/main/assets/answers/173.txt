@@ -1,0 +1,44 @@
+Concepto:
+AlarmManager programa disparos en tiempo (a menudo exactos) mediante PendingIntent; WorkManager ejecuta trabajo en background garantizado, diferible y con restricciones (red, batería, almacenamiento), respetando Doze y políticas modernas.
+
+Explicación detallada:
+AlarmManager pertenece al modelo antiguo de “despertar la app a una hora”. No ejecuta tu lógica directamente: envía un Intent. No ofrece reintentos automáticos, encadenamiento ni observabilidad unificada. Las alarmas exactas consumen batería y están restringidas (permisos, límites en repeticiones).
+
+WorkManager (Jetpack) es la capa recomendada para tareas que deben completarse aunque la app cierre: subir logs, sincronizar catálogo, prefetch. Internamente puede usar JobScheduler (API 23+), AlarmManager o Firebase JobDispatcher según versión. Expone Constraints, backoff exponencial, UniqueWork, observación con WorkInfo y corrutinas/Flow.
+
+Comparación práctica:
+| Aspecto | AlarmManager | WorkManager |
+| Hora exacta usuario | Sí (setAlarmClock) | No prioritario |
+| Sync periódico en Doze | Mal adaptado | Sí |
+| Reintentos | Manual | Automático |
+| Restricción Wi‑Fi | Manual | Constraints |
+| Persistencia tras reboot | Reprogramar tú | Sí (con constraints) |
+| Foreground inmediato | No | Worker con ForegroundInfo |
+
+AlarmManager sigue válido para despertador real o recordatorio visible en esa hora. WorkManager para casi todo trabajo de red o disco en background.
+
+Cuándo usarlo:
+- AlarmManager: alarma de usuario, calendario con hora fija, casos que deben sonar incluso en Doze (setAlarmClock).
+- WorkManager: sync, analytics batch, limpieza de caché, descargas no urgentes, migraciones.
+
+Ejemplo:
+// WorkManager: sync cada 6h con red
+val request = PeriodicWorkRequestBuilder<SyncWorker>(6, TimeUnit.HOURS)
+    .setConstraints(
+        Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .build()
+    )
+    .build()
+WorkManager.getInstance(context).enqueueUniquePeriodicWork(
+    "sync", ExistingPeriodicWorkPolicy.KEEP, request
+)
+
+// AlarmManager: recordatorio exacto
+alarmManager.setAlarmClock(
+    AlarmManager.AlarmClockInfo(triggerTime, showIntent),
+    operationPendingIntent
+)
+
+Consejo para entrevista:
+Respuesta ideal en una frase: “AlarmManager para tiempo wall-clock crítico para el usuario; WorkManager para trabajo deferible y fiable en background.” Menciona Doze, SCHEDULE_EXACT_ALARM y que WorkManager puede usar AlarmManager internamente sin que tú lo gestiones.

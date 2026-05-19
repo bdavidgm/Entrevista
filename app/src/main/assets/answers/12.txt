@@ -1,0 +1,35 @@
+Concepto:
+En Kotlin, un rango (range) es un objeto que representa una secuencia ordenada entre un valor inicial y otro, normalmente creado con el operador .. (intervalo cerrado, incluye el final) o until (intervalo semiabierto, excluye el final). Los tipos más usados son IntRange, LongRange y CharRange, y son Iterable para usar en for y en comprobaciones con in.
+
+Explicación detallada:
+La expresión 1..10 incluye el 10; 1 until 10 incluye del 1 al 9. Puedes invertir con downTo y cambiar el paso con step: (100 downTo 0 step 10). El operador in comprueba pertenencia sin materializar una lista: if (score in 0..100). Esto evita errores off-by-one frecuentes en bucles sobre índices de listas: for (i in items.indices) o for (i in 0 until items.size).
+
+En Android los rangos aparecen en validación de formularios (edad, porcentaje), paginación de índices, animaciones frame a frame y filtros simples. Para fechas y horas en producción se prefiere java.time (Instant, LocalDate) o kotlinx-datetime, no rangos de enteros crudos sobre epoch sin cuidado.
+
+Los rangos de Float y Double existen pero son delicados por precisión binaria; evita comparar igualdad en extremos flotantes. CharRange es útil en parsers triviales; para texto real usa regex o bibliotecas dedicadas.
+
+En entrevistas comparan .. con until usando ejemplos de arrays y RecyclerView: el último índice válido es size - 1, hence until size. También preguntan si 10..1 está vacío (sí, a menos que uses downTo).
+
+En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
+
+Cuándo usarlo:
+Bucles numéricos claros, validación de intervalos, ramas when con in, y rangos de índices en colecciones. Para iterar elementos de una lista, usa for (item in list) o list.forEach; reserva índices para cuando necesites posición o modificar por índice.
+
+Ejemplo:
+fun isTeenAge(age: Int) = age in 13..19
+
+fun loadAllPages(totalPages: Int) {
+    for (page in 0 until totalPages) {
+        repository.fetchPage(page)
+    }
+}
+
+// Prefetch de ítems visibles en LazyColumn
+fun prefetch(visible: IntRange, buffer: Int = 2) {
+    val start = (visible.first - buffer).coerceAtLeast(0)
+    val end = visible.last + buffer
+    imageLoader.warmRange(start..end)
+}
+
+Consejo para entrevista:
+Memoriza: .. inclusivo, until exclusivo en el extremo superior. Ejemplo clásico: for (i in 0..array.lastIndex) vs 0 until array.size. Menciona repeat(n) cuando no necesitas el índice.

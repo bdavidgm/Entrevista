@@ -1,0 +1,45 @@
+Concepto:
+El BOM (Bill of Materials) de Compose es un artefacto Maven platform que alinea versiones compatibles de todas las librerías Compose (ui, material3, animation, etc.) declarando una sola versión BOM y omitiendo versión en cada dependencia individual.
+
+Explicación detallada:
+implementation(platform("androidx.compose:compose-bom:2024.09.00")) y luego implementation("androidx.compose.material3:material3") sin versión explícita. Evita conflictos donde material3 1.2 requiere runtime 1.5 distinto y crashes sutiles.
+
+Actualizar Compose = bump versión BOM en catalog. Otras BOMs: Firebase BOM, Coil a veces documentado junto.
+
+No incluye Kotlin compiler extension version: compiler extension version en composeOptions o plugin Compose debe alinearse con release notes del BOM.
+
+En el contexto de proyectos Android reales, combina esta idea con las guías oficiales de Android Developers y con métricas de calidad (crashes, ANR, Vitals) cuando aplique. En code review, pregunta siempre por ciclo de vida, testabilidad y si la solución escala cuando el equipo crece.
+
+Durante la entrevista, estructura la respuesta en definición, ejemplo concreto de tu experiencia o proyecto demo, y trade-offs frente a alternativas. Mencionar versiones recientes de API o biblioteca (Material3, Paging 3, Hilt 2.x) demuestra que sigues el ecosistema, sin necesidad de memorizar números de versión exactos.
+
+Para profundizar tras la entrevista, revisa documentación oficial, codelabs y el código fuente de tu propio proyecto Entrevista aplicando el concepto en un flujo mínimo reproducible. La práctica deliberada con tests unitarios refuerza la confianza al explicar el tema en viva voz.
+
+En el contexto de proyectos Android reales, combina esta idea con las guías oficiales de Android Developers y con métricas de calidad (crashes, ANR, Vitals) cuando aplique. En code review, pregunta siempre por ciclo de vida, testabilidad y si la solución escala cuando el equipo crece.
+
+Durante la entrevista, estructura la respuesta en definición, ejemplo concreto de tu experiencia o proyecto demo, y trade-offs frente a alternativas. Mencionar versiones recientes de API o biblioteca (Material3, Paging 3, Hilt 2.x) demuestra que sigues el ecosistema, sin necesidad de memorizar números de versión exactos.
+
+Para profundizar tras la entrevista, revisa documentación oficial, codelabs y el código fuente de tu propio proyecto Entrevista aplicando el concepto en un flujo mínimo reproducible. La práctica deliberada con tests unitarios refuerza la confianza al explicar el tema en viva voz.
+
+Cuándo usarlo:
+Todo proyecto Compose multi-módulo. Obligatorio en entrevistas 2024+ como buena práctica.
+
+Ejemplo:
+// libs.versions.toml
+[versions]
+composeBom = "2024.09.00"
+
+[libraries]
+compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
+compose-ui = { group = "androidx.compose.ui", name = "ui" }
+compose-material3 = { group = "androidx.compose.material3", name = "material3" }
+
+// build.gradle.kts
+dependencies {
+    implementation(platform(libs.compose.bom))
+    implementation(libs.compose.ui)
+    implementation(libs.compose.material3)
+    androidTestImplementation(platform(libs.compose.bom))
+}
+
+Consejo para entrevista:
+Explica platform() y una versión BOM. Menciona alinear compiler plugin. No mezclar versiones manuales sueltas sin BOM.

@@ -1,0 +1,50 @@
+Concepto:
+El patrón Repository es una capa de abstracción que unifica el acceso a datos desde una o varias fuentes (API, Room, DataStore, caché en memoria) y expone una API orientada al dominio o a la app. Oculta detalles de red y persistencia al ViewModel y facilita tests con implementaciones fake.
+
+Explicación detallada:
+El ViewModel no debe llamar a Retrofit ni DAO directamente: pide productRepository.getProducts() y el repository decide si leer de red, caché local o ambos (estrategia network-first, cache-first). Esto centraliza políticas de sincronización, reintentos y mapeo DTO -> entidad de dominio.
+
+Un repository puede ser una interfaz ProductRepository con implementación DefaultProductRepository inyectada por Hilt. Internamente usa ProductApi, ProductDao y quizá DataStore para timestamps. Los errores se mapean a Result o excepciones de dominio legibles para la UI.
+
+En Clean Architecture el repository pertenece a la capa de datos pero implementa interfaces definidas en dominio (Dependency Inversion). En MVVM pragmático a veces la interfaz vive en el mismo módulo data; en proyectos grandes, módulo :domain define contrato y :data implementa.
+
+Testing: FakeProductRepository en tests de ViewModel devuelve listas fijas sin Mockito de Retrofit. Tests de integración prueban la implementación real contra base en memoria.
+
+Cache: el repository puede mantener StateFlow compartido o invalidar tras escrituras. Paging 3 integra RemoteMediator que actúa como capa de sincronización entre red y Room dentro del ecosistema repository-like.
+
+En el contexto de proyectos Android reales, combina esta idea con las guías oficiales de Android Developers y con métricas de calidad (crashes, ANR, Vitals) cuando aplique. En code review, pregunta siempre por ciclo de vida, testabilidad y si la solución escala cuando el equipo crece.
+
+Durante la entrevista, estructura la respuesta en definición, ejemplo concreto de tu experiencia o proyecto demo, y trade-offs frente a alternativas. Mencionar versiones recientes de API o biblioteca (Material3, Paging 3, Hilt 2.x) demuestra que sigues el ecosistema, sin necesidad de memorizar números de versión exactos.
+
+Para profundizar tras la entrevista, revisa documentación oficial, codelabs y el código fuente de tu propio proyecto Entrevista aplicando el concepto en un flujo mínimo reproducible. La práctica deliberada con tests unitarios refuerza la confianza al explicar el tema en viva voz.
+
+Preguntas de seguimiento frecuentes en entrevistas para este tema incluyen comparación con alternativas del ecosistema, implicaciones en testing y en el ciclo de vida de Android, y cómo lo aplicarías en una app modular con varios flavors. Si el entrevistador pide profundidad, menciona herramientas de diagnóstico (Profiler, Lint, StrictMode, Layout Inspector) y cómo validarías en CI que no hay regresiones.
+
+En proyectos reales, documenta decisiones en ADR breves o en README del módulo para que el equipo no revierta el patrón por desconocimiento. La mejor respuesta de entrevista combina definición precisa, ejemplo Kotlin o Compose concreto y honestidad sobre límites: ninguna solución es gratis en complejidad o tamaño de APK.
+
+Relaciona este concepto con los demás bloques del manifiesto Entrevista (arquitectura, corrutinas, seguridad, build) para demostrar visión de sistema completo, no conocimiento aislado de una API.
+
+Cuándo usarlo:
+Siempre que haya más de una fuente de datos o posibilidad de cambiar implementación (mock en debug, API staging). Evita repository de un solo método que solo reenvía una llamada API sin valor; en ese caso evalúa si la capa aporta o es over-engineering.
+
+Ejemplo:
+interface ProductRepository {
+    suspend fun getProducts(): List<Product>
+    suspend fun refresh()
+}
+
+class ProductRepositoryImpl @Inject constructor(
+    private val api: ProductApi,
+    private val dao: ProductDao
+) : ProductRepository {
+    override suspend fun getProducts(): List<Product> =
+        dao.getAll().ifEmpty { refresh(); dao.getAll() }
+
+    override suspend fun refresh() {
+        val remote = api.fetchAll()
+        dao.insertAll(remote.map { it.toEntity() })
+    }
+}
+
+Consejo para entrevista:
+Explica una fuente de verdad, estrategia de caché y test con fake. No confundas Repository con DAO: DAO es SQLite; Repository orquesta. Seguimiento: ¿Dónde va el mapper? En data layer o use case según Clean.

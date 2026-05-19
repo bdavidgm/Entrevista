@@ -1,0 +1,39 @@
+Concepto:
+Tasks y Back Stack son el mecanismo con el que Android organiza Activities en pilas (tasks) asociadas a apps recientes: cada startActivity puede apilar, reordenar o limpiar entradas según flags y launchMode.
+
+Explicación detallada:
+Task: colección de Activities en orden LIFO (última en entrar, primera en salir con Back). Una app puede tener varias tasks (document launch mode, intents con NEW_TASK).
+
+Back Stack por task: A → B → C; Back desde C destruye C y muestra B. Si C es fin de task, usuario vuelve al launcher u otra app.
+
+Intent flags que afectan la pila:
+- FLAG_ACTIVITY_NEW_TASK: nueva task o reutilizar según affinity.
+- FLAG_ACTIVITY_CLEAR_TOP: si Activity ya existe, destruye instancias encima y llama onNewIntent.
+- FLAG_ACTIVITY_SINGLE_TOP: si está en top, no crea otra instancia.
+- FLAG_ACTIVITY_CLEAR_TASK + NEW_TASK: reset total (splash/logout).
+
+launchMode en manifest (ver pregunta 196): standard, singleTop, singleTask, singleInstance.
+
+Fragments: back stack propio gestionado por FragmentManager (addToBackStack); Navigation Component unifica popBackStack.
+
+Recents (multitarea): cada task tiene thumbnail; document mode muestra varias tasks de la misma app (navegador).
+
+Cuándo usarlo:
+- Diseñar flujos login → home sin volver a login con Back.
+- Deep links que deben abrir pantalla concreta sin duplicar home.
+- Evitar múltiples copias de MainActivity.
+
+Ejemplo:
+// Tras login, limpiar stack y dejar Home
+val intent = Intent(this, HomeActivity::class.java).apply {
+    flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+            Intent.FLAG_ACTIVITY_CLEAR_TASK
+}
+startActivity(intent)
+finish()
+
+// Navigation Component
+navController.popBackStack() // equivalente conceptual a desapilar fragmentos
+
+Consejo para entrevista:
+Dibuja la pila A-B-C. Explica diferencia task vs back stack de fragments. Menciona CLEAR_TASK tras auth y singleTask para “home raíz”. Conecta con predictive back (Android 13+).

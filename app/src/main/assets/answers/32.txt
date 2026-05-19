@@ -1,0 +1,40 @@
+Concepto:
+Un Fragment es un pedazo de UI y lógica reutilizable que vive dentro de una Activity, con su propio ciclo de vida vinculado al del host. Permite composición de pantallas (pestañas, master-detail, navegación) y fue el estándar antes de Jetpack Compose; sigue vigente en apps híbridas y Navigation Component.
+
+Explicación detallada:
+FragmentManager gestiona transacciones add/replace/remove y back stack. Ciclo de vida incluye onAttach, onCreate, onCreateView, onViewCreated, onStart, onResume y simétricos inversos. viewLifecycleOwner es crítico: observa datos solo mientras la vista existe, no mientras el fragment instance sobrevive.
+
+Problemas clásicos: retain instance obsoleto, leaks por Context de Activity, doble callback tras rotación si no usas ViewModel. DialogFragment, BottomSheetDialogFragment son especializaciones.
+
+Con Compose, muchos equipos reducen fragments a hosts NavHostFragment o eliminan fragments en pantallas nuevas. Interop ComposeView dentro de Fragment es común en migraciones.
+
+En entrevistas: diferencia lifecycle del fragment vs lifecycle de la vista; commit allowStateLoss; comunicación entre fragments (ViewModel compartido, Navigator, no interfaces acopladas al host si evitable).
+
+En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
+
+En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
+
+Cuándo usarlo:
+Apps con XML/Navigation Component existentes, módulos legacy, tablets master-detail. En greenfield Compose puro, Fragment puede ser solo contenedor mínimo.
+
+Ejemplo:
+class ProductFragment : Fragment(R.layout.fragment_product) {
+    private val viewModel: ProductViewModel by viewModels()
+    private var binding: FragmentProductBinding? = null
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        val binding = FragmentProductBinding.bind(view)
+        this.binding = binding
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.product.collect { binding.title.text = it.name }
+        }
+    }
+
+    override fun onDestroyView() {
+        binding = null
+        super.onDestroyView()
+    }
+}
+
+Consejo para entrevista:
+viewLifecycleOwner vs lifecycleOwner. onDestroyView limpiar binding. Fragment transactions y back stack.

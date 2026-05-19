@@ -1,0 +1,42 @@
+Concepto:
+Destructuring (desestructuración) en Kotlin permite extraer componentes de un objeto en variables individuales en una sola declaración, usando la convención componentN() de data class o operator componentN definido.
+
+Explicación detallada:
+Data class genera component1(), component2(), ... automáticamente.
+
+Sintaxis:
+val (name, age) = person
+for ((index, value) in list.withIndex()) { }
+
+En parámetros:
+fun printUser((name, id): Pair<String, String>) — menos común.
+
+Map:
+for ((key, value) in map) { }
+
+Cuándo no funciona:
+- Clases normales sin componentN.
+- Tipos con muchos campos: desestructurar todo reduce legibilidad; usar propiedades nombradas.
+
+En Android:
+- Pair/Triple de resultados locales.
+- Entidades data class en loops.
+- Entries de mapa de configuración.
+
+Cuándo usarlo:
+when, loops y asignaciones donde los nombres de componentes son claros y el tipo es data class o tiene componentN.
+
+Ejemplo:
+data class LatLng(val lat: Double, val lng: Double)
+
+fun distance(a: LatLng, b: LatLng): Double {
+    val (lat1, lng1) = a
+    val (lat2, lng2) = b
+    return haversine(lat1, lng1, lat2, lng2)
+}
+
+val response = api.fetch() // data class UserResponse(val user: User, val meta: Meta)
+val (user, meta) = response
+
+Consejo para entrevista:
+Menciona que requiere data class o componentN. Ejemplo con for en map. No abuses en funciones públicas con muchos valores anónimos.

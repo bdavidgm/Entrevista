@@ -1,0 +1,44 @@
+Concepto:
+Paging 3 es la librería de Jetpack para cargar y mostrar grandes conjuntos de datos por páginas de forma eficiente, con placeholders, estados de carga/error y integración con RecyclerView, Compose LazyColumn y fuentes Room o red.
+
+Explicación detallada:
+PagingSource load(params) devuelve LoadResult.Page con datos y keys para siguiente/anterior. Pager construye Flow<PagingData<T>>. En UI, collect con collectLatest y LazyPagingItems en Compose o submitData en Adapter.
+
+RemoteMediator sincroniza red + Room: REFRESH carga API y guarda en BD; Paging lee solo de Room. Separación clara offline-first.
+
+LoadState: Loading, Error, NotLoading para footer y retry. prefetchDistance y pageSize tunan rendimiento. header/footer con LoadStateAdapter.
+
+Evita listas gigantes en memoria: solo páginas visibles más prefetch. Invalida PagingSource tras filtros cambiando Pager o invalidate().
+
+En el contexto de proyectos Android reales, combina esta idea con las guías oficiales de Android Developers y con métricas de calidad (crashes, ANR, Vitals) cuando aplique. En code review, pregunta siempre por ciclo de vida, testabilidad y si la solución escala cuando el equipo crece.
+
+Durante la entrevista, estructura la respuesta en definición, ejemplo concreto de tu experiencia o proyecto demo, y trade-offs frente a alternativas. Mencionar versiones recientes de API o biblioteca (Material3, Paging 3, Hilt 2.x) demuestra que sigues el ecosistema, sin necesidad de memorizar números de versión exactos.
+
+Para profundizar tras la entrevista, revisa documentación oficial, codelabs y el código fuente de tu propio proyecto Entrevista aplicando el concepto en un flujo mínimo reproducible. La práctica deliberada con tests unitarios refuerza la confianza al explicar el tema en viva voz.
+
+En el contexto de proyectos Android reales, combina esta idea con las guías oficiales de Android Developers y con métricas de calidad (crashes, ANR, Vitals) cuando aplique. En code review, pregunta siempre por ciclo de vida, testabilidad y si la solución escala cuando el equipo crece.
+
+Durante la entrevista, estructura la respuesta en definición, ejemplo concreto de tu experiencia o proyecto demo, y trade-offs frente a alternativas. Mencionar versiones recientes de API o biblioteca (Material3, Paging 3, Hilt 2.x) demuestra que sigues el ecosistema, sin necesidad de memorizar números de versión exactos.
+
+Para profundizar tras la entrevista, revisa documentación oficial, codelabs y el código fuente de tu propio proyecto Entrevista aplicando el concepto en un flujo mínimo reproducible. La práctica deliberada con tests unitarios refuerza la confianza al explicar el tema en viva voz.
+
+Cuándo usarlo:
+Feeds infinitos, catálogos, historial de mensajes. No para listas de 10 elementos fijos en memoria.
+
+Ejemplo:
+@Composable
+fun ProductList(pager: Flow<PagingData<Product>>) {
+    val items = pager.collectAsLazyPagingItems()
+    LazyColumn {
+        items(items.itemCount) { index ->
+            items[index]?.let { ProductRow(it) }
+        }
+        when (items.loadState.append) {
+            is LoadState.Loading -> item { CircularProgressIndicator() }
+            else -> Unit
+        }
+    }
+}
+
+Consejo para entrevista:
+Explica PagingSource, RemoteMediator, PagingData. Contrasta con cargar todo en RecyclerView. Seguimiento: ¿Cómo refrescar? invalidate() o nueva Pager.

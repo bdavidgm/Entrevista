@@ -1,0 +1,33 @@
+Concepto:
+mutableStateOf crea un objeto State<T> observable por Compose: al cambiar su .value, se notifica a los Composables que lo leyeron durante la composición y se programa recomposición. Es el mecanismo básico de estado reactivo en UI declarativa.
+
+Explicación detallada:
+Delegado by mutableStateOf(x) en propiedades es idiomático. Lectura durante @Composable subscribe; escritura desde callbacks, LaunchedEffect o ViewModel expuesto como State<T> (no mutable fuera). Para listas, preferir mutableStateListOf o inmutables con copy para evitar mutaciones no detectadas.
+
+Estado hoisting: el state puede vivir en ancestro y pasarse como State<T> + callback onValueChange. ViewModel usa MutableStateFlow internamente y expone StateFlow.asStateFlow() o collectAsStateWithLifecycle en UI.
+
+Comparación con LiveData: State integrado en Compose; LiveData necesita observeAsState. Comparación con Rx: menos boilerplate en UI simple.
+
+En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
+
+En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
+
+Cuándo usarlo:
+Contadores, toggles, texto de campo local, flags de UI. Estado de pantalla compartido en ViewModel con StateFlow preferible para lógica compleja y tests.
+
+Ejemplo:
+@Composable
+fun SwitchRow(label: String) {
+    var enabled by remember { mutableStateOf(false) }
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(label)
+        Switch(checked = enabled, onCheckedChange = { enabled = it })
+    }
+}
+
+// Desde ViewModel hacia Compose
+val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+Text(uiState.title)
+
+Consejo para entrevista:
+mutableStateOf vs mutableStateListOf. No mutar lista interna sin reasignar si es immutable list snapshot. structural equality en data class state.

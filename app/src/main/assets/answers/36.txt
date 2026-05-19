@@ -1,0 +1,30 @@
+Concepto:
+Un Service es un componente Android sin UI pensado para ejecutar operaciones de larga duración en segundo plano o para exponer APIs a otros procesos (bound service). Corre en el proceso de la aplicación salvo que se especifique otro process en el Manifest.
+
+Explicación detallada:
+Started service: se inicia con startService y debe detenerse con stopSelf/stopService; en versiones modernas restricciones de background limitan su uso. IntentService está deprecado. Foreground service muestra notificación obligatoria y tipos FGS (location, media, etc.) según Android 14+.
+
+Bound service: clientes se enlazan con bindService y obtienen IBinder para IPC local. WorkManager y corrutinas sustituyen muchos casos de descarga/sync en background de forma consciente de batería.
+
+En entrevistas comparan Service vs WorkManager vs corrutina en proceso: WorkManager para trabajo deferible garantizado; foreground service para tareas visibles al usuario (reproducción música, tracking); evitar started service legacy en background.
+
+En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
+
+En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
+
+Cuándo usarlo:
+Música en background, fitness tracking, VoIP, tareas que el usuario espera activas con notificación. Para sync periódico, WorkManager. No abuses services para cada petición HTTP.
+
+Ejemplo:
+class UploadForegroundService : Service() {
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        val notification = buildNotification()
+        startForeground(NOTIF_ID, notification)
+        // iniciar upload en corrutina o thread
+        return START_NOT_STICKY
+    }
+    override fun onBind(intent: Intent?) = null
+}
+
+Consejo para entrevista:
+Started vs bound vs foreground. Límites background Android 8+. WorkManager cuándo en lugar de Service.

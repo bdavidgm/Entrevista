@@ -1,0 +1,39 @@
+Concepto:
+Navigation Component es la librería de Jetpack para gestionar navegación entre destinos (pantallas) con un grafo declarado, back stack consistente, argumentos, deep links y animaciones. Unifica Fragments (XML) y Compose (Navigation Compose) bajo el mismo NavController.
+
+Explicación detallada:
+El grafo navigation.xml o Kotlin DSL define destinos y acciones. NavController.navigate(R.id.action) o navigate("route"). Safe Args genera clases tipadas para argumentos en Fragments. Deep links y nested graphs organizan flujos (onboarding, main).
+
+Con Fragments: NavHostFragment en layout; cada destino es fragment. Con Compose: NavHost composable. El back stack lo gestiona el componente; popBackStack vuelve atrás. Para bottom nav, evita crear back stack paralelos incorrectos usando múltiples graphs o saveState.
+
+Integración ViewModel: ViewModel scoped al NavBackStackEntry sobrevive navegación dentro del mismo destino pero no necesariamente al pop. navGraphViewModels comparte entre destinos del mismo graph.
+
+Testing Navigation con TestNavHostController. Migración gradual: un NavHost con mix de fragment y composable destinations en versiones recientes.
+
+En el contexto de proyectos Android reales, combina esta idea con las guías oficiales de Android Developers y con métricas de calidad (crashes, ANR, Vitals) cuando aplique. En code review, pregunta siempre por ciclo de vida, testabilidad y si la solución escala cuando el equipo crece.
+
+Durante la entrevista, estructura la respuesta en definición, ejemplo concreto de tu experiencia o proyecto demo, y trade-offs frente a alternativas. Mencionar versiones recientes de API o biblioteca (Material3, Paging 3, Hilt 2.x) demuestra que sigues el ecosistema, sin necesidad de memorizar números de versión exactos.
+
+Para profundizar tras la entrevista, revisa documentación oficial, codelabs y el código fuente de tu propio proyecto Entrevista aplicando el concepto en un flujo mínimo reproducible. La práctica deliberada con tests unitarios refuerza la confianza al explicar el tema en viva voz.
+
+En el contexto de proyectos Android reales, combina esta idea con las guías oficiales de Android Developers y con métricas de calidad (crashes, ANR, Vitals) cuando aplique. En code review, pregunta siempre por ciclo de vida, testabilidad y si la solución escala cuando el equipo crece.
+
+Durante la entrevista, estructura la respuesta en definición, ejemplo concreto de tu experiencia o proyecto demo, y trade-offs frente a alternativas. Mencionar versiones recientes de API o biblioteca (Material3, Paging 3, Hilt 2.x) demuestra que sigues el ecosistema, sin necesidad de memorizar números de versión exactos.
+
+Para profundizar tras la entrevista, revisa documentación oficial, codelabs y el código fuente de tu propio proyecto Entrevista aplicando el concepto en un flujo mínimo reproducible. La práctica deliberada con tests unitarios refuerza la confianza al explicar el tema en viva voz.
+
+Cuándo usarlo:
+Apps multi-pantalla con navegación compleja, deep links, o single-Activity. Evita Transaction manual fragmentManager si el grafo encaja.
+
+Ejemplo:
+// navigation.xml simplificado + MainActivity
+val navController = findNavController(R.id.nav_host)
+navController.navigate(R.id.action_home_to_detail, bundleOf("id" to 42))
+
+// Compose
+navController.navigate("detail/42") {
+    launchSingleTop = true
+}
+
+Consejo para entrevista:
+Menciona grafo, back stack, Safe Args, deep links. Pregunta bottom navigation: un NavController o varios con restoreState. No confundas con Intent entre apps.

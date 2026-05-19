@@ -1,0 +1,36 @@
+Concepto:
+Baseline Profile es un artefacto generado que guía al compilador ART (y optimizaciones de build) para precompilar y optimizar rutas críticas de código de la app en el primer arranque y posteriores, reduciendo jank y mejorando tiempo de inicio (TTI).
+
+Explicación detallada:
+Se genera ejecutando Macrobenchmark o el plugin de Baseline Profile con un perfil de usuario simulado (scroll, navegación). El archivo baseline-prof.txt se empaqueta en el APK/AAB. Android 7+ beneficia; Compose y startup son casos de uso destacados.
+
+ProfileInstaller biblioteca aplica perfil en instalación. Sin perfil, ART interpreta/JIT en caliente con más coste inicial.
+
+Relacionado: Startup Profiles, R8 optimizations. No sustituye código eficiente; complementa.
+
+En el contexto de proyectos Android reales, combina esta idea con las guías oficiales de Android Developers y con métricas de calidad (crashes, ANR, Vitals) cuando aplique. En code review, pregunta siempre por ciclo de vida, testabilidad y si la solución escala cuando el equipo crece.
+
+Durante la entrevista, estructura la respuesta en definición, ejemplo concreto de tu experiencia o proyecto demo, y trade-offs frente a alternativas. Mencionar versiones recientes de API o biblioteca (Material3, Paging 3, Hilt 2.x) demuestra que sigues el ecosistema, sin necesidad de memorizar números de versión exactos.
+
+Para profundizar tras la entrevista, revisa documentación oficial, codelabs y el código fuente de tu propio proyecto Entrevista aplicando el concepto en un flujo mínimo reproducible. La práctica deliberada con tests unitarios refuerza la confianza al explicar el tema en viva voz.
+
+En el contexto de proyectos Android reales, combina esta idea con las guías oficiales de Android Developers y con métricas de calidad (crashes, ANR, Vitals) cuando aplique. En code review, pregunta siempre por ciclo de vida, testabilidad y si la solución escala cuando el equipo crece.
+
+Durante la entrevista, estructura la respuesta en definición, ejemplo concreto de tu experiencia o proyecto demo, y trade-offs frente a alternativas. Mencionar versiones recientes de API o biblioteca (Material3, Paging 3, Hilt 2.x) demuestra que sigues el ecosistema, sin necesidad de memorizar números de versión exactos.
+
+Para profundizar tras la entrevista, revisa documentación oficial, codelabs y el código fuente de tu propio proyecto Entrevista aplicando el concepto en un flujo mínimo reproducible. La práctica deliberada con tests unitarios refuerza la confianza al explicar el tema en viva voz.
+
+Cuándo usarlo:
+Apps con métricas de startup o scroll críticas en Play; releases importantes. Requiere CI para regenerar tras cambios de navegación.
+
+Ejemplo:
+// build.gradle.kts
+dependencies {
+    implementation(libs.androidx.profileinstaller)
+    baselineProfile(project(":baselineprofile"))
+}
+
+// Módulo :baselineprofile con test que recorre flujo crítico y genera perfil
+
+Consejo para entrevista:
+Explica qué problema (cold start, jank) y cómo se genera. Menciona Macrobenchmark. No digas que es ProGuard.

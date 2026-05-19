@@ -1,0 +1,45 @@
+Concepto:
+Un companion object es un objeto singleton asociado a una clase, declarado con companion object dentro del cuerpo de la clase. Equivale al concepto estático de Java pero modelado como objeto real: puede implementar interfaces, extender clases y participar en genéricos de forma más flexible que static.
+
+Explicación detallada:
+Desde Kotlin llamas Companion.factory() o, si defines @JvmStatic, Factory.from Java sin pasar por Companion. Por convención, el companion se llama Companion si no pones nombre; puedes nombrarlo Factory u otro. En Android es el hogar de: newIntent(), EXTRA_* constants, fromBundle(), parse(), TAG de logging, y factory methods.
+
+@JvmStatic genera métodos estáticos reales en bytecode para interoperabilidad Java y llamadas más limpias. Sin @JvmStatic, Java ve Companion.INSTANCE.metodo(). companion object puede tener init block propio. Solo puede existir un companion por clase.
+
+Comparación: constantes puras en top-level file + const val vs companion: top-level es idiomático en Kotlin puro; companion agrupa con la clase para discoverability en Java/Android. enum también centraliza constantes pero es para conjuntos cerrados de valores.
+
+En Gradle Kotlin DSL, companion object aparece menos que top-level, pero en Activities es estándar definir EXTRA_* y newIntent(). @JvmStatic expone métodos estáticos reales para Java y para referencias ::Class.method desde Kotlin. El companion puede implementar interfaces, útil para factories genéricas. Solo un companion por clase; si necesitas otro ámbito estático, usa object anidado con nombre. En entrevistas comparan companion con static de Java: no existe static keyword en Kotlin, companion es el sustituto idiomático.
+
+En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
+
+Cuándo usarlo:
+Factory methods, constantes de la clase, conversores, builders estáticos, implementación de interfaces de creación. No abuses metiendo lógica de negocio pesada en companion: dificulta tests y viola SRP.
+
+Ejemplo:
+class DetailActivity : AppCompatActivity() {
+    companion object {
+        private const val EXTRA_ID = "extra_id"
+        const val TAG = "DetailActivity"
+
+        fun newIntent(context: Context, id: String): Intent =
+            Intent(context, DetailActivity::class.java).apply {
+                putExtra(EXTRA_ID, id)
+            }
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        val id = intent.getStringExtra(EXTRA_ID) ?: return finish()
+    }
+}
+
+// @JvmStatic para Java
+class Logger {
+    companion object {
+        @JvmStatic
+        fun d(tag: String, msg: String) = Log.d(tag, msg)
+    }
+}
+
+Consejo para entrevista:
+"¿Companion es static?" Respuesta matizada: en JVM se materializa como campo estático Companion + instancia. Preguntan @JvmStatic y @JvmField. Relaciona con Intent factories en Activities y Fragments.

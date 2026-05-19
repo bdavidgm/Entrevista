@@ -1,0 +1,41 @@
+Concepto:
+Una data class en Kotlin es una clase optimizada para almacenar datos inmutables (o con estado mutable explícito) cuyo propósito principal es contener valores. El compilador genera automáticamente equals(), hashCode(), toString(), copy() y componentN() para destructuring. Son el equivalente idiomático a POJOs/records en Java pero con mucho menos boilerplate.
+
+Explicación detallada:
+Para que el compilador genere esos métodos, la clase debe declararse con la palabra clave data y cumplir reglas: al menos un parámetro en el constructor primario; propiedades del constructor pueden ser val/var; no puede ser abstract, open, sealed ni inner en el sentido de conflicto con data (una data class puede ser sealed en algunos casos como hijo). equals y hashCode se basan en los componentes del constructor primario, lo que las hace ideales como claves en Map o elementos en Set si los campos son estables.
+
+copy() permite crear variantes inmutables cambiando solo algunos campos: user.copy(name = "Nuevo"). En arquitectura Android, data class dominan en capas de dominio, DTOs de red, UiState de ViewModel y eventos de un solo uso (a veces combinadas con sealed class para estados de pantalla). En entrevistas contrastan data class con class normal (sin equals estructural), con sealed class (jerarquías cerradas de tipos) y con @Parcelize para pasar por Bundle.
+
+Room y Moshi/Gson serializan data class cómodamente; kotlinx.serialization también. Cuidado: data class con campos mutables (var) rompen invariantes de igualdad si mutas después de insertar en un Set. Preferir val en modelos de estado.
+
+Cuándo usarlo:
+Modelos de API, entidades de dominio, UiState, eventos de navegación, resultados de operaciones. No uses data class para clases con mucha lógica de negocio compleja, servicios, ViewModels ni Activities. Si necesitas herencia abierta o comportamiento polimórfico fuerte, considera sealed class o interfaces.
+
+Ejemplo:
+data class Product(
+    val id: String,
+    val name: String,
+    val priceCents: Int
+)
+
+// UiState en ViewModel
+data class CartUiState(
+    val items: List<Product> = emptyList(),
+    val totalCents: Int = 0,
+    val isLoading: Boolean = false
+)
+
+// copy para actualizar estado inmutable
+fun addItem(state: CartUiState, product: Product): CartUiState {
+    val newItems = state.items + product
+    return state.copy(
+        items = newItems,
+        totalCents = newItems.sumOf { it.priceCents }
+    )
+}
+
+// Destructuring
+val (id, name, _) = product
+
+Consejo para entrevista:
+Preguntan qué métodos se generan y si puedes heredar de otra data class (no de otra data class; sí de clase normal con restricciones). Menciona copy vs mutación, equals estructural, y @Parcelize para Android. Error común: poner lógica pesada en el cuerpo de la data class.

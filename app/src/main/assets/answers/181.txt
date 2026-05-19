@@ -1,0 +1,35 @@
+Concepto:
+WindowManager es el servicio que gestiona ventanas en pantalla: layout params, rotación, flags de ventana (fullscreen, keep screen on) y, en APIs avanzadas, añadir vistas overlay tipo SYSTEM_ALERT (con permisos restrictivos).
+
+Explicación detallada:
+Cada Activity tiene una Window gestionada por WindowManager. Acceso típico:
+- activity.window o context.getSystemService(WindowManager::class.java)
+- window.attributes (LayoutParams): width, height, type, flags
+- window.setFlags(FLAG_FULLSCREEN, FLAG_FULLSCREEN) — muchas UIs usan WindowInsetsController ahora
+- window.addFlags(FLAG_KEEP_SCREEN_ON) para video o navegación
+
+LayoutParams.type define capa: TYPE_APPLICATION para contenido normal; TYPE_APPLICATION_OVERLAY (API 26+) para burbujas flotantes con SETTINGS canDrawOverlays.
+
+addView(view, params) añade vista al WM global (chat heads legacy); requiere permiso SYSTEM_ALERT_WINDOW, mal visto en Play Store salvo casos justificados.
+
+En Compose y Material3, preferir Modifier.systemBarsPadding(), enableEdgeToEdge(), WindowCompat.setDecorFitsSystemWindows(window, false) en lugar de manipular flags manualmente.
+
+Rotación: WindowManager también informa display metrics; getDefaultDisplay() deprecado → Context.display o WindowMetricsCalculator.
+
+Cuándo usarlo:
+- Mantener pantalla encendida durante reproducción.
+- Modo inmersivo en juegos (InsetsController.hide(systemBars())).
+- Bubbles o overlays (raro; usar APIs oficiales de Bubbles si aplica).
+
+Ejemplo:
+// Mantener pantalla on en Activity
+window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+
+// Edge-to-edge moderno
+WindowCompat.setDecorFitsSystemWindows(window, false)
+WindowInsetsControllerCompat(window, window.decorView).apply {
+    isAppearanceLightStatusBars = true
+}
+
+Consejo para entrevista:
+No te centres solo en “burbujas flotantes”. Habla de Window de Activity, edge-to-edge, InsetsController vs flags antiguos, y permiso overlay como excepción. Demuestra evolución hacia AndroidX Window library.

@@ -1,0 +1,45 @@
+Concepto:
+Los operadores as (cast explícito inseguro) y as? (cast seguro nullable) convierten un valor a otro tipo en Kotlin; as? devuelve null si el cast no es posible en lugar de lanzar ClassCastException.
+
+Explicación detallada:
+as:
+- Cast clásico: val s = obj as String
+- Si obj no es String en runtime, lanza ClassCastException.
+- Útil cuando estás seguro por lógica previa (p. ej. tras is en rama donde el compilador no hace smart cast por ser propiedad mutable).
+
+as?:
+- Cast seguro: val s = obj as? String
+- Resultado String?; null si falla.
+- Encadena con Elvis: (obj as? String) ?: return
+
+Relación con is:
+- Preferir is + smart cast cuando el compilador puede inferir el tipo en la misma rama.
+- as? en genéricos erasure: (list as? List<String>) no valida elementos en runtime por type erasure.
+
+En Android:
+- findViewById antes de ViewBinding: view as TextView (legacy).
+- Intent extras: intent.getParcelableExtra("key", User::class.java) en API moderna evita casts manuales.
+- Fragments y tags: parentFragment as? DetailHost
+
+Evitar casts innecesarios con diseño: sealed class, when exhaustivo, interfaces en lugar de Any.
+
+Cuándo usarlo:
+as? por defecto en código defensivo y capas que reciben Any o Serializable. as solo con garantía fuerte o tras comprobación is en la misma expresión.
+
+Ejemplo:
+fun handleClick(view: View) {
+    val button = view as? Button ?: return
+    button.isEnabled = false
+}
+
+fun parseExtra(intent: Intent): User? {
+    return if (Build.VERSION.SDK_INT >= 33) {
+        intent.getParcelableExtra("user", User::class.java)
+    } else {
+        @Suppress("DEPRECATION")
+        intent.getParcelableExtra("user") as? User
+    }
+}
+
+Consejo para entrevista:
+Contrasta as vs as? vs is/smart cast. En Android menciona getParcelableExtra tipado y por qué el erasure limita casts de genéricos.

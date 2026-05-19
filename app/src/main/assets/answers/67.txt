@@ -1,0 +1,47 @@
+Concepto:
+ViewModel es un componente de Jetpack que almacena y gestiona datos relacionados con la UI de forma consciente del ciclo de vida: sobrevive a rotaciones y se destruye cuando su scope (Activity/Fragment/NavBackStackEntry) termina definitivamente. Separa la lógica de presentación de la View.
+
+Explicación detallada:
+Al rotar, la Activity se destruye y recrea; un ViewModel almacenado en ViewModelStore no se reinicia, por lo que StateFlow o datos cargados persisten. Se crea con ViewModelProvider o viewModel()/hiltViewModel() y nunca debe retener referencia a Activity, View o Context de UI (usa Application context si es imprescindible).
+
+viewModelScope cancela coroutines automáticamente en onCleared(). Para trabajo que debe continuar tras salir de pantalla, usa applicationScope o WorkManager, no el ViewModelScope extendido indebidamente.
+
+LiveData era el canal histórico; StateFlow es preferido hoy por composición, operadores y coroutines. SavedStateHandle permite restaurar argumentos y estado ligero tras process death combinado con ViewModel.
+
+Múltiples ViewModels: uno por pantalla o compartido por nav graph con navGraphViewModels. Anti-patrón: comunicación entre ViewModels directa; usa repository compartido o event bus acotado.
+
+Testing con viewModelScope y TestDispatcher, Turbine para Flow. @VisibleForTesting para exponer estado interno solo si es necesario.
+
+En el contexto de proyectos Android reales, combina esta idea con las guías oficiales de Android Developers y con métricas de calidad (crashes, ANR, Vitals) cuando aplique. En code review, pregunta siempre por ciclo de vida, testabilidad y si la solución escala cuando el equipo crece.
+
+Durante la entrevista, estructura la respuesta en definición, ejemplo concreto de tu experiencia o proyecto demo, y trade-offs frente a alternativas. Mencionar versiones recientes de API o biblioteca (Material3, Paging 3, Hilt 2.x) demuestra que sigues el ecosistema, sin necesidad de memorizar números de versión exactos.
+
+Para profundizar tras la entrevista, revisa documentación oficial, codelabs y el código fuente de tu propio proyecto Entrevista aplicando el concepto en un flujo mínimo reproducible. La práctica deliberada con tests unitarios refuerza la confianza al explicar el tema en viva voz.
+
+Preguntas de seguimiento frecuentes en entrevistas para este tema incluyen comparación con alternativas del ecosistema, implicaciones en testing y en el ciclo de vida de Android, y cómo lo aplicarías en una app modular con varios flavors. Si el entrevistador pide profundidad, menciona herramientas de diagnóstico (Profiler, Lint, StrictMode, Layout Inspector) y cómo validarías en CI que no hay regresiones.
+
+En proyectos reales, documenta decisiones en ADR breves o en README del módulo para que el equipo no revierta el patrón por desconocimiento. La mejor respuesta de entrevista combina definición precisa, ejemplo Kotlin o Compose concreto y honestidad sobre límites: ninguna solución es gratis en complejidad o tamaño de APK.
+
+Relaciona este concepto con los demás bloques del manifiesto Entrevista (arquitectura, corrutinas, seguridad, build) para demostrar visión de sistema completo, no conocimiento aislado de una API.
+
+Cuándo usarlo:
+Cualquier pantalla con estado que sobreviva configuración, llamadas async o lógica testeable. No uses ViewModel para utilidades sin UI ni para singletons globales.
+
+Ejemplo:
+class DetailViewModel @Inject constructor(
+    savedState: SavedStateHandle,
+    private val repo: ItemRepository
+) : ViewModel() {
+    private val itemId: Int = savedState["id"] ?: error("missing id")
+    private val _uiState = MutableStateFlow(DetailUiState())
+    val uiState = _uiState.asStateFlow()
+
+    init { load() }
+    private fun load() = viewModelScope.launch {
+        _uiState.value = DetailUiState(loading = true)
+        _uiState.value = DetailUiState(item = repo.get(itemId))
+    }
+}
+
+Consejo para entrevista:
+Explica supervivencia a rotación y onCleared. Contrasta con onRetainNonConfigurationInstance (obsoleto). No digas que ViewModel reemplaza Room: persistencia es otra capa.

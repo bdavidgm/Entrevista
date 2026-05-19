@@ -1,0 +1,59 @@
+Concepto:
+Acceder a la cámara en Android implica solicitar el permiso CAMERA (en tiempo de ejecución desde API 23), elegir una API (CameraX recomendada, Camera2 de bajo nivel o intents del sistema) y gestionar el ciclo de vida, orientación y almacenamiento del resultado.
+
+Explicación detallada:
+Hay tres enfoques habituales:
+
+1) Intent implícito (ACTION_IMAGE_CAPTURE o ACTION_VIDEO_CAPTURE): delegas la captura en la app de cámara del sistema. Recibes un thumbnail en extras o debes proveer un Uri destino vía EXTRA_OUTPUT y FileProvider. Ventaja: poco código y sin permiso CAMERA si solo usas el intent (según documentación y versión). Desventaja: poca personalización de UI y preview.
+
+2) CameraX (biblioteca Jetpack): abstrae Camera2, maneja compatibilidad entre fabricantes, lifecycle binding y casos de uso (Preview, ImageCapture, ImageAnalysis). Es el estándar actual para apps que muestran preview en pantalla.
+
+3) Camera2 API: control fino (manual focus, RAW, múltiples streams) pero mucha complejidad y diferencias entre dispositivos.
+
+Flujo típico con preview propio:
+- Declarar uses-permission android.permission.CAMERA y feature opcional.
+- Comprobar PackageManager.FEATURE_CAMERA_ANY.
+- Pedir permiso con ActivityResultContracts.RequestPermission.
+- Inicializar ProcessCameraProvider en un Executor.
+- Vincular use cases al LifecycleOwner con bindToLifecycle.
+- Para guardar fotos: ImageCapture con MediaStore o FileProvider; en Android 10+ usar scoped storage.
+
+Consideraciones: rotación (Display rotation vs sensor orientation), flash, enfoque táctil, liberar la cámara en onStop, no bloquear el hilo principal, y políticas de privacidad (indicador de cámara en barra de estado en versiones recientes).
+
+Cuándo usarlo:
+- Apps de escaneo, redes sociales, KYC, código QR, realidad aumentada ligera.
+- Cuando necesitas preview en tu UI: CameraX.
+- Captura puntual sin UI propia: intent del sistema + FileProvider.
+- Control profesional de exposición/RAW: Camera2 directo.
+
+Ejemplo:
+// Permiso + CameraX Preview + ImageCapture (esquema)
+val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
+cameraProviderFuture.addListener({
+    val provider = cameraProviderFuture.get()
+    val preview = Preview.Builder().build().also {
+        it.surfaceProvider = previewView.surfaceProvider
+    }
+    val capture = ImageCapture.Builder().build()
+    provider.unbindAll()
+    provider.bindToLifecycle(
+        lifecycleOwner,
+        CameraSelector.DEFAULT_BACK_CAMERA,
+        preview,
+        capture
+    )
+}, ContextCompat.getMainExecutor(context))
+
+// Captura
+val output = ImageCapture.OutputFileOptions.Builder(photoFile).build()
+imageCapture.takePicture(
+    output,
+    executor,
+    object : ImageCapture.OnImageSavedCallback {
+        override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) { }
+        override fun onError(exception: ImageCaptureException) { }
+    }
+)
+
+Consejo para entrevista:
+Di que CameraX es la recomendación oficial, explica FileProvider y scoped storage, y que el permiso CAMERA es peligroso y debe justificarse en Play Console. Si preguntan por Camera2, reconoce complejidad pero menciona que CameraX lo usa por debajo.

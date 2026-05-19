@@ -1,0 +1,38 @@
+Concepto:
+El operador !! (llamado "double-bang" o "not-null assertion") convierte un valor de tipo nullable a non-null, forzando al compilador a tratarlo como no anulable. Si en runtime el valor es null, lanza NullPointerException. Es el escape hatch de null safety: anulas las garantías del compilador y asumes tú la responsabilidad.
+
+Explicación detallada:
+Internamente, !! se traduce en una comprobación que lanza NPE con mensaje indicando la expresión. No realiza conversión mágica: solo suprime el sistema de tipos. En código Android legacy o tras findViewById antes de ViewBinding, era común view!!.text; hoy se considera code smell. Alternativas más seguras: safe call ?., Elvis ?:, requireNotNull(), checkNotNull(), smart casts, let { }.
+
+En entrevistas, decir que evitas !! demuestra madurez. Casos aceptables: tests unitarios donde controlas datos, invariantes documentadas (p.ej. después de requireNotNull en init), o interop con Java donde ya validaste. En producción, cada !! es deuda técnica y posible crash en Play Console.
+
+El equipo de Kotlin recomienda tratar !! como último recurso. Herramientas de lint (Detekt, Android Lint) pueden marcar usos excesivos. En coroutines y Flow, preferir operadores que no asuman non-null (filterNotNull, mapNotNull).
+
+Historial Android: findViewById y extras de Intent nulos empujaron al !! masivo. ViewBinding, Kotlin null safety y Navigation Args tipados reducen su necesidad. Si el linter marca !!, refactoriza a early return, requireNotNull con mensaje, o tipos no anulables tras validación en capa de datos. En código Java interop, Platform types pueden forzar decisiones: anota @Nullable/@NonNull en Java o convierte en frontera Kotlin. Crashlytics agrupa NPE por línea: cada !! es un candidato a crash en producción si el supuesto falla.
+
+En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
+
+Cuándo usarlo:
+Casi nunca en código de producción nuevo. Preferir contratos explícitos. En prototipos rápidos o código descartable puede aparecer; refactoriza antes de merge. Si el revisor pregunta por qué hay !!, debes justificar la invariante.
+
+Ejemplo:
+// MAL (típico antipatrón)
+val name = intent.getStringExtra("name")!!.trim()
+
+// BIEN
+val name = intent.getStringExtra("name")?.trim() ?: return
+
+// Si realmente es invariante de contrato
+val repo: UserRepository = checkNotNull(appComponent.userRepository) {
+  "UserRepository debe estar inicializado en Application.onCreate"
+}
+
+// Test controlado
+@Test
+fun parsesValidJson() {
+  val dto: UserDto? = parser.parse(VALID_JSON)
+  assertEquals("Ada", dto!!.name)
+}
+
+Consejo para entrevista:
+Pregunta trampa: "¿Elimina !! las NPE?" No: las convierte en NPE en runtime si hay null. Comparar con Java donde no hay aviso en compilación. Si insisten en un caso válido, menciona tests o checkNotNull con mensaje.

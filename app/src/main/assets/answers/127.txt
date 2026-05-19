@@ -1,0 +1,43 @@
+Concepto:
+Application es la clase que representa el proceso Android de tu app antes de que exista cualquier Activity; se instancia una vez al arrancar el proceso y vive hasta que el sistema mata el proceso.
+
+Explicación detallada:
+Declaración en AndroidManifest:
+<application android:name=".MyApplication" ... />
+
+Callbacks:
+- onCreate(): inicialización global (timber, strict mode en debug, App Startup, migraciones ligeras). Debe ser rápido; trabajo pesado en background.
+- onTerminate(): no fiable en dispositivos reales; no depender para persistencia.
+- onLowMemory(), onTrimMemory(): liberar caches no críticos.
+
+Obtener instancia:
+- context.applicationContext as MyApplication (evitar cast en producción sin comprobar).
+- En Hilt: @HiltAndroidApp en Application activa generación de componente raíz.
+
+Singleton de proceso:
+- Variables estáticas en Application sobreviven rotaciones de Activity pero no garantizan persistencia si el proceso muere.
+- Preferir DI con @Singleton scoped al componente Application de Hilt.
+
+No usar Application para:
+- Estado de UI de una pantalla (usar ViewModel).
+- Lógica que debería estar en UseCase o Repository.
+
+Cuándo usarlo:
+Inicialización global: logging, analytics, configuración de imagen (Coil/Glide), WorkManager custom configuration, registro de ActivityLifecycleCallbacks para analytics.
+
+Ejemplo:
+@HiltAndroidApp
+class MyApplication : Application() {
+    override fun onCreate() {
+        super.onCreate()
+        if (BuildConfig.DEBUG) {
+            Timber.plant(Timber.DebugTree())
+        }
+    }
+}
+
+// AndroidManifest.xml
+<application android:name=".MyApplication" ... />
+
+Consejo para entrevista:
+Diferencia Application (proceso) vs Activity (pantalla). Menciona @HiltAndroidApp y que onCreate debe ser ligero. Evita anti-patrón de guardar todo en Application.

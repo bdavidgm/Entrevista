@@ -1,0 +1,38 @@
+Concepto:
+App signing (firma de aplicaciones) es el proceso criptográfico que garantiza que un APK/AAB proviene del desarrollador autorizado usando un keystore privado; Play App Signing separa upload key y signing key de distribución.
+
+Explicación detallada:
+Android usa esquema v2/v3/v4 de firma en APK. Cada build release se firma con clave privada; el dispositivo/Play verifica con certificado público.
+
+Keystore: archivo .jks o .keystore con alias, passwords (guardar en CI secrets, no en repo). signingConfigs en Gradle apuntan a keystore o variables de entorno.
+
+Play App Signing: subes con upload key; Google re-firma con app signing key para usuarios finales. Permite reset upload key si se pierde (proceso soporte).
+
+Debug: debug.keystore automático con contraseñas conocidas; solo desarrollo.
+
+Implicaciones: misma applicationId con distinta firma no actualiza instalada; modules deben alinearse.
+
+Cuándo usarlo:
+- Todo build release (internal testing incluido en Play).
+- Configurar en CI con secretos cifrados.
+
+Ejemplo:
+android {
+    signingConfigs {
+        create("release") {
+            storeFile = file(System.getenv("KEYSTORE_PATH") ?: "release.jks")
+            storePassword = System.getenv("STORE_PASSWORD")
+            keyAlias = System.getenv("KEY_ALIAS")
+            keyPassword = System.getenv("KEY_PASSWORD")
+        }
+    }
+    buildTypes {
+        release {
+            signingConfig = signingConfigs.getByName("release")
+            isMinifyEnabled = true
+        }
+    }
+}
+
+Consejo para entrevista:
+Diferencia debug vs release keystore, Play App Signing, y nunca commitear keystores. Menciona que la firma prueba integridad e identidad del publicador, no cifrado del código (eso es R8/ProGuard aparte).

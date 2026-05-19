@@ -1,0 +1,49 @@
+Concepto:
+Navigation Compose es la integración del Navigation Component con Jetpack Compose: define un grafo de rutas como destinos Composable con NavHost, NavController y argumentos tipados, gestionando back stack y deep links de forma declarativa sin Fragments.
+
+Explicación detallada:
+NavController en Compose se obtiene con rememberNavController() y se asocia al NavHost con startDestination y el grafo de rutas. Cada destino es composable("ruta") { backStackEntry -> ... }. Los argumentos se declaran en la ruta, por ejemplo "detail/{id}", y se leen con backStackEntry.arguments o navArgument más NavType.
+
+Ventajas frente a navigation XML: rutas en Kotlin, argumentos con tipo seguro, animaciones de transición con enterTransition y exitTransition, y navegación anidada (graphs para flujos login frente a main). Integración con ViewModel: hiltViewModel() con scope al NavBackStackEntry permite ViewModels por destino.
+
+Deep links se configuran con navDeepLink y uriPattern. Para bottom navigation con varias pestañas, el patrón recomendado usa restoreState y saveState en navigate() para no perder estado al cambiar de tab, junto con launchSingleTop cuando corresponda.
+
+Arquitectura single-Activity encaja naturalmente: una Activity con setContent { AppNav() }. Para resultados entre pantallas, Navigation reciente ofrece rutas type-safe con Kotlin Serialization o callbacks con popBackStack y SavedStateHandle.
+
+Errores comunes: varios NavController sin coordinación, olvidar popUpTo al completar login, y navegar desde LaunchedEffect sin respetar el lifecycle. En tests se puede usar createComposeRule con NavHostController de prueba.
+
+Type-safe navigation con Kotlin Serialization define @Serializable object Home y data class Detail(val id: Int), generando rutas sin strings mágicos. Reduce errores en refactor y es pregunta frecuente en entrevistas senior.
+
+Animaciones personalizadas entre destinos mejoran percepción de calidad pero no abuses en listas profundas por coste. popUpTo con inclusive true limpia el back stack tras login exitoso para que el usuario no vuelva a la pantalla de credenciales con botón atrás.
+
+Integración con Hilt: cada composable destination puede recibir hiltViewModel() con scope al NavBackStackEntry; al navegar a otro destino, el ViewModel del anterior se limpia según el grafo. Para ViewModel compartido entre pantallas del mismo flujo (wizard), usa navigation graph anidado y navGraphViewModels.
+
+Preguntas de seguimiento frecuentes en entrevistas para este tema incluyen comparación con alternativas del ecosistema, implicaciones en testing y en el ciclo de vida de Android, y cómo lo aplicarías en una app modular con varios flavors. Si el entrevistador pide profundidad, menciona herramientas de diagnóstico (Profiler, Lint, StrictMode, Layout Inspector) y cómo validarías en CI que no hay regresiones.
+
+En proyectos reales, documenta decisiones en ADR breves o en README del módulo para que el equipo no revierta el patrón por desconocimiento. La mejor respuesta de entrevista combina definición precisa, ejemplo Kotlin o Compose concreto y honestidad sobre límites: ninguna solución es gratis en complejidad o tamaño de APK.
+
+Relaciona este concepto con los demás bloques del manifiesto Entrevista (arquitectura, corrutinas, seguridad, build) para demostrar visión de sistema completo, no conocimiento aislado de una API.
+
+Cuándo usarlo:
+Apps Compose-first con una Activity, flujos multi-pantalla, deep links y argumentos. Si la app sigue 100% en Fragments legacy sin migrar, el Navigation Component XML puede mantenerse hasta migrar pantallas al NavHost Compose.
+
+Ejemplo:
+@Composable
+fun AppNav() {
+    val navController = rememberNavController()
+    NavHost(navController, startDestination = "home") {
+        composable("home") {
+            HomeScreen(onOpen = { id -> navController.navigate("detail/$id") })
+        }
+        composable(
+            route = "detail/{itemId}",
+            arguments = listOf(navArgument("itemId") { type = NavType.IntType })
+        ) { entry ->
+            val id = entry.arguments?.getInt("itemId") ?: return@composable
+            DetailScreen(itemId = id, onBack = { navController.popBackStack() })
+        }
+    }
+}
+
+Consejo para entrevista:
+Domina NavHost, rutas con argumentos, popUpTo inclusive para auth, y ViewModel scoped al back stack entry. Pregunta típica de bottom nav: launchSingleTop, restoreState y saveState.

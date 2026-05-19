@@ -1,0 +1,53 @@
+Concepto:
+Kotlin DSL (Domain Specific Language) es la forma de escribir scripts de Gradle usando sintaxis Kotlin en archivos .gradle.kts en lugar de Groovy en .gradle.
+
+Explicación detallada:
+Gradle es el sistema de build de Android. Tradicionalmente los archivos eran build.gradle en Groovy. Desde Gradle 5+ se soporta oficialmente Kotlin DSL: build.gradle.kts a nivel de proyecto y de módulo, settings.gradle.kts y gradle/libs.versions.toml para version catalogs.
+
+Ventajas del Kotlin DSL frente a Groovy:
+- Tipado estático: el IDE resuelve referencias a tasks, extensiones y propiedades; menos errores en tiempo de compilación del script.
+- Autocompletado y navegación (Go to Definition) en Android Studio.
+- Refactor seguro de nombres de módulos y dependencias.
+- Misma sintaxis que el código de la app: plugins { }, dependencies { }.
+
+Estructura típica en app/build.gradle.kts:
+- plugins { alias(libs.plugins.android.application); alias(libs.plugins.kotlin.android) }
+- android { compileSdk, defaultConfig, buildTypes }
+- dependencies { implementation(...), kapt(...), testImplementation(...) }
+
+El archivo settings.gradle.kts define include(":app"), módulos feature, repositorios y pluginManagement. El version catalog (libs.versions.toml) centraliza versiones en [versions], [libraries] y [plugins]. Gradle genera tipos de acceso (Libs, Plugins) a partir del TOML. Los scripts .kts se compilan a bytecode antes de ejecutarse; el primer sync puede ser más lento que Groovy.
+
+Migración desde Groovy: renombrar a .kts, usar = en asignaciones, comillas dobles consistentes, importar clases cuando el IDE lo sugiera.
+
+Cuándo usarlo:
+En proyectos nuevos de Android se recomienda Kotlin DSL por defecto. En equipos que ya usan Kotlin en la app, unifica el lenguaje en todo el repositorio. Version catalogs escalan mejor con muchos módulos y dependencias compartidas.
+
+Ejemplo:
+// settings.gradle.kts
+pluginManagement {
+    repositories { google(); mavenCentral(); gradlePluginPortal() }
+}
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories { google(); mavenCentral() }
+}
+rootProject.name = "Entrevista"
+include(":app")
+
+// app/build.gradle.kts
+plugins {
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
+}
+android {
+    namespace = "com.example.entrevista"
+    compileSdk = 35
+    defaultConfig {
+        applicationId = "com.example.entrevista"
+        minSdk = 26
+        targetSdk = 35
+    }
+}
+
+Consejo para entrevista:
+Menciona tipado, version catalogs (libs.versions.toml) y que .kts es el estándar actual. No confundas Kotlin DSL (scripts de build) con Kotlin de la aplicación (runtime): son capas distintas.

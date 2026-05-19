@@ -1,0 +1,46 @@
+Concepto:
+Turbine es una librería de testing para Flow que facilita assertar emisiones de forma declarativa con awaitItem(), awaitComplete() y cancel, reduciendo race conditions frente a collect manual en tests de corrutinas.
+
+Explicación detallada:
+flow.test { } abre un scope donde cada awaitItem() suspende hasta la siguiente emisión o falla por timeout. assertEquals sobre el valor recibido. awaitComplete() verifica cierre limpio del Flow. Para StateFlow hot, el primer awaitItem suele ser el valor actual al suscribirse; planifica el orden de asserts.
+
+Operadores útiles: skipItems(n) salta emisiones iniciales; expectNoEvents() dentro de un bloque verifica que no lleguen más valores en un intervalo; cancelAndIgnoreRemainingEvents() termina el test sin esperar infinito en flows que no completan.
+
+Combina con kotlinx-coroutines-test runTest y MainDispatcherRule. Para debounce, advanceTimeBy en el TestScope antes de awaitItem. Para flatMapLatest, emite búsquedas rápidas y verifica que solo la última llega al collector.
+
+Turbine evita el patrón frágil de launch + delay + assert en un MutableList compartido, que causa flakes en CI. Es estándar en proyectos Kotlin que testean ViewModel StateFlow, repository Room Flow y operadores personalizados.
+
+En el contexto de proyectos Android reales, combina esta idea con las guías oficiales de Android Developers y con métricas de calidad cuando aplique. En code review, pregunta siempre por ciclo de vida, testabilidad y si la solución escala cuando el equipo crece.
+
+Durante la entrevista, estructura la respuesta en definición, ejemplo concreto y trade-offs frente a collect manual o toList(). Mencionar Turbine demuestra experiencia con corrutinas modernas en tests.
+
+Errores comunes: no cancelar el test y dejar collectors colgados; olvidar advanceUntilIdle antes de awaitItem cuando el Flow emite desde otra coroutine; comparar listas completas sin tener en cuenta emisiones intermedias de loading. La dependencia es cashapp.turbine:turbine en testImplementation.
+
+Para SharedFlow de eventos UI, usa test { action(); awaitItem() es el evento esperado } y verifica que no hay replay no deseado. Integración con Hilt y ViewModel: instancia ViewModel con fakes, llama métodos públicos, Turbine en uiState o effects.
+
+Cuándo usarlo:
+Cualquier test que colecte Flow en proyecto Kotlin moderno. Alternativa manual es frágil y propenso a flakes. No uses toList() en flows infinitos o sin complete.
+
+Ejemplo:
+@Test
+fun searchEmitsResults() = runTest {
+    repository.results.test {
+        repository.search("kotlin")
+        assertEquals(listOf("item"), awaitItem())
+        cancelAndIgnoreRemainingEvents()
+    }
+}
+
+@Test
+fun debouncedSearch() = runTest {
+    viewModel.queryFlow.test {
+        viewModel.onQuery("a")
+        advanceTimeBy(300)
+        val result = awaitItem()
+        assertTrue(result.isNotEmpty())
+        cancelAndIgnoreRemainingEvents()
+    }
+}
+
+Consejo para entrevista:
+Nombre Turbine y awaitItem. Contrasta con toList() que puede colgar si flow infinito. Menciona timeout y primer valor de StateFlow.

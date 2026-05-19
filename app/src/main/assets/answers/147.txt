@@ -1,0 +1,45 @@
+Concepto:
+MainDispatcherRule (o MainCoroutineRule) es una regla de JUnit que sustituye Dispatchers.Main por un TestDispatcher en tests unitarios, permitiendo controlar y avanzar corrutinas sin depender del hilo principal de Android.
+
+Explicación detallada:
+ViewModels y clases que usan Dispatchers.Main fallan en JVM puro porque Main no está definido.
+
+Solución kotlinx-coroutines-test:
+@get:Rule
+val mainDispatcherRule = MainDispatcherRule()
+
+Implementación típica con UnconfinedTestDispatcher o StandardTestDispatcher:
+- Dispatchers.setMain(dispatcher) en starting
+- Dispatchers.resetMain() en finished
+
+Con StandardTestDispatcher:
+- advanceUntilIdle() para ejecutar corrutinas pendientes.
+- runCurrent() para un paso.
+
+En tests de ViewModel:
+@Test
+fun loadsData() = runTest {
+    val vm = MyViewModel(fakeRepo)
+    advanceUntilIdle()
+    assertEquals(UiState.Success, vm.state.value)
+}
+
+Alternativa: inyectar Dispatcher en producción (@MainDispatcher Qualifier en Hilt) y pasar TestDispatcher en test sin regla global.
+
+Cuándo usarlo:
+Todo test JVM que ejecute viewModelScope, withContext(Main) o Dispatchers.Main explícito.
+
+Ejemplo:
+class MainDispatcherRule(
+    private val testDispatcher: TestDispatcher = UnconfinedTestDispatcher()
+) : TestWatcher() {
+    override fun starting(description: Description) {
+        Dispatchers.setMain(testDispatcher)
+    }
+    override fun finished(description: Description) {
+        Dispatchers.resetMain()
+    }
+}
+
+Consejo para entrevista:
+Explica por qué falla Main en unit tests. Menciona runTest, advanceUntilIdle y opción de inyectar dispatchers (mejor diseño).

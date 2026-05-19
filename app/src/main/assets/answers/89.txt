@@ -1,0 +1,39 @@
+Concepto:
+Mockito (Java) y MockK (Kotlin) son librerías de mocking que crean objetos dobles para aislar la unidad bajo test: simulan dependencias (repositorios, APIs) y verifican interacciones (verify) sin implementaciones reales.
+
+Explicación detallada:
+MockK: every { repo.get() } returns listOf(); coEvery para suspend; verify { repo.get() } wasCalled 1 times. relaxed = true mocks devuelven defaults. mockkStatic para extensiones.
+
+Mockito: when().thenReturn(); menos idiomático en Kotlin por nullability. spy() envuelve objeto real.
+
+Preferir fakes (FakeRepository con mapa en memoria) cuando la interfaz es pequeña: tests más legibles y menos frágiles a refactor. Mocks para interacciones puntuales o SDKs externos.
+
+@Mock lateinit var con MockitoJUnit rule; MockK usa mockk() inline.
+
+En el contexto de proyectos Android reales, combina esta idea con las guías oficiales de Android Developers y con métricas de calidad (crashes, ANR, Vitals) cuando aplique. En code review, pregunta siempre por ciclo de vida, testabilidad y si la solución escala cuando el equipo crece.
+
+Durante la entrevista, estructura la respuesta en definición, ejemplo concreto de tu experiencia o proyecto demo, y trade-offs frente a alternativas. Mencionar versiones recientes de API o biblioteca (Material3, Paging 3, Hilt 2.x) demuestra que sigues el ecosistema, sin necesidad de memorizar números de versión exactos.
+
+Para profundizar tras la entrevista, revisa documentación oficial, codelabs y el código fuente de tu propio proyecto Entrevista aplicando el concepto en un flujo mínimo reproducible. La práctica deliberada con tests unitarios refuerza la confianza al explicar el tema en viva voz.
+
+En el contexto de proyectos Android reales, combina esta idea con las guías oficiales de Android Developers y con métricas de calidad (crashes, ANR, Vitals) cuando aplique. En code review, pregunta siempre por ciclo de vida, testabilidad y si la solución escala cuando el equipo crece.
+
+Durante la entrevista, estructura la respuesta en definición, ejemplo concreto de tu experiencia o proyecto demo, y trade-offs frente a alternativas. Mencionar versiones recientes de API o biblioteca (Material3, Paging 3, Hilt 2.x) demuestra que sigues el ecosistema, sin necesidad de memorizar números de versión exactos.
+
+Para profundizar tras la entrevista, revisa documentación oficial, codelabs y el código fuente de tu propio proyecto Entrevista aplicando el concepto en un flujo mínimo reproducible. La práctica deliberada con tests unitarios refuerza la confianza al explicar el tema en viva voz.
+
+Cuándo usarlo:
+Unit tests de ViewModel/use case con dependencias inyectadas. Evita mock de clases finales sin configuración o data classes complejas si fake es simple.
+
+Ejemplo:
+@Test
+fun `loads products`() = runTest {
+    val repo = mockk<ProductRepository>()
+    coEvery { repo.getProducts() } returns listOf(Product("1", "A"))
+    val vm = ProductListViewModel(repo)
+    vm.load()
+    assertEquals(1, vm.uiState.value.items.size)
+}
+
+Consejo para entrevista:
+MockK para Kotlin, Mockito en legacy Java. Menciona fake vs mock trade-off. coEvery para suspend.

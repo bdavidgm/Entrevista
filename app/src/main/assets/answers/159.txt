@@ -1,0 +1,50 @@
+Concepto:
+CompositionLocal es el mecanismo de Jetpack Compose para propagar valores implícitos por el árbol de composición sin pasarlos explícitamente como parámetros a cada Composable hijo.
+
+Explicación detallada:
+Analogía: Context Theme en Views, pero type-safe y con providers locales.
+
+API:
+- staticCompositionLocalOf { default } — sin proveedor, usa default (puede fallar en debug).
+- compositionLocalOf { default } — no proveer causa error en runtime al leer.
+- CompositionLocalProvider(LocalX provides value) { children }
+
+Built-in:
+- LocalContext, LocalContentColor, LocalTextStyle, MaterialTheme usa locals internamente.
+
+Custom:
+val LocalUserSession = compositionLocalOf<UserSession> {
+    error("No UserSession provided")
+}
+
+Ventajas:
+- Evita prop drilling de 10 niveles.
+- Temas y dependencias de UI scoped a subtree.
+
+Riesgos:
+- Abuso oculta dependencias (difícil saber qué necesita un Composable).
+- Testing: proveer valores fake con CompositionLocalProvider.
+
+Cuándo usarlo:
+Temas, sesión de usuario en subtree, dimensiones específicas de feature, acceso controlado a callbacks de navegación en módulos UI.
+
+Ejemplo:
+data class UserSession(val userId: String, val isPremium: Boolean)
+
+val LocalUserSession = staticCompositionLocalOf<UserSession?> { null }
+
+@Composable
+fun AppRoot(session: UserSession) {
+    CompositionLocalProvider(LocalUserSession provides session) {
+        MainNavHost()
+    }
+}
+
+@Composable
+fun PremiumBadge() {
+    val session = LocalUserSession.current ?: return
+    if (session.isPremium) Text("PRO")
+}
+
+Consejo para entrevista:
+Contrasta con parámetros explícitos. Menciona LocalContext y no abusar para lógica de negocio pesada. Proveer fakes en tests de UI Compose.

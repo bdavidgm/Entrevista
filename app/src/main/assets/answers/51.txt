@@ -1,0 +1,40 @@
+Concepto:
+Modifier es una interfaz encadenable en Jetpack Compose que describe cómo decorar o medir un Composable: tamaño, padding, clic, scroll, semántica, etc. Se pasa como parámetro modifier al composable y se aplica en orden de izquierda a derecha (el primero puede afectar al siguiente).
+
+Explicación detallada:
+Patrón: Modifier.padding(8.dp).fillMaxWidth().clickable { }. Los layouts (Row, Box) propagan constraints a hijos. Modifier.fillMaxSize(), weight en Row, aspectRatio, offset. MaterialTheme y custom modifiers para comportamiento compartido.
+
+Buena práctica: el composable raíz acepta Modifier externo y lo concatena: modifier.then(Modifier.padding(...)) o el caller pasa padding externo. default modifier parameter = Modifier.
+
+En entrevistas: orden importa (padding antes vs después de clickable afecta área de click). Comparan con View layoutParams + OnClickListener separados.
+
+En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
+
+En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
+
+Cuándo usarlo:
+Siempre que necesites dimensionar, espaciar, hacer clickable, scroll, testTag, semantics. Extrae cadenas repetidas en fun Modifier.myStyle() extension.
+
+Ejemplo:
+@Composable
+fun PrimaryButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Button(
+        onClick = onClick,
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .height(48.dp)
+    ) {
+        Text(text)
+    }
+}
+
+// Uso
+PrimaryButton("Continuar", onClick = { next() }, modifier = Modifier.padding(top = 8.dp))
+
+Consejo para entrevista:
+Orden de modifiers con ejemplo clickable+padding. fillMaxWidth vs wrapContent. Modifier.composed para custom reusable.

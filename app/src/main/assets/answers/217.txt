@@ -1,0 +1,46 @@
+Concepto:
+ProGuard y R8 son herramientas de ofuscación, reducción y optimización de bytecode en builds release; R8 es el default del Android Gradle Plugin y combina shrinking, obfuscation y optimización.
+
+Explicación detallada:
+R8 en release (minifyEnabled true):
+- Shrinking (tree shaking): elimina clases/métodos no usados según análisis de entrada.
+- Obfuscation: renombra clases/métodos a a, b, c dificultando ingeniería inversa.
+- Optimización: inline, elimina código muerto.
+
+Reglas proguard-rules.pro:
+-keep para clases reflejadas (Retrofit interfaces, Room entities, Parcelable, Gson/Moshi models si reflexión).
+-keepattributes Signature, InnerClasses para stack traces.
+-dontwarn para dependencias opcionales.
+
+Mapping file: mapping.txt asocia nombres ofuscados con originales; subir a Play Console y Crashlytics para crashes legibles.
+
+Riesgos: reflexión sin reglas rompe runtime; Serializable/Parcelable mal configurados; demasiados -keep anulan beneficio.
+
+ProGuard manual ya no es flujo típico; AGP invoca R8.
+
+Cuándo usarlo:
+- Siempre release en producción (tamaño APK/AAB y seguridad básica).
+- Desactivar solo temporalmente para depurar crash ofuscación.
+
+Ejemplo:
+android {
+    buildTypes {
+        release {
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+        }
+    }
+}
+
+# proguard-rules.pro
+-keep class com.example.data.api.** { *; }
+-keepclassmembers class * {
+    @com.squareup.moshi.Json <fields>;
+}
+
+Consejo para entrevista:
+Di R8 reemplaza ProGuard, explica shrinking vs obfuscation, mapping file y reglas -keep para Retrofit/Room/Moshi. Menciona isShrinkResources y probar release build en QA.

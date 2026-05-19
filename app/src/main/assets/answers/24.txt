@@ -1,0 +1,48 @@
+Concepto:
+Las delegated properties (propiedades delegadas) delegan el getter y/o setter de una propiedad a un objeto Delegate que implementa operadores getValue y setValue (o provideDelegate). Kotlin incluye delegados estándar lazy, observable, vetoable, y notNull; Android añade viewModels(), viewBinding(), by remember en Compose via APIs similares conceptualmente.
+
+Explicación detallada:
+Sintaxis: val name: Type by Delegate(). El compilador genera getter/setter que reenvían al delegado. lazy inicializa en primer acceso; observable dispara callback al cambiar; viewModels() obtiene ViewModel scoped al lifecycle owner; mapValues en bundles.
+
+Ventajas: separar boilerplate de lifecycle (ViewModel, SavedStateHandle), reutilizar lógica de acceso, testear delegados. Custom delegates encapsulan SharedPreferences tipadas, argumentos de Fragment, permisos.
+
+En entrevistas comparan by lazy vs lateinit, y viewModels() delegate vs factory manual. provideDelegate permite decidir delegado en runtime al definir propiedad.
+
+En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
+
+En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
+
+Cuándo usarlo:
+ViewModels en Activity/Fragment, lazy costoso, binding de vistas con viewBinding(), preferencias. Implementa delegados custom solo si el patrón se repite mucho.
+
+Ejemplo:
+class ListFragment : Fragment(R.layout.fragment_list) {
+    private val viewModel: ListViewModel by viewModels()
+    private val binding by viewBinding(FragmentListBinding::bind)
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.items.collect { binding.list.submit(it) }
+        }
+    }
+}
+
+class SettingsRepository(prefs: SharedPreferences) {
+    var darkMode: Boolean by prefs.boolean("dark_mode", false)
+}
+
+// Delegado simple (conceptual)
+class boolean(
+    private val prefs: SharedPreferences,
+    private val key: String,
+    private val default: Boolean
+) {
+    operator fun getValue(thisRef: Any?, property: KProperty<*>) =
+        prefs.getBoolean(key, default)
+    operator fun setValue(thisRef: Any?, property: KProperty<*>, value: Boolean) {
+        prefs.edit { putBoolean(key, value) }
+    }
+}
+
+Consejo para entrevista:
+Explica getValue/setValue y KProperty. Preguntan viewModels() y factory. Custom delegate para argumentos Fragment es pregunta avanzada frecuente.

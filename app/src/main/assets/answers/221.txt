@@ -1,0 +1,47 @@
+Concepto:
+Los callbacks del ciclo de vida de un Service son onCreate, onStartCommand (started), onBind (bound), onUnbind, onRebind, onDestroy; el orden depende de si es started, bound o ambos.
+
+Explicación detallada:
+Secuencia típica started:
+1) startService → onCreate (primera vez) → onStartCommand
+2) Más startService → solo onStartCommand (nuevo startId)
+3) stopSelf/stopService → onDestroy cuando no hay trabajo/startIds pendientes
+
+Secuencia bound:
+1) bindService → onCreate → onBind → cliente conectado
+2) unbind → onUnbind → onDestroy (si no started)
+
+Started + bound: onDestroy cuando sin clients Y stopped.
+
+onStartCommand flags: START_FLAG_REDELIVERY, START_FLAG_RETRY si proceso matado.
+
+onBind retorna null en pure started service.
+
+onRebind tras onUnbind cuando ACTIVITY_BIND_AUTO_CREATE y cliente vuelve.
+
+No confundir con Activity lifecycle; Service puede vivir con app en background limitado.
+
+Cuándo usarlo:
+- Depurar fugas (Service no destruido).
+- Entender cuándo liberar recursos (sensor, player) en onDestroy.
+- Entrevistas de ciclo de vida Android.
+
+Ejemplo:
+class LogService : Service() {
+    override fun onCreate() {
+        super.onCreate()
+        // init recursos
+    }
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        // procesar intent; stopSelf(startId) al final
+        return START_NOT_STICKY
+    }
+    override fun onBind(intent: Intent?) = null
+    override fun onDestroy() {
+        // liberar recursos
+        super.onDestroy()
+    }
+}
+
+Consejo para entrevista:
+Recita callbacks en orden lógico para started y bound por separado. Menciona startId y stopSelf. Conecta con ForegroundService añadiendo startForeground tras onCreate/onStartCommand.

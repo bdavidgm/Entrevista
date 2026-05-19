@@ -1,0 +1,39 @@
+Concepto:
+Cloud Firestore es una base de datos NoSQL documental en la nube de Firebase: colecciones, documentos, campos tipados, consultas indexadas, sincronización offline y listeners en tiempo real.
+
+Explicación detallada:
+Modelo: Collection "users" → Document "uid123" → fields { name, age, tags[] }. Subcolecciones anidadas.
+
+API Android:
+- get(), add(), set(), update(), delete()
+- whereEqualTo, orderBy, limit (requieren índices compuestos en consola)
+- addSnapshotListener para UI reactiva
+- Persistencia offline habilitada por defecto; sincroniza al recuperar red
+
+Transacciones y batches para consistencia. Security Rules en servidor definen quién lee/escribe por auth.uid.
+
+Vs Realtime Database: Firestore mejor para consultas complejas y escalado; RTDB más simple JSON tree baja latencia.
+
+Cuándo usarlo:
+- Apps con datos compartidos en tiempo real (chat ligero, colaboración).
+- Prototipos sin backend propio.
+- Complemento con Cloud Functions para lógica sensible.
+
+Evitar: datos altamente relacionales complejos sin diseño; queries sin índices; poner lógica crítica solo en cliente.
+
+Ejemplo:
+val db = Firebase.firestore
+db.collection("orders")
+    .whereEqualTo("userId", uid)
+    .orderBy("createdAt", Query.Direction.DESCENDING)
+    .limit(20)
+    .addSnapshotListener { snapshot, error ->
+        if (error != null) return@addSnapshotListener
+        val orders = snapshot?.documents?.mapNotNull {
+            it.toObject<Order>()
+        } ?: emptyList()
+        _uiState.value = OrdersState(orders)
+    }
+
+Consejo para entrevista:
+Explica modelo documental, rules, offline cache, índices. Contrasta con Room local (source of truth offline-first híbrido). Menciona coste por lecturas y diseño de denormalización.

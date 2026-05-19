@@ -1,0 +1,45 @@
+Concepto:
+Kotlin es el lenguaje preferido para Android desde 2019: conciso, seguro ante nulls, interoperable con Java y con soporte de primera clase para corrutinas, DSLs y APIs modernas de Jetpack.
+
+Explicación detallada:
+Ventajas frente a Java en Android:
+
+1) Null safety: tipos String vs String? detectados en compilación; operadores ?., ?:, let reducen NPE en producción.
+
+2) Concisión: data class, sealed class, when exhaustivo, propiedades sin boilerplate getters/setters, default parameters, named arguments. Menos líneas = menos bugs y reviews más rápidos.
+
+3) Funciones de orden superior y lambdas: colecciones con map/filter, APIs reactivas legibles; SAM conversions donde Java exige interfaces.
+
+4) Coroutines: async sin callback hell; integración con ViewModel scope, Room, Retrofit suspend, Flow. Java usa callbacks, RxJava o Executors más verbosos.
+
+5) Extension functions: añadir utilidades a Context, View, String sin subclassing (usar con moderación).
+
+6) Interoperabilidad: @JvmStatic, @JvmOverloads, @file:JvmName para llamar desde Java legacy; migración gradual módulo a módulo.
+
+7) Multiplataforma (KMP): lógica compartida con iOS en algunos equipos (no siempre en entrevista junior).
+
+8) Oficialidad: documentación, codelabs, Compose samples y AndroidX asumen Kotlin.
+
+Java sigue en código legacy y algunas APIs generadas; en entrevista se espera que escribas Kotlin nuevo.
+
+Cuándo usarlo:
+- Todo código nuevo en proyectos Android modernos.
+- Compose (APIs idiomáticas Kotlin).
+- Cuando migras módulos Java por riesgo/ROI.
+
+Ejemplo:
+// Java verboso vs Kotlin
+// Java: if (user != null) { String n = user.getName(); if (n != null) show(n); }
+// Kotlin:
+user?.name?.let { show(it) }
+
+data class User(val id: Long, val name: String)
+
+sealed interface UiState {
+    data object Loading : UiState
+    data class Success(val users: List<User>) : UiState
+    data class Error(val message: String) : UiState
+}
+
+Consejo para entrevista:
+Da 3-4 puntos concretos (null safety, coroutines, data/sealed, oficial) con ejemplo breve. Menciona interop Java sin fanatismo. Evita decir “Java está muerto”; di “Kotlin es el default para desarrollo nuevo”.

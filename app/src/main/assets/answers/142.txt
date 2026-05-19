@@ -1,0 +1,44 @@
+Concepto:
+SupervisorJob es un Job que no cancela a sus hijos cuando uno de ellos falla con excepción; solo el hijo fallido se cancela, permitiendo que hermanos sigan ejecutándose.
+
+Explicación detallada:
+Job normal (estructura de corrutinas):
+- Si un hijo falla sin manejar la excepción, el padre cancela a todos los hijos (structured concurrency).
+
+SupervisorJob:
+- Fallo aislado: útil cuando tareas paralelas son independientes (varias peticiones de red, workers).
+
+Uso:
+val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+scope.launch { taskA() }
+scope.launch { taskB() } // si A falla, B continúa
+
+viewModelScope internamente puede combinar elementos; para patrones custom en ViewModel a veces se usa supervisorScope { } de la librería.
+
+supervisorScope builder:
+supervisorScope {
+    launch { fetchUsers() }
+    launch { fetchSettings() }
+}
+
+Cuándo usarlo:
+Múltiples flujos independientes en una pantalla; logging/analytics paralelos; evitar que un error secundario tumbe la carga principal si está bien manejado.
+
+Precaución: no es excusa para ignorar errores; captura excepciones en cada hijo si la UI debe reaccionar.
+
+Ejemplo:
+viewModelScope.launch {
+    supervisorScope {
+        launch {
+            runCatching { repo.syncCatalog() }
+                .onFailure { _events.emit(UiEvent.CatalogError) }
+        }
+        launch {
+            runCatching { repo.syncCart() }
+                .onFailure { _events.emit(UiEvent.CartError) }
+        }
+    }
+}
+
+Consejo para entrevista:
+Contrasta Job vs SupervisorJob. Relaciona con structured concurrency y por qué no usar GlobalScope. Menciona supervisorScope.

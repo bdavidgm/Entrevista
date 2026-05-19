@@ -1,0 +1,40 @@
+Concepto:
+El diseño adaptativo (tablet / large screen) adapta layout, navegación y densidad de contenido según el tamaño de pantalla, orientación y postura del dispositivo (teléfono, plegable, tablet, escritorio).
+
+Explicación detallada:
+Android ofrece:
+- Qualifiers: sw600dp, w600dp, large, xlarge en res/layout-sw600dp.
+- WindowSizeClass (Material3): Compact, Medium, Expanded para width/height.
+- SlidingPaneLayout, Navigation Rail, dos paneles lista-detalle en tablets.
+- Compose: BoxWithConstraints, WindowInsets, Material3 AdaptiveNavigationSuite.
+
+Patrones:
+- Lista + detalle simultáneos en tablet; solo uno en teléfono con back stack.
+- Grid de columnas variable (LazyVerticalGrid con min size).
+- Evitar solo escalar UI de teléfono; usar espacio horizontal (maestro-detalle).
+
+Foldables:
+- Jetpack WindowManager para postures y separadores.
+- Continuidad al plegar/desplegar.
+
+Pruebas:
+- Emuladores de tablet y Desktop mode.
+- Layout validation en Android Studio.
+
+Cuándo usarlo:
+Apps de productividad, medios, e-commerce. Google Play prioriza apps optimizadas para tablets en categorías grandes.
+
+Ejemplo:
+@Composable
+fun HomeAdaptive(windowSizeClass: WindowSizeClass) {
+    when (windowSizeClass.widthSizeClass) {
+        WindowWidthSizeClass.Compact -> SinglePaneNav()
+        WindowWidthSizeClass.Medium,
+        WindowWidthSizeClass.Expanded -> ListDetailPaneScaffold()
+    }
+}
+
+// XML alternativa: res/layout/activity_main.xml y res/layout-sw600dp/activity_main.xml
+
+Consejo para entrevista:
+Menciona WindowSizeClass, list-detail y qualifiers sw600dp. Habla de Navigation Rail vs BottomBar. No confundas solo con orientación landscape.

@@ -1,0 +1,52 @@
+Concepto:
+TypeConverter en Room convierte entre tipos de Kotlin/Java que SQLite no soporta nativamente (Date, UUID, enums, listas) y tipos que sí almacena (TEXT, INTEGER, REAL, BLOB).
+
+Explicación detallada:
+SQLite solo tiene tipos almacenados limitados. Room persiste columnas como INTEGER, REAL, TEXT, BLOB.
+
+Implementación:
+class Converters {
+    @TypeConverter
+    fun fromTimestamp(value: Long?): Date? = value?.let { Date(it) }
+
+    @TypeConverter
+    fun dateToTimestamp(date: Date?): Long? = date?.time
+}
+
+Registro:
+@Database(entities = [...], version = 1)
+@TypeConverters(Converters::class)
+abstract class AppDatabase : RoomDatabase()
+
+También a nivel de campo o clase con @TypeConverters en Entity o DAO.
+
+Casos comunes:
+- Instant / LocalDateTime (java.time) a Long o String ISO.
+- Enum a String.
+- List<String> a JSON con Moshi/Gson en converter.
+
+Buenas prácticas:
+- Converters stateless y rápidos.
+- Migraciones si cambias formato de serialización.
+- Para relaciones complejas usar tablas relacionadas en lugar de JSON blob (normalización).
+
+Cuándo usarlo:
+Siempre que una propiedad de @Entity no sea primitiva ni String directamente mapeable.
+
+Ejemplo:
+enum class Status { ACTIVE, ARCHIVED }
+
+class StatusConverter {
+    @TypeConverter fun toString(s: Status) = s.name
+    @TypeConverter fun fromString(v: String) = Status.valueOf(v)
+}
+
+@Entity
+@TypeConverters(StatusConverter::class)
+data class Task(
+    @PrimaryKey val id: String,
+    val status: Status
+)
+
+Consejo para entrevista:
+Explica por qué hace falta (limitaciones SQLite). Menciona registro global vs local y riesgo de cambiar formato sin migración.

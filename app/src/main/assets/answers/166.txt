@@ -1,0 +1,64 @@
+Concepto:
+Detectar el estado de red (conectividad) en Android consiste en saber si hay acceso a Internet usable y de qué tipo (Wi-Fi, celular, metered), usando ConnectivityManager y, desde API 24+, NetworkCallback en lugar de APIs deprecadas como NetworkInfo.
+
+Explicación detallada:
+ConnectivityManager:
+- getSystemService(Context.CONNECTIVITY_SERVICE)
+- activeNetwork y getNetworkCapabilities(activeNetwork) en API 23+.
+
+NetworkCapabilities:
+- NET_CAPABILITY_INTERNET: tiene ruta potencial.
+- NET_CAPABILITY_VALIDATED: el sistema verificó conectividad real (ping captive portal).
+- TRANSPORT_WIFI, TRANSPORT_CELLULAR.
+
+NetworkCallback (recomendado):
+registerDefaultNetworkCallback(callback) recibe onAvailable, onLost, onCapabilitiesChanged.
+
+Unregister en onDestroy para evitar leaks.
+
+Restricciones:
+- ACCESS_NETWORK_STATE permission en manifest (normal, no runtime).
+
+Alternativas:
+- ConnectivityManager.registerNetworkCallback con NetworkRequest filtrado (solo Wi-Fi, etc.).
+- WorkManager Constraints.Builder().setRequiredNetworkType(CONNECTED).
+- Library androidx: NetworkObserver patterns.
+
+No confundir:
+- Tener Wi-Fi conectado sin Internet (portal cautivo) -> usar VALIDATED.
+- isActiveNetworkMetered para evitar descargas grandes en datos móviles.
+
+Cuándo usarlo:
+Antes de sync, mostrar banner offline, elegir calidad de streaming, decidir si encolar WorkManager.
+
+Ejemplo:
+class NetworkMonitor @Inject constructor(
+    @ApplicationContext context: Context
+) {
+    private val cm = context.getSystemService(ConnectivityManager::class.java)
+    private val _online = MutableStateFlow(false)
+    val online: StateFlow<Boolean> = _online.asStateFlow()
+
+    private val callback = object : ConnectivityManager.NetworkCallback() {
+        override fun onCapabilitiesChanged(
+            network: Network,
+            caps: NetworkCapabilities
+        ) {
+            _online.value = caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+        }
+        override fun onLost(network: Network) {
+            _online.value = false
+        }
+    }
+
+    fun start() {
+        cm.registerDefaultNetworkCallback(callback)
+    }
+
+    fun stop() {
+        cm.unregisterNetworkCallback(callback)
+    }
+}
+
+Consejo para entrevista:
+Menciona NetworkCallback vs NetworkInfo deprecado. NET_CAPABILITY_VALIDATED para Internet real. Relaciona con WorkManager constraints y Repository offline-first.

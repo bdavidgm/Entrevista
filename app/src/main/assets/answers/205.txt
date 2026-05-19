@@ -1,0 +1,35 @@
+Concepto:
+OkHttp es el cliente HTTP eficiente de Square usado por Retrofit: connection pooling, interceptors, caché, TLS, timeouts y soporte HTTP/2.
+
+Explicación detallada:
+Capas:
+- Interceptor chain: logging, auth headers, retry, mocking en tests.
+- Authenticator: reintento tras 401 con nuevo token.
+- Cache: Cache(CacheDirectory, maxSize) para respuestas con Cache-Control.
+- Timeouts: connect, read, write, call.
+
+Request/Response model: cuerpos como ResponseBody; usar try/finally close.
+
+En Android, OkHttp corre en background; nunca en main thread para llamadas síncronas (Retrofit suspend ya cambia contexto).
+
+Debugging: HttpLoggingInterceptor solo en debug; riesgo de filtrar tokens en logs.
+
+Cuándo usarlo:
+- Siempre detrás de Retrofit (configuración centralizada).
+- Descargas directas, uploads multipart, WebSockets (okhttp3 WebSocket).
+- Certificate pinning para APIs sensibles.
+
+Ejemplo:
+val client = OkHttpClient.Builder()
+    .connectTimeout(30, TimeUnit.SECONDS)
+    .readTimeout(30, TimeUnit.SECONDS)
+    .addInterceptor { chain ->
+        val request = chain.request().newBuilder()
+            .addHeader("Authorization", "Bearer $token")
+            .build()
+        chain.proceed(request)
+    }
+    .build()
+
+Consejo para entrevista:
+Explica interceptors vs network interceptors, pooling, y que Retrofit es capa de declaración sobre OkHttp. Menciona no loguear secrets y pinning en banca. Conecta con WorkManager para reintentos de negocio, no solo HTTP retry.

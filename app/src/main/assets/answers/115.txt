@@ -1,0 +1,53 @@
+Concepto:
+El Principio de Responsabilidad Única (SRP, Single Responsibility Principle) establece que una clase o módulo debe tener una sola razón para cambiar: una responsabilidad cohesiva y bien delimitada.
+
+Explicación detallada:
+Es la S de SOLID. Una razón para cambiar significa un único tipo de requisito de negocio o infraestructura que, si evoluciona, afecta solo a ese componente.
+
+Anti-patrones en Android:
+- God Activity: red, persistencia, permisos, navegación y layouts en un solo archivo.
+- ViewModel que formatea strings para UI, accede a archivos, lanza intents y contiene lógica de dominio compleja.
+- Repository que además renderiza notificaciones y maneja analytics.
+
+Diseño alineado con SRP:
+- UserRepository: abstrae origen de datos de usuario (API + cache local).
+- GetUserProfileUseCase: reglas de negocio para obtener perfil.
+- ProfileViewModel: estado y eventos de la pantalla de perfil.
+- UserDtoMapper: conversión DTO a entidad de dominio.
+- ProfileScreen (Composable): solo presentación y delegación de eventos.
+
+Beneficios en equipos y entrevistas:
+- Tests unitarios pequeños y rápidos por clase.
+- Cambios en API no obligan a tocar Composables.
+- Modularización Gradle por capas (:domain, :data, :feature) refuerza SRP a escala de módulo.
+
+Pragmatismo: una data class con equals/hashCode no viola SRP; un UseCase puede orquestar dos repos si su responsabilidad es un caso de uso concreto (p. ej. sincronizar carrito).
+
+Cuándo usarlo:
+Como criterio de diseño continuo al dividir pantallas, paquetes y módulos. Especialmente en code reviews y refactors de código legacy.
+
+Ejemplo:
+class UserRepository @Inject constructor(
+    private val api: UserApi,
+    private val dao: UserDao
+) {
+    suspend fun getUser(id: String): User =
+        dao.getById(id) ?: api.fetchUser(id).also { dao.insert(it) }
+}
+
+class GetUserUseCase @Inject constructor(
+    private val repository: UserRepository
+) {
+    suspend operator fun invoke(id: String): User = repository.getUser(id)
+}
+
+@HiltViewModel
+class ProfileViewModel @Inject constructor(
+    private val getUser: GetUserUseCase
+) : ViewModel() {
+    private val _uiState = MutableStateFlow(ProfileUiState())
+    val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()
+}
+
+Consejo para entrevista:
+Explica con ejemplo concreto de capas Android, no solo teoría SOLID. La frase clave es una sola razón para cambiar, no una sola función por clase.

@@ -1,0 +1,37 @@
+Concepto:
+El modo batería (Battery Saver) y las restricciones de segundo plano de Android limitan la ejecución de apps cuando el dispositivo busca ahorrar energía o cuando la app no está en primer plano, afectando jobs, alarmas, red y ubicación.
+
+Explicación detallada:
+Battery Saver / Doze:
+- Retrasa jobs de red, alarma y sync en batch cuando pantalla apagada y dispositivo inmóvil.
+- App Standby Buckets: ACTIVE, WORKING_SET, FREQUENT, RARE — limitan jobs y FCM.
+
+Restricciones relevantes:
+- Background execution limits (Android 8+): servicios en background restringidos; usar WorkManager o Foreground Service con tipo declarado.
+- Exact alarms: SCHEDULE_EXACT_ALARM permiso en API 31+.
+- Ubicación en background: permiso ACCESS_BACKGROUND_LOCATION aparte.
+- Foreground Service types (Android 14+): declarar location, dataSync, etc.
+
+WorkManager:
+- Respeta constraints (batería, red, carga) y es la vía recomendada para trabajo diferible.
+
+Detección:
+- PowerManager.isPowerSaveMode
+- Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS (usar con ética, no abusar whitelist).
+
+Cuándo usarlo:
+Diseñar features offline-first, sincronización con WorkManager, informar al usuario si la funcionalidad requiere desactivar optimización (raro). Probar en Doze con adb shell dumpsys deviceidle.
+
+Ejemplo:
+val work = OneTimeWorkRequestBuilder<SyncWorker>()
+    .setConstraints(
+        Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .setRequiresBatteryNotLow(true)
+            .build()
+    )
+    .build()
+WorkManager.getInstance(context).enqueue(work)
+
+Consejo para entrevista:
+Menciona Doze, App Standby y por qué AlarmManager/Service crudo falla. WorkManager y FCM high priority como alternativas legítimas. No prometas bypass agresivo de batería.

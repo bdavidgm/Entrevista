@@ -1,0 +1,40 @@
+Concepto:
+El operador de llamada segura ?. (safe call) ejecuta la llamada o acceso a propiedad solo si el receptor no es null; si es null, toda la expresión devuelve null sin lanzar excepción. Permite encadenar accesos: usuario?.direccion?.ciudad, propagando null de forma controlada.
+
+Explicación detallada:
+El tipo resultante de a?.b cuando b es String es String? aunque a fuera String no anulable, porque el canal completo puede abortar en null. Combina con Elvis ?: para defaults: usuario?.nombre ?: "Anónimo". También con let: usuario?.let { mostrar(it) }.
+
+En Android, safe call es la primera línea de defensa tras APIs que devuelven nullable: findViewById en código legacy, intent.extras, respuestas JSON parseadas, cursores de ContentResolver. Sustituye verificaciones verbosas if (x != null) x.method().
+
+A diferencia de !!, safe call nunca convierte silenciosamente null en crash; convierte en nullabilidad explícita en el tipo. El compilador te obliga a manejar el String? resultante. En colecciones, mapNotNull y filterNotNull complementan safe call en listas.
+
+Rendimiento: overhead mínimo (comparación null). En hot paths masivos, estructuras no anulables tras validación única pueden ser más claras que cadenas largas de ?.
+
+En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
+
+En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
+
+Cuándo usarlo:
+Siempre que el receptor sea nullable y quieras continuar solo si existe. Evita cadenas de más de cuatro ?. sin variables intermedias con nombres claros o early return.
+
+Ejemplo:
+val city = user?.address?.city
+
+binding.avatar.loadUrl(profile?.avatarUrl)
+
+fun onTokenReceived(intent: Intent?) {
+    val token = intent?.getStringExtra(EXTRA_TOKEN)
+    if (token != null) {
+        sessionStore.save(token)
+    } else {
+        showLogin()
+    }
+}
+
+// Con let para bloque con non-null
+intent?.getParcelableExtra<ShareData>(EXTRA_DATA)?.let { data ->
+    shareController.publish(data)
+}
+
+Consejo para entrevista:
+Contrasta ?. con !! y con if (x != null). Preguntan tipo de retorno encadenado. Menciona que ?. también aplica a llamadas: callback?.invoke().

@@ -1,0 +1,42 @@
+Concepto:
+Un test de ViewModel verifica la lógica de presentación de forma aislada: dado un evento o acción, el estado expuesto (StateFlow/LiveData) o efectos esperados cambian correctamente, usando repositorios fake o mocks y TestDispatcher sin UI ni emulador.
+
+Explicación detallada:
+Configura MainDispatcherRule o StandardTestDispatcher para controlar coroutines. Instancia ViewModel con FakeRepository. Llama onAction() o métodos públicos. Assert en uiState.value o collect con Turbine.
+
+Casos: loading -> success, loading -> error, cancelación no actualiza estado tras destroy (opcional). No uses Robolectric si el ViewModel no toca Android.
+
+SavedStateHandle: pasar SavedStateHandle(mapOf("id" to 1)) en constructor si aplica. Hilt: sin @HiltAndroidTest si inyectas manualmente en unit test.
+
+Turbine: vm.uiState.test { awaitItem(); ... }. advanceUntilIdle() con test scheduler.
+
+En el contexto de proyectos Android reales, combina esta idea con las guías oficiales de Android Developers y con métricas de calidad (crashes, ANR, Vitals) cuando aplique. En code review, pregunta siempre por ciclo de vida, testabilidad y si la solución escala cuando el equipo crece.
+
+Durante la entrevista, estructura la respuesta en definición, ejemplo concreto de tu experiencia o proyecto demo, y trade-offs frente a alternativas. Mencionar versiones recientes de API o biblioteca (Material3, Paging 3, Hilt 2.x) demuestra que sigues el ecosistema, sin necesidad de memorizar números de versión exactos.
+
+Para profundizar tras la entrevista, revisa documentación oficial, codelabs y el código fuente de tu propio proyecto Entrevista aplicando el concepto en un flujo mínimo reproducible. La práctica deliberada con tests unitarios refuerza la confianza al explicar el tema en viva voz.
+
+En el contexto de proyectos Android reales, combina esta idea con las guías oficiales de Android Developers y con métricas de calidad (crashes, ANR, Vitals) cuando aplique. En code review, pregunta siempre por ciclo de vida, testabilidad y si la solución escala cuando el equipo crece.
+
+Durante la entrevista, estructura la respuesta en definición, ejemplo concreto de tu experiencia o proyecto demo, y trade-offs frente a alternativas. Mencionar versiones recientes de API o biblioteca (Material3, Paging 3, Hilt 2.x) demuestra que sigues el ecosistema, sin necesidad de memorizar números de versión exactos.
+
+Para profundizar tras la entrevista, revisa documentación oficial, codelabs y el código fuente de tu propio proyecto Entrevista aplicando el concepto en un flujo mínimo reproducible. La práctica deliberada con tests unitarios refuerza la confianza al explicar el tema en viva voz.
+
+Cuándo usarlo:
+Cada ViewModel con lógica no trivial. Complementa tests de use case y repository.
+
+Ejemplo:
+@OptIn(ExperimentalCoroutinesApi::class)
+class CartViewModelTest {
+    @get:Rule val main = MainDispatcherRule()
+
+    @Test
+    fun addItemUpdatesTotal() = runTest {
+        val vm = CartViewModel(FakeCartRepo())
+        vm.addItem(Item("1", 10.0))
+        assertEquals(10.0, vm.uiState.value.total, 0.0)
+    }
+}
+
+Consejo para entrevista:
+Menciona runTest, fake repo, Turbine. No pruebes framework Android en unit test de ViewModel.

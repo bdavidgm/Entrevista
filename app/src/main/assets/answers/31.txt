@@ -1,0 +1,33 @@
+Concepto:
+Una Activity es un componente de Android que representa una pantalla con interfaz de usuario y actúa como punto de entrada para la interacción del usuario. Gestiona un ventana en el sistema y coordina el ciclo de vida, permisos, navegación y, en arquitecturas modernas, delega lógica de negocio al ViewModel.
+
+Explicación detallada:
+Cada Activity tiene un ciclo de vida gestionado por el sistema (onCreate, onStart, onResume, onPause, onStop, onDestroy) según visibilidad y memoria. El AndroidManifest declara activities con intent-filters para launcher. Una app típica tiene varias activities o una sola con Navigation (Compose o Fragment).
+
+Activity no debe contener lógica pesada ni estado que sobreviva rotación sin ViewModel/SavedState. Patrón actual: Activity delgada + Compose o binding + ViewModel + inyección (Hilt). onCreate infla UI y suscribe observables; onDestroy limpia listeners si no usan lifecycle-aware components.
+
+Comparación con Fragment: Activity es contenedor de ventana; Fragment es sub-unidad reutilizable dentro de Activity. Con Compose, MainActivity suele ser host único. Comparación con Service: Activity es UI foreground visible al usuario (salvo casos especiales).
+
+En entrevistas preguntan launch modes (standard, singleTop, singleTask, singleInstance), task/back stack, y configuration changes. También edge-to-edge, permisos y Activity Result API.
+
+En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
+
+En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
+
+Cuándo usarlo:
+Pantalla completa con ventana propia, entry points, hosts de navegación, flows que requieren Activity context (algunos contratos). Evita múltiples activities para cada diálogo pequeño si Compose/Fragment basta.
+
+Ejemplo:
+@AndroidEntryPoint
+class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
+        setContent {
+            MyAppTheme { AppNavHost() }
+        }
+    }
+}
+
+Consejo para entrevista:
+Ciclo de vida resumido y qué va en ViewModel. Launch modes con ejemplo back stack. No bloquees onCreate con red.

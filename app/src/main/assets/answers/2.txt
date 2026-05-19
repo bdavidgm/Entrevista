@@ -1,0 +1,40 @@
+Concepto:
+El operador Elvis (?:) en Kotlin devuelve el operando de la izquierda si no es null; en caso contrario evalúa y devuelve el operando de la derecha. Su nombre alude a la forma del operador (parece el peinado de Elvis Presley). Es la forma idiomática de proporcionar valores por defecto sin anidar if-else ni usar el operador ternario de Java.
+
+Explicación detallada:
+El Elvis se evalúa de forma perezosa en el lado derecho solo cuando el izquierdo es null. Combina muy bien con el safe call (?.) porque la expresión `a?.b ?: default` significa: "si a es null, el resultado es null y entonces usa default; si a no es null, usa a.b (que aún podría ser null si b es anulable)". Para encadenamientos largos conviene extraer lógica a funciones o usar let para claridad.
+
+En Android lo verás en binding de UI, parsing de argumentos de Intent, configuración de Retrofit/Room y en ViewModels al mapear estados: `state.errorMessage ?: ""`. A diferencia de `?:` en otros lenguajes, en Kotlin el tipo resultante es la unión más específica posible: si la izquierda es String? y la derecha String, el resultado suele ser String.
+
+Comparación con alternativas: `if (x != null) x else y` es equivalente pero más verboso; `x ?: throw IllegalArgumentException()` es el patrón para fail-fast; `x ?: return` permite salida temprana en funciones. No confundir con el operador || de otros lenguajes para booleanos.
+
+En proyectos Android reales, el Elvis aparece al mapear respuestas de API donde campos opcionales determinan UI: si el backend omite avatarUrl, muestras placeholder sin ramas if anidadas. También al leer DataStore o SharedPreferences, donde getString devuelve nullable. Combínalo con safe call en cadenas: user?.profile?.bio ?: getString(R.string.no_bio). El compilador infiere el tipo final más específico posible, lo que reduce casts manuales frente a Java. En tests, el Elvis con throw documenta precondiciones: requireNotNull es similar pero semánticamente orientado a contratos de programación.
+
+Cuándo usarlo:
+Para defaults en UI, constantes de configuración, normalización de APIs y valores de fallback en pipelines de datos. Usa `?: return` o `?: throw` cuando un null sea un error de programación o de contrato. Evita cadenas de cinco o más Elvis seguidos sin nombres intermedios: dificultan la lectura y el debug.
+
+Ejemplo:
+// Intent extras con default
+val userId = intent.getStringExtra(EXTRA_USER_ID) ?: run {
+    finish()
+    return
+}
+
+// ViewModel / State
+data class ProfileUiState(
+    val displayName: String = "Invitado",
+    val avatarUrl: String? = null
+)
+
+fun mapToUi(user: User?): ProfileUiState {
+    return ProfileUiState(
+        displayName = user?.name ?: "Invitado",
+        avatarUrl = user?.photoUrl
+    )
+}
+
+// Elvis con throw (contrato estricto)
+fun requireToken(token: String?): String = token ?: throw IllegalStateException("Token requerido")
+
+Consejo para entrevista:
+Pueden preguntar si el lado derecho se evalúa siempre (no, solo si el izquierdo es null). Otro truco: `val x = nullable ?: return` en funciones. Relaciona Elvis con null safety y con early returns en corrutinas y Activities.

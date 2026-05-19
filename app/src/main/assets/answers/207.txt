@@ -1,0 +1,44 @@
+Concepto:
+RxJava es una biblioteca de programación reactiva basada en Observable/Flowable que modela streams asíncronos con operadores (map, flatMap, subscribeOn/observeOn); fue muy popular en Android antes de coroutines.
+
+Explicación detallada:
+Conceptos:
+- Observable emite 0..n items; Single uno; Completable ninguno; Maybe opcional.
+- Suscripción gestiona ciclo de vida; dispose en onDestroy para evitar leaks.
+- Schedulers: io() para red, computation() para CPU, mainThread() para UI (AndroidSchedulers).
+
+Retrofit integración histórica: Observable<Usuario> o Single con RxJavaCallAdapterFactory.
+
+Ventajas: composición de streams, backpressure con Flowable, operadores potentes para combinar APIs.
+
+Desventajas: curva de aprendizaje, stack traces complejos, fácil olvidar dispose, verbosidad vs coroutines/Flow.
+
+Cuándo usarlo hoy:
+- Mantenimiento de codebases Rx existentes.
+- Streams de eventos muy complejos con combinaciones (debounce, zip) si el equipo domina Rx.
+- Proyectos nuevos: preferir Kotlin Flow + coroutines.
+
+Migración típica: Observable → Flow, Completable → suspend fun, CompositeDisposable → viewModelScope.
+
+Ejemplo:
+// RxJava (legacy)
+api.getUser(id)
+    .subscribeOn(Schedulers.io())
+    .observeOn(AndroidSchedulers.mainThread())
+    .subscribe(
+        { user -> view.show(user) },
+        { error -> view.showError(error) }
+    )
+
+// Equivalente coroutines
+viewModelScope.launch {
+    try {
+        val user = api.getUser(id)
+        view.show(user)
+    } catch (e: Exception) {
+        view.showError(e)
+    }
+}
+
+Consejo para entrevista:
+Demuestra que entiendes Observable, schedulers y dispose, pero que elegirías coroutines en greenfield. Si preguntan Flow vs Observable, menciona backpressure y cancelación estructurada con coroutines.

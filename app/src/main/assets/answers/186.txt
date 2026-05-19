@@ -1,0 +1,44 @@
+Concepto:
+JobScheduler (API 21+) es la API del sistema para programar trabajos en background con restricciones (red, carga, idle); WorkManager lo usa internamente y es la capa que debes preferir en apps modernas.
+
+Explicación detallada:
+JobInfo describe el trabajo:
+- setRequiredNetworkType (ANY, UNMETERED, NOT_ROAMING)
+- setRequiresCharging / setRequiresDeviceIdle / setPersisted (requiere RECEIVE_BOOT_COMPLETED)
+- setPeriodic (mínimo 15 min en API 24+ para periódicos)
+- setBackoffCriteria en fallos
+
+JobScheduler.schedule(jobInfo) devuelve RESULT_SUCCESS o error. La ejecución ocurre en JobService.onStartJob / onStopJob (debes llamar jobFinished cuando termines).
+
+Ventajas: batching con otros jobs, respeto a Doze, eficiencia energética.
+
+Limitaciones: solo Android propio (no multiplataforma); API verbosa; límites de jobs por app; no es ideal para tareas inmediatas.
+
+WorkManager abstrae JobScheduler en API 23+, AlarmManager en versiones antiguas, y ofrece garantías de ejecución, observabilidad y testing más simple.
+
+Cuándo usarlo:
+- Casi nunca directamente en apps nuevas: usa WorkManager.
+- Librerías de sistema o código de plataforma que no puede depender de Jetpack.
+- Entender qué hay “debajo” de WorkManager en entrevistas.
+
+Ejemplo:
+// Uso directo (conocimiento; en app real usa WorkManager)
+class SyncJobService : JobService() {
+    override fun onStartJob(params: JobParameters): Boolean {
+        CoroutineScope(Dispatchers.IO).launch {
+            doSync()
+            jobFinished(params, false)
+        }
+        return true // trabajo async
+    }
+    override fun onStopJob(params: JobParameters) = false
+}
+
+val jobInfo = JobInfo.Builder(1, ComponentName(this, SyncJobService::class.java))
+    .setRequiredNetworkType(JobInfo.NETWORK_TYPE_UNMETERED)
+    .setPersisted(true)
+    .build()
+getSystemService(JobScheduler::class.java).schedule(jobInfo)
+
+Consejo para entrevista:
+Respuesta corta ganadora: “JobScheduler es la primitiva de Android; WorkManager es la abstracción recomendada que lo usa.” Explica restricciones y JobService. No digas que usarías JobScheduler directo en un proyecto greenfield sin motivo.

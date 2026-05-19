@@ -1,0 +1,43 @@
+Concepto:
+Smart cast es la capacidad del compilador de Kotlin para tratar automáticamente una variable como un tipo más específico tras una comprobación is, null check o condición que garantiza el tipo en ese ámbito.
+
+Explicación detallada:
+Tras if (x is String) { ... }, dentro del bloque x se usa como String sin cast explícito.
+
+Condiciones para smart cast:
+- val o parámetro inmutable (no propiedad open con custom getter que pueda cambiar entre comprobación y uso).
+- Variable local no capturada por lambda que se ejecute async antes del uso.
+- when con is ramas exhaustivas en sealed class.
+
+Ejemplos comunes:
+- if (value != null) { value.length } // value smart cast a no-null
+- when (state) { is Loading -> showSpinner(); is Success -> show(state.data) }
+
+Sin smart cast usas as o as?:
+- Propiedad de clase: if (item is Product) { item.name } puede fallar smart cast si item es var; solución: val local = item; if (local is Product) ...
+
+En Android con sealed class UiState:
+when (state) {
+    is UiState.Loading -> CircularProgressIndicator()
+    is UiState.Error -> Text(state.message)
+    is UiState.Success -> UserList(state.users)
+}
+
+Smart cast mejora legibilidad y seguridad frente a casts manuales propensos a ClassCastException.
+
+Cuándo usarlo:
+Diseña APIs con sealed class, interfaces cerradas y tipos nullable explícitos para aprovechar el compilador. Evita almacenar tipos en Any si puedes modelar uniones con sealed.
+
+Ejemplo:
+sealed class Result<out T> {
+    data class Ok<T>(val value: T) : Result<T>()
+    data class Err(val message: String) : Result<Nothing>()
+}
+
+fun <T> Result<T>.getOrNull(): T? = when (this) {
+    is Result.Ok -> value  // smart cast a Ok
+    is Result.Err -> null
+}
+
+Consejo para entrevista:
+Explica por qué a veces no hay smart cast (var, propiedad open, lambda). Muestra sealed class + when como patrón idiomático en ViewModels Android.

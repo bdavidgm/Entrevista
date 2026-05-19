@@ -1,0 +1,37 @@
+Concepto:
+internal es un modificador de visibilidad en Kotlin que restringe el uso de la declaración al mismo módulo de compilación (en Gradle, típicamente un módulo Android :app, :feature-login, etc.). Es más restrictivo que public (visible everywhere) y más permisivo que private (solo archivo/clase).
+
+Explicación detallada:
+En JVM, internal se compila a public con anotación/metadata y el compilador Kotlin valida límites en tiempo de compilación entre módulos. Dentro del módulo, clases internal pueden usarse en APIs públicas del módulo expuestas como public si el tipo aparece en firma pública — cuidado con leakage de tipos internal en APIs public.
+
+Modularización Android multi-módulo: expón solo interfaces public en :core-api; implementaciones internal en :core-impl. Facilita encapsular Room DAOs, DTOs de red y detalles sin hacer todo public.
+
+Comparación: Java package-private no existe igual en Kotlin; internal es por módulo, no por paquete. protected en Kotlin incluye subclases aunque estén en otro módulo (JVM), distinto de internal.
+
+En entrevistas preguntan diferencia módulo vs paquete y cómo diseñar límites en clean architecture. También @VisibleForTesting como alternativa pragmática.
+
+En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
+
+En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
+
+Cuándo usarlo:
+Implementaciones por defecto, helpers de módulo, DAO, mappers que no deben consumir otros módulos. API surface pública mínima en libraries internas.
+
+Ejemplo:
+// module :feature-orders
+
+internal class OrdersRepositoryImpl(
+    private val api: OrdersApi
+) : OrdersRepository {
+    override suspend fun getOrders() = api.fetch()
+}
+
+public interface OrdersRepository {
+    suspend fun getOrders(): List<Order>
+}
+
+// Solo accesible dentro del mismo módulo Gradle
+internal fun mapDto(dto: OrderDto) = Order(dto.id, dto.total)
+
+Consejo para entrevista:
+internal = mismo módulo Gradle. Contrasta public/private/protected. Preguntan si Java puede llamar internal (sí con bytecode tricks pero no idiomático; compilador Kotlin bloquea).

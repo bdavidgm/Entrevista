@@ -1,0 +1,34 @@
+Concepto:
+ViewModel es un componente de arquitectura que almacena y gestiona datos relacionados con la UI de forma consciente del ciclo de vida: sobrevive a cambios de configuración como rotación porque el sistema conserva la instancia mientras el alcance (Activity/Fragment) no termine definitivamente.
+
+Explicación detallada:
+Al rotar, la Activity se destruye y recrea pero ViewModelStore mantiene el mismo ViewModel para la misma clave/scope. Así no recargas red ni pierdes estado de pantalla. No sobrevive process death: combina con SavedStateHandle o persistencia.
+
+ViewModel no debe referenciar View, Context de Activity ni recursos: memory leaks. Usa Application context si necesitas contexto largo. viewModelScope cancela corrutinas en onCleared.
+
+En entrevistas: diferencia ViewModel vs onRetainCustomNonConfigurationInstance (obsoleto); vs singleton; cuándo SavedStateHandle. Fragment comparte ViewModel con activity scope o navigation graph scope.
+
+En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
+
+En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
+
+Cuándo usarlo:
+Estado de UI, lógica de presentación, llamadas a repositorio con exposición StateFlow/LiveData. No para estado global de app entero sin scope claro.
+
+Ejemplo:
+class SearchViewModel(
+    private val repo: SearchRepository
+) : ViewModel() {
+    private val _query = MutableStateFlow("")
+    val results = _query
+        .debounce(300)
+        .flatMapLatest { repo.search(it) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    fun onQueryChange(q: String) { _query.value = q }
+}
+
+// Activity rota: misma instancia, results no se reinicia innecesariamente
+
+Consejo para entrevista:
+Qué sobrevive rotación vs process death. viewModelScope y onCleared. Factory e Hilt @HiltViewModel. No pasar Activity al ViewModel.

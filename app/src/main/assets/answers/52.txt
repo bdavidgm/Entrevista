@@ -1,0 +1,34 @@
+Concepto:
+LazyColumn y LazyRow son contenedores Compose que virtualizan listas grandes: solo componen, miden y dibujan los ítems visibles (más un buffer), similar a RecyclerView. LazyColumn es vertical; LazyRow horizontal.
+
+Explicación detallada:
+items(), itemsIndexed(), item {} definen entradas con keys estables para preservar estado y animaciones. contentPadding y reverseLayout soportan diseños comunes. stickyHeader para secciones fijas al hacer scroll. item {} sin lista materializa un solo elemento (cabecera, banner) sin mezclarlo en la colección de datos.
+
+Estado: LazyListState para scroll programático, observar firstVisibleItemIndex y layoutInfo. rememberLazyListState() conserva scroll tras rotación si lo elevas o usas rememberSaveable con Saver. Prefetch implícito carga ítems cercanos al viewport. Comparación RecyclerView: menos ViewHolder y Adapter boilerplate; en cambio debes dominar keys, tipos de ítem y recomposición para listas con actualizaciones frecuentes (chat en vivo, precios en bolsa).
+
+LazyRow es el equivalente horizontal (carruseles, chips). Evita anidar LazyColumn dentro de LazyColumn sin altura fija: usa un solo lazy o NestedScrollConnection. Para grid, LazyVerticalGrid divide en celdas. En migración desde ListAdapter, piensa en items(list) { } como submitList con diff implícito vía keys y equals del modelo. Prueba listas largas en dispositivos gama baja para validar fluidez y consumo de memoria.
+
+En entrevistas: por qué keys importan; diferencia Column con scroll vs LazyColumn (Column materializa todo). Nested scroll y lazy anidados con cuidado.
+
+Para paginación infinita, combina LazyListState con snapshotFlow que observa el último índice visible y dispara carga del siguiente page en el ViewModel. itemContentType ayuda a Compose a reciclar composables de tipos distintos (header vs row). Comparado con RecyclerView, evitas ViewHolder y notifyItemChanged, pero debes entender recomposición y keys para igualar rendimiento en listas muy dinámicas con muchas actualizaciones parciales.
+
+Cuándo usarlo:
+Listas potencialmente largas (feeds, chats, catálogos). Para pocos elementos fijos (<~15 simples), Column puede bastar.
+
+Ejemplo:
+@Composable
+fun MessageList(messages: List<Message>) {
+    LazyColumn(
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        items(messages, key = { it.id }) { message ->
+            MessageRow(message)
+        }
+    }
+}
+
+Consejo para entrevista:
+keys y recomposición. LazyListState.animateScrollToItem. items vs items(count) para paginación. Comparar con RecyclerView Adapter.
+
+En el contexto de entrevistas técnicas Android, profundiza con ejemplos reales: listas con imágenes (Coil), placeholders, estados vacíos y errores de red. Explica cómo medirías jank con Macrobenchmark o FrameMetrics. Si piden RecyclerView vs LazyColumn, menciona ViewHolder pooling explícito frente a slot table de Compose y que ambos requieren estabilidad de ids. Para tests UI, usa assertIsDisplayed sobre ítems visibles y scrollToNode en Compose Test.

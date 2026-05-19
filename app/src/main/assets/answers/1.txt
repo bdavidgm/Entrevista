@@ -1,0 +1,42 @@
+Concepto:
+La null safety (seguridad frente a nulos) es un sistema de tipos de Kotlin que distingue explícitamente entre referencias que pueden ser null (tipos anulables, marcados con ?) y las que no pueden (tipos no anulables). El compilador rechaza en tiempo de compilación la mayoría de usos inseguros de null, convirtiendo muchas NullPointerException de runtime en errores de compilación. Es una de las características más valoradas de Kotlin en proyectos Android porque reduce crashes en producción.
+
+Explicación detallada:
+En Java, cualquier referencia de un tipo de referencia puede ser null implícitamente; las anotaciones @Nullable/@NonNull son opcionales y el compilador no las aplica de forma estricta. Kotlin invierte el modelo por defecto: String significa "nunca null" y String? significa "puede ser null". Para asignar un valor anulable a uno no anulable necesitas una conversión explícita o comprobar que no es null (smart cast tras un if, operador Elvis, safe call, etc.).
+
+El flujo típico en Android es que APIs de red, base de datos o Bundle devuelven valores opcionales. Con null safety modelas esos casos en la firma del tipo: getUser()?.email en lugar de asumir que siempre hay usuario. Los smart casts permiten que, tras comprobar `if (user != null)`, el compilador trate `user` como no anulable dentro del bloque sin casts manuales.
+
+En entrevistas suelen contrastar null safety con Optional de Java, con el operador !! (que reintroduce el riesgo de NPE) y con plataformas que usan tipos suma (sealed) para representar ausencia de valor de forma más explícita. También preguntan por interoperabilidad Java-Kotlin: tipos de Java se mapean a tipos de plataforma (Platform types) donde el compilador no conoce la nullabilidad hasta que tú la documentas o compruebas.
+
+Cuándo usarlo:
+Usa tipos no anulables por defecto en dominio, ViewModels y modelos internos. Reserva los anulables para datos externos (API, intents, SharedPreferences), estados iniciales no cargados y campos opcionales de negocio. En fronteras con Java, anota o convierte pronto a tipos Kotlin seguros. Evita propagar String? por toda la app si puedes normalizar en el repositorio.
+
+Ejemplo:
+// Modelo de dominio: preferir no anulables tras validar en el repositorio
+data class User(val id: String, val email: String)
+
+class UserRepository(private val api: UserApi) {
+    suspend fun getUser(id: String): User? {
+        val dto = api.fetchUser(id) ?: return null
+        return User(dto.id, dto.email ?: return null) // email obligatorio en dominio
+    }
+}
+
+// En la UI: safe call + Elvis
+fun showEmail(user: User?) {
+    val email = user?.email ?: "Sin correo"
+    textView.text = email
+}
+
+// Smart cast tras comprobación
+fun onUserLoaded(user: User?) {
+    if (user == null) {
+        showError()
+        return
+    }
+    // user es User (no User?) aquí
+    navigateToProfile(user.id)
+}
+
+Consejo para entrevista:
+Preguntas frecuentes: "¿Qué es un smart cast?", "¿Qué son los platform types?", "¿Cuándo usarías !!?". Respuesta sólida: evitar !! salvo tests o invariantes demostrables; preferir ?., ?:, requireNotNull o early return. Menciona que Kotlin no elimina el 100% de NPE (arrays nativos, interop Java, !! explícito).

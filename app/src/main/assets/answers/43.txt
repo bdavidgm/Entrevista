@@ -1,0 +1,35 @@
+Concepto:
+onSaveInstanceState es un callback donde la Activity o Fragment guarda estado efímero en un Bundle antes de posible destrucción y recreación (rotación, cambio de idioma, process death bajo presión de memoria). El sistema entrega ese Bundle en onCreate para restaurar la UI.
+
+Explicación detallada:
+Solo para datos ligeros serializables (primitivos, String, Parcelable pequeño). No uses para listas enormes, imágenes ni datos de negocio críticos: usa ViewModel + repositorio o Room. El Bundle tiene límite de tamaño (~1MB orden de magnitud; exceder puede fallar).
+
+ViewModel sobrevive rotación pero no process death garantizado sin SavedStateHandle. rememberSaveable en Compose es análogo para estado de UI. onSaveInstanceState se llama antes de onStop en algunos casos; en API recientes también onPause en activities.
+
+En entrevistas: diferencia configuración change vs process death; qué sobrevive ViewModel; SavedStateHandle. No confundir con persistencia en disco.
+
+En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
+
+En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
+
+Cuándo usarlo:
+Estado de UI temporal: scroll position, texto en campo, tab seleccionado, id de item expandido. Datos de dominio: ViewModel + backend.
+
+Ejemplo:
+override fun onSaveInstanceState(outState: Bundle) {
+    super.onSaveInstanceState(outState)
+    outState.putInt(KEY_TAB, binding.tabLayout.selectedTabPosition)
+    outState.putString(KEY_QUERY, binding.search.text.toString())
+}
+
+override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
+    setContentView(binding.root)
+    savedInstanceState?.let {
+        binding.tabLayout.selectTab(it.getInt(KEY_TAB))
+        binding.search.setText(it.getString(KEY_QUERY))
+    }
+}
+
+Consejo para entrevista:
+Qué poner y qué no. SavedStateHandle en ViewModel. Process death testing con "Don't keep activities".

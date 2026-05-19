@@ -1,0 +1,39 @@
+Concepto:
+Firebase Crashlytics es un servicio de informes de fallos en tiempo casi real que agrupa crashes y ANRs por stack trace, versión, dispositivo y permite añadir logs/breadcrumbs custom para diagnosticar producción.
+
+Explicación detallada:
+Integración Gradle: plugin com.google.firebase.crashlytics, google-services.json, dependencia firebase-crashlytics-ktx.
+
+Automático: captura excepciones no controladas en main thread y nativas (con NDK config). Reportes tras reinicio de app (no siempre instantáneo en debug).
+
+API útil:
+- Firebase.crashlytics.log("Paso antes del pago")
+- setCustomKey("cart_id", id)
+- setUserId(hashAnonymized) — cuidado GDPR
+- recordException(Throwable) para errores capturados no fatales
+- crashlytics.setCrashlyticsCollectionEnabled(BuildConfig.DEBUG.not())
+
+Dashboard: issues por frecuencia, regresiones en versiones nuevas, comparar builds.
+
+Complementos: Performance Monitoring, Analytics events para correlacionar.
+
+Cuándo usarlo:
+- Toda app en producción necesita telemetría de crashes.
+- Priorizar fixes por impacto en usuarios.
+
+Alternativas: Sentry, Bugsnag, Datadog RUM.
+
+Ejemplo:
+Firebase.crashlytics.apply {
+    setCustomKey("feature_flag_checkout_v2", true)
+    log("Checkout iniciado")
+}
+try {
+    processPayment()
+} catch (e: PaymentException) {
+    Firebase.crashlytics.recordException(e)
+    showErrorToUser()
+}
+
+Consejo para entrevista:
+Menciona custom keys/logs, no usar crash() en prod, deshabilitar collection en debug si quieres, y privacidad de userId. Conecta con CI mapping de ProGuard/R8 (upload mapping file) para stacks legibles.

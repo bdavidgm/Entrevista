@@ -1,0 +1,41 @@
+Concepto:
+La ruta de aprendizaje Android (p. ej. roadmap.sh/android) organiza competencias en fases progresivas: fundamentos del lenguaje y plataforma, UI, arquitectura, datos, async, calidad y publicación hasta nivel senior.
+
+Explicación detallada:
+Fases típicas de un roadmap moderno:
+
+1) Prerrequisitos: Git, Kotlin básico (null safety, colecciones, OOP), Gradle intro, estructuras de datos.
+
+2) Fundamentos Android: Activity, Fragment, ciclo de vida, Intent, permisos, Context, manifest, layouts XML o introducción Compose.
+
+3) UI: Views (RecyclerView, ConstraintLayout) o Jetpack Compose (estado, recomposición, navegación); Material Design; adaptabilidad tablet.
+
+4) Arquitectura: MVVM, capa Repository, inyección (Hilt), principios SOLID, Clean Architecture ligera, UDF/MVI opcional.
+
+5) Datos: Room, DataStore, Retrofit/OkHttp, caching, offline-first, Paging 3.
+
+6) Concurrencia: coroutines, Flow, StateFlow, dispatchers, testing con Turbine.
+
+7) Calidad: JUnit, MockK, Espresso, CI, Lint, Profiler, Crashlytics.
+
+8) Sistema y APIs: notificaciones, WorkManager, background limits, seguridad (Keystore, permisos).
+
+9) Publicación: AAB, Play Console, firma, R8, vitals.
+
+10) Senior: modularización, performance (Baseline Profiles), KMP opcional, liderazgo técnico.
+
+El roadmap no es checklist lineal: se iteran temas con proyectos (app notas, clima, ecommerce mini).
+
+Cuándo usarlo:
+- Planificar estudios 6-12 meses para junior→mid.
+- Entrevistas: demostrar conocimiento del ecosistema completo, no solo tutorial aislado.
+
+Ejemplo:
+// Proyecto por fase (portfolio)
+// Fase UI: app lista tareas Compose + Room
+// Fase red: mismo + Retrofit + Repository + Hilt
+// Fase calidad: tests ViewModel + Espresso login
+// Fase release: AAB en Play internal track
+
+Consejo para entrevista:
+Menciona roadmap.sh como guía, no como biblia. Relaciona tu experiencia con fases concretas (“domino MVVM y coroutines, profundizando en modularización”). Muestra proyecto end-to-end en portfolio.

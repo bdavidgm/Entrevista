@@ -1,0 +1,56 @@
+Concepto:
+Un evento de UI one-shot es una acción que debe consumirse una sola vez por el observador (navegar, mostrar Snackbar, Toast), a diferencia del estado persistente que la UI puede re-renderizar tras rotación sin repetir el efecto.
+
+Explicación detallada:
+Problema:
+- Si expones navegación como parte de UiState data class y la pantalla rota, al recomponer o re-observar se dispara otra vez NavigateToLogin.
+- LiveData con Event wrapper o Channel/SharedFlow para eventos.
+
+Patrones:
+1) Channel + receiveAsFlow (consumo único):
+private val _events = Channel<UiEvent>(Channel.BUFFERED)
+val events = _events.receiveAsFlow()
+
+2) SharedFlow con replay=0 y extraBufferCapacity.
+
+3) Wrapper Event<T> con getContentIfNotHandled() (patrón legacy LiveData).
+
+4) Snackbar en Compose con LaunchedEffect(eventId) y incrementar id por evento.
+
+Estado vs evento:
+- State: lista de items, loading — siempre reflejado en UI.
+- Event: Navigate, ShowError — fire once.
+
+Cuándo usarlo:
+Navegación, diálogos, mensajes tras acción exitosa, permisos denegados. No mezclar en el mismo StateFlow sin diseño.
+
+Ejemplo:
+sealed interface UiEvent {
+    data class ShowMessage(val text: String) : UiEvent
+    data object NavigateBack : UiEvent
+}
+
+@HiltViewModel
+class CheckoutViewModel @Inject constructor(...) : ViewModel() {
+    private val _events = Channel<UiEvent>(Channel.BUFFERED)
+    val events = _events.receiveAsFlow()
+
+    fun onPaymentSuccess() {
+        viewModelScope.launch { _events.send(UiEvent.NavigateBack) }
+    }
+}
+
+@Composable
+fun CheckoutScreen(vm: CheckoutViewModel = hiltViewModel()) {
+    LaunchedEffect(Unit) {
+        vm.events.collect { event ->
+            when (event) {
+                UiEvent.NavigateBack -> navController.popBackStack()
+                is UiEvent.ShowMessage -> snackbarHost.showSnackbar(event.text)
+            }
+        }
+    }
+}
+
+Consejo para entrevista:
+Explica rotación y repetición. Contrasta StateFlow para estado vs Channel/SharedFlow para eventos. Menciona anti-patrón de poner navigate en UiState sin consumo.

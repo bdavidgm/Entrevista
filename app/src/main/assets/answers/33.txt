@@ -1,0 +1,32 @@
+Concepto:
+Un Intent es un objeto de mensajería que describe una acción a realizar: iniciar Activity, Service, entregar broadcast, o pedir resultado a otra pantalla. Transporta componente objetivo (explícito) o acción genérica (implícito) más extras (Bundle) con datos primitivos, Parcelable, etc.
+
+Explicación detallada:
+Intent explícito: clase concreta, usado dentro de la app para navegación conocida. Intent implícito: action + category + data URI, resuelto por el sistema contra Manifest de apps (compartir, abrir enlace, cámara). PendingIntent envuelve Intent para ejecutar en nombre de tu app más tarde (notificaciones, widgets, alarmas) con permisos y mutabilidad controlada.
+
+Extras tipados con constantes; evita strings mágicos dispersos. Activity Result API reemplaza startActivityForResult deprecado. Deep links y App Links asocian intents con URLs.
+
+Seguridad: no exportar components innecesarios; validar intents entrantes; PendingIntent FLAG_IMMUTABLE en Android 12+. En entrevistas preguntan flags (NEW_TASK, CLEAR_TOP), task affinity y intent filters.
+
+En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
+
+En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
+
+Cuándo usarlo:
+Navegación entre pantallas, compartir contenido, abrir settings, lanzar chooser, programar notificaciones. Para navegación interna grande, Navigation Component o Compose Navigation reducen intents manuales.
+
+Ejemplo:
+val intent = Intent(this, DetailActivity::class.java).apply {
+    putExtra(DetailActivity.EXTRA_ID, productId)
+}
+startActivity(intent)
+
+// Activity Result
+private val pickImage = registerForActivityResult(
+    ActivityResultContracts.GetContent()
+) { uri -> viewModel.onImagePicked(uri) }
+
+fun selectPhoto() = pickImage.launch("image/*")
+
+Consejo para entrevista:
+Explícito vs implícito con ejemplos. PendingIntent y flags inmutables. Deep link básico en manifest.

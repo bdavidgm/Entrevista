@@ -1,0 +1,38 @@
+Concepto:
+En corrutinas de Kotlin, el contexto (CoroutineContext) es un conjunto de elementos que definen cómo y dónde se ejecuta una corrutina: Job, Dispatcher, CoroutineName, etc. Los Dispatchers indican en qué pool de hilos corre el trabajo: Main para UI, IO para bloqueo, Default para CPU, Unconfined especial.
+
+Explicación detallada:
+launch(Dispatchers.IO) { } combina contextos con +. viewModelScope y lifecycleScope inyectan SupervisorJob y dispatcher apropiado. Main (Android) postea al hilo UI; IO para red, disco, Room; Default para sort/map pesado CPU.
+
+Nunca bloquees Main: ANR. withContext(Dispatchers.IO) cambia contexto suspendiendo sin bloquear hilo. flowOn en Flow mueve upstream. CoroutineScope debe tener Job cancelable al destruir pantalla.
+
+En entrevistas comparan GlobalScope (evitar en Android) vs scope ligado a lifecycle. Preguntan structured concurrency: hijos cancelados con padre. Menciona SupervisorJob en ViewModel para que un hijo fallido no cancele hermanos.
+
+En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
+
+En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
+
+Cuándo usarlo:
+IO para repositorio, Main para actualizar UI tras withContext, Default para procesamiento CPU intensivo en background. Test: StandardTestDispatcher, UnconfinedTestDispatcher.
+
+Ejemplo:
+class NewsViewModel(
+    private val repo: NewsRepository
+) : ViewModel() {
+    fun refresh() {
+        viewModelScope.launch {
+            _uiState.value = UiState.Loading
+            try {
+                val items = withContext(Dispatchers.IO) {
+                    repo.fetchHeadlines()
+                }
+                _uiState.value = UiState.Success(items)
+            } catch (e: Exception) {
+                _uiState.value = UiState.Error(e.message ?: "Error")
+            }
+        }
+    }
+}
+
+Consejo para entrevista:
+Lista Dispatchers y ANR. Preguntan difference launch vs async, withContext vs async. Main.immediate en Compose. No uses GlobalScope en Activities.

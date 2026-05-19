@@ -1,0 +1,41 @@
+Concepto:
+MVP (Model-View-Presenter) separa la UI pasiva (View) de la lógica de presentación (Presenter) que orquesta el Model; el Presenter no conoce detalles de Android framework salvo contrato con View.
+
+Explicación detallada:
+Roles:
+- Model: datos y reglas de negocio (repositorio, API, Room).
+- View: Activity/Fragment que implementa interfaz IView (showLoading, showError, renderList); solo UI y delega eventos.
+- Presenter: recibe eventos (onLoginClicked), llama Model, actualiza View en hilo principal; en tests se mockea View y Model.
+
+Flujo login: View.notify click → Presenter.login(user, pass) → Model.authenticate → callback → Presenter.view.hideLoading(); view.navigateHome() o view.showError().
+
+Ventajas: testabilidad del Presenter sin instrumentación; separación clara en proyectos pre-Architecture Components.
+
+Desventajas: mucho boilerplate (interfaces View/Presenter); Presenter debe desacoplarse del ciclo de vida (memory leaks si View retiene Activity); duplicación con configuración changes si no usas ViewModel.
+
+Hoy MVVM + ViewModel + StateFlow reemplaza MVP en la mayoría de apps nuevas; MVP sigue en entrevistas y código legacy.
+
+Cuándo usarlo:
+- Mantenimiento de apps antiguas con MVP.
+- Entender evolución hacia MVVM/MVI.
+- Equipos que testean lógica de UI sin Robolectric pesado (Presenter unit tests).
+
+Ejemplo:
+interface LoginView {
+    fun showError(msg: String)
+    fun openHome()
+}
+class LoginPresenter(
+    private val view: LoginView,
+    private val repo: AuthRepository
+) {
+    fun onLogin(email: String, pass: String) {
+        repo.login(email, pass) { result ->
+            if (result.isSuccess) view.openHome()
+            else view.showError("Credenciales inválidas")
+        }
+    }
+}
+
+Consejo para entrevista:
+Contrasta MVP con MVVM: Presenter vs ViewModel, View activa vs pasiva, supervivencia a rotación (ViewModel + SavedState). Di que conoces MVP pero implementarías MVVM con UDF en proyectos nuevos.

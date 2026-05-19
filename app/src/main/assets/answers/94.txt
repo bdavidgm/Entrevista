@@ -1,0 +1,40 @@
+Concepto:
+ANR (Application Not Responding) ocurre cuando el hilo principal no procesa eventos de entrada o el broadcast receiver en ~5 segundos (varía por tipo). El sistema muestra diálogo "La aplicación no responde" y puede cerrar el proceso.
+
+Explicación detallada:
+Causas: bloqueo en onCreate, JSON parsing enorme en UI, deadlock en synchronized main, operación síncrona de BD en main (si permitida), bucle infinito en UI thread. Input dispatching ANR: usuario toca pero main está ocupado.
+
+BroadcastReceiver onReceive tiene límite ~10s en foreground; debe delegar trabajo a goAsync o WorkManager. Foreground service tiene reglas propias.
+
+Diagnóstico: traces ANR en Play Console, bugreport, StrictMode. Solución: mover trabajo, reducir trabajo en onCreate (App Startup ligero), paginar listas.
+
+En el contexto de proyectos Android reales, combina esta idea con las guías oficiales de Android Developers y con métricas de calidad (crashes, ANR, Vitals) cuando aplique. En code review, pregunta siempre por ciclo de vida, testabilidad y si la solución escala cuando el equipo crece.
+
+Durante la entrevista, estructura la respuesta en definición, ejemplo concreto de tu experiencia o proyecto demo, y trade-offs frente a alternativas. Mencionar versiones recientes de API o biblioteca (Material3, Paging 3, Hilt 2.x) demuestra que sigues el ecosistema, sin necesidad de memorizar números de versión exactos.
+
+Para profundizar tras la entrevista, revisa documentación oficial, codelabs y el código fuente de tu propio proyecto Entrevista aplicando el concepto en un flujo mínimo reproducible. La práctica deliberada con tests unitarios refuerza la confianza al explicar el tema en viva voz.
+
+En el contexto de proyectos Android reales, combina esta idea con las guías oficiales de Android Developers y con métricas de calidad (crashes, ANR, Vitals) cuando aplique. En code review, pregunta siempre por ciclo de vida, testabilidad y si la solución escala cuando el equipo crece.
+
+Durante la entrevista, estructura la respuesta en definición, ejemplo concreto de tu experiencia o proyecto demo, y trade-offs frente a alternativas. Mencionar versiones recientes de API o biblioteca (Material3, Paging 3, Hilt 2.x) demuestra que sigues el ecosistema, sin necesidad de memorizar números de versión exactos.
+
+Para profundizar tras la entrevista, revisa documentación oficial, codelabs y el código fuente de tu propio proyecto Entrevista aplicando el concepto en un flujo mínimo reproducible. La práctica deliberada con tests unitarios refuerza la confianza al explicar el tema en viva voz.
+
+Cuándo usarlo:
+Nunca bloquear main; aplica esta regla en todo el ciclo de vida de la Activity y en callbacks de UI. Prefetch y skeleton UI mientras carga async. Para tareas largas: WorkManager o FGS con notificación.
+
+Ejemplo:
+// Provoca ANR
+override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
+    val all = database.dao().getAllSync() // miles de filas en main
+}
+
+// Correcto
+lifecycleScope.launch {
+    val all = withContext(Dispatchers.IO) { database.dao().getAll() }
+    adapter.submitList(all)
+}
+
+Consejo para entrevista:
+Cita tiempos aproximados (5s input). Diferencia ANR vs crash. Menciona Play Vitals ANR rate.

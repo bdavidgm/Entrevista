@@ -1,0 +1,44 @@
+Concepto:
+runBlocking es una función de corrutinas que bloquea el hilo actual hasta que el bloque suspendido termine, creando un event loop temporal para ejecutar corrutinas en ese hilo.
+
+Explicación detallada:
+Firma conceptual:
+fun <T> runBlocking(context, block): T
+
+Bloquea el caller — en Main thread causa ANR si el bloque tarda.
+
+Usos legítimos:
+- Tests unitarios JVM: runBlocking { repository.load() }
+- main() en herramientas CLI Kotlin.
+- Puente temporal desde código Java callback-based (evitar en producción UI).
+
+NO usar en:
+- Activity, Fragment, Composable, onCreate, onClick — usa lifecycleScope o viewModelScope.
+
+Alternativas en Android:
+- viewModelScope.launch { }
+- withContext en suspend function desde repo.
+
+runBlocking vs runBlocking<Unit>:
+- Puede especificar dispatcher; por defecto usa el del hilo bloqueado con event loop.
+
+Cuándo usarlo:
+Tests, scripts, integración en código no-Android. En producción Android UI casi nunca.
+
+Ejemplo:
+// Test
+@Test
+fun `loads users`() = runBlocking {
+    val repo = FakeUserRepository()
+    val users = repo.getUsers()
+    assertEquals(2, users.size)
+}
+
+// Mal en Activity
+override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
+    // NO: runBlocking { api.fetch() }
+}
+
+Consejo para entrevista:
+Enfatiza ANR en Main y que en tests está bien. Contrasta con suspend y launch. Si preguntan tests, menciona runTest de kotlinx-coroutines-test como alternativa moderna.

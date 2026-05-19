@@ -1,0 +1,46 @@
+Concepto:
+SavedStateHandle es un contenedor de Bundle-like que sobrevive a muerte de proceso y rotación de configuración, inyectado en ViewModel para guardar y restaurar estado de navegación o argumentos procesados.
+
+Explicación detallada:
+Proporcionado por lifecycle-viewmodel-savedstate.
+- viewModels() y hiltViewModel() pueden recibir SavedStateHandle.
+- get/set con claves String; soporte LiveData y StateFlow helpers.
+
+Persistencia:
+- Sobrevive rotación (ViewModel en store).
+- Sobrevive process death si el sistema mató el proceso y restauró la Activity con saved state (no garantiza todos los casos; datos críticos también en BD).
+
+Uso típico:
+- Restaurar scroll position, texto de búsqueda, tab seleccionado.
+- Leer argumentos de Navigation: savedStateHandle.get<String>("userId") con navArgs.
+
+API:
+savedStateHandle["query"] = "kotlin"
+val query = savedStateHandle.get<String>("query") ?: ""
+
+getStateFlow("key", initial) para exponer a UI reactiva.
+
+Límites de tamaño: como Bundle, no guardar objetos enormes; usar IDs y cargar desde repo.
+
+Cuándo usarlo:
+Estado de UI que debe sobrevivir rotación/process death pero no justifica tabla en Room. Complementa UiState en memoria del ViewModel.
+
+Ejemplo:
+@HiltViewModel
+class SearchViewModel @Inject constructor(
+    private val savedStateHandle: SavedStateHandle,
+    private val repository: SearchRepository
+) : ViewModel() {
+
+    private val queryFlow = savedStateHandle.getStateFlow("query", "")
+    val results = queryFlow.flatMapLatest { q ->
+        repository.search(q)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    fun onQueryChange(q: String) {
+        savedStateHandle["query"] = q
+    }
+}
+
+Consejo para entrevista:
+Diferencia SavedStateHandle vs Room vs rememberSaveable en Compose. Menciona process death y getStateFlow.

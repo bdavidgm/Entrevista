@@ -1,0 +1,44 @@
+Concepto:
+MVVM (Model-View-ViewModel) es un patrón de arquitectura de presentación donde la View solo muestra datos y reenvía interacciones, el ViewModel expone estado y lógica de UI sin conocer Android Views, y el Model representa datos y reglas de negocio. En Android moderno se combina con Jetpack ViewModel, Flow y Compose o XML.
+
+Explicación detallada:
+La View (Activity, Fragment o Composable) observa el ViewModel vía LiveData, StateFlow o uiState. El ViewModel sobrevive rotaciones, obtiene datos del Repository y transforma eventos de usuario en actualizaciones de estado. No debe referenciar Context de UI ni navegar directamente en código limpio: los eventos de navegación se exponen como efectos secundarios observables o callbacks inyectados en capa UI.
+
+El Model no es solo una clase de datos: incluye entidades de dominio, use cases y el repository que abstrae fuentes (red, BD, preferencias). MVVM no define capas de dominio completas como Clean Architecture, pero la separación View-ViewModel-Model ya mejora testabilidad: puedes unit-testear ViewModel con repositorios fake sin Espresso.
+
+Flujo típico: usuario pulsa "actualizar" -> View llama viewModel.refresh() -> ViewModel lanza coroutine, llama repository -> emite loading/success/error en StateFlow -> View recomponer o actualiza UI. Binding unidireccional: estado baja, eventos suben.
+
+Comparación en entrevista: MVP usa Presenter con referencia a View (más acoplamiento); MVI usa intents y reduce a un solo state inmutable con ciclo cerrado; MVVM es más flexible y el estándar de facto con Jetpack. MVVM con UiState data class evita múltiples LiveData sueltos.
+
+Anti-patrones: "God ViewModel" con toda la lógica de la app, lógica de negocio compleja sin use cases, y exponer MutableStateFlow público. Usa funciones y StateFlow de solo lectura.
+
+En el contexto de proyectos Android reales, combina esta idea con las guías oficiales de Android Developers y con métricas de calidad (crashes, ANR, Vitals) cuando aplique. En code review, pregunta siempre por ciclo de vida, testabilidad y si la solución escala cuando el equipo crece.
+
+Durante la entrevista, estructura la respuesta en definición, ejemplo concreto de tu experiencia o proyecto demo, y trade-offs frente a alternativas. Mencionar versiones recientes de API o biblioteca (Material3, Paging 3, Hilt 2.x) demuestra que sigues el ecosistema, sin necesidad de memorizar números de versión exactos.
+
+Para profundizar tras la entrevista, revisa documentación oficial, codelabs y el código fuente de tu propio proyecto Entrevista aplicando el concepto en un flujo mínimo reproducible. La práctica deliberada con tests unitarios refuerza la confianza al explicar el tema en viva voz.
+
+Preguntas de seguimiento frecuentes en entrevistas para este tema incluyen comparación con alternativas del ecosistema, implicaciones en testing y en el ciclo de vida de Android, y cómo lo aplicarías en una app modular con varios flavors. Si el entrevistador pide profundidad, menciona herramientas de diagnóstico (Profiler, Lint, StrictMode, Layout Inspector) y cómo validarías en CI que no hay regresiones.
+
+En proyectos reales, documenta decisiones en ADR breves o en README del módulo para que el equipo no revierta el patrón por desconocimiento. La mejor respuesta de entrevista combina definición precisa, ejemplo Kotlin o Compose concreto y honestidad sobre límites: ninguna solución es gratis en complejidad o tamaño de APK.
+
+Relaciona este concepto con los demás bloques del manifiesto Entrevista (arquitectura, corrutinas, seguridad, build) para demostrar visión de sistema completo, no conocimiento aislado de una API.
+
+Cuándo usarlo:
+Proyectos Android medianos y grandes, equipos que usan Jetpack y testing de presentación. Es el patrón por defecto recomendado por Google para apps nuevas. Para flujos muy predecibles con muchos estados discretos, MVI puede ser alternativa.
+
+Ejemplo:
+data class HomeUiState(val items: List<Item> = emptyList(), val loading: Boolean = false)
+
+class HomeViewModel(private val repo: ItemRepository) : ViewModel() {
+    private val _state = MutableStateFlow(HomeUiState())
+    val state = _state.asStateFlow()
+
+    fun onRefresh() = viewModelScope.launch {
+        _state.update { it.copy(loading = true) }
+        _state.update { it.copy(loading = false, items = repo.fetch()) }
+    }
+}
+
+Consejo para entrevista:
+Dibuja el flujo unidireccional y menciona que ViewModel no conoce View. Pregunta clásica: diferencia MVP/MVI/MVVM en una frase cada uno. Evita decir que MVVM obliga a LiveData; StateFlow es igualmente válido.

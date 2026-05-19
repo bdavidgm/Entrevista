@@ -1,0 +1,49 @@
+Concepto:
+LinearLayout es un ViewGroup que dispone hijos en una sola fila (horizontal) o columna (vertical), uno tras otro, con pesos opcionales para repartir espacio restante.
+
+Explicación detallada:
+Atributos clave:
+- android:orientation="vertical" | "horizontal"
+- layout_width/height: match_parent, wrap_content, 0dp con layout_weight para ocupar proporción del espacio libre (solo útil en una dimensión según orientación).
+- gravity: alineación del contenido dentro del LinearLayout.
+- layout_gravity en hijos (en horizontal, weight en width).
+
+Ventajas: simple, predecible para formularios cortos. Desventajas: anidamiento profundo (nested weights) es lento en medición/layout; difícil alinear elementos no adyacentes (botón al fondo y texto arriba sin spacer).
+
+Hoy en Views se prefiere ConstraintLayout para pantallas complejas; en proyectos nuevos muchas UIs son Jetpack Compose (Column/Row con Modifier.weight).
+
+LinearLayout sigue en layouts legacy, widgets simples y entrevistas que prueban conocimiento clásico.
+
+Cuándo usarlo:
+- Lista vertical de 2-3 campos en tutorial o pantallas muy simples.
+- Mantenimiento de XML antiguo.
+- En Compose: equivalente Column/Row (no uses LinearLayout dentro de Compose salvo AndroidView).
+
+Ejemplo:
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Email" />
+
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="Entrar" />
+</LinearLayout>
+
+// Compose equivalente
+Column(Modifier.fillMaxSize().padding(16.dp)) {
+    TextField(value = email, onValueChange = { email = it })
+    Button(onClick = onLogin) { Text("Entrar") }
+}
+
+Consejo para entrevista:
+Explica orientation y weight, y por qué anidar muchos LinearLayout es anti-patrón (performance, flexibilidad). Menciona migración a ConstraintLayout o Compose Column/Row.

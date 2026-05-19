@@ -1,0 +1,38 @@
+Concepto:
+Material Design es el sistema de diseño de Google para interfaces coherentes en Android y web: principios de elevación, color, tipografía, motion y componentes (Material 3) que garantizan usabilidad y marca reconocible.
+
+Explicación detallada:
+Material3 (M3) usa dynamic color (Material You) desde wallpaper en Android 12+, esquemas light/dark, tokens de color (primary, onPrimary, surface), tipografía escalable y formas redondeadas configurables. En Compose: material3 dependency con MaterialTheme, colorScheme, Typography, Shapes.
+
+Componentes: Button, FAB, NavigationBar, Card, Dialog, Snackbar alineados con accesibilidad y estados (pressed, disabled). XML: Material Components library con themes Theme.Material3.
+
+No es solo estética: touch targets 48dp, contraste WCAG, motion significativa. Customización dentro de tokens, no romper patrones de navegación sin razón.
+
+En el contexto de proyectos Android reales, combina esta idea con las guías oficiales de Android Developers y con métricas de calidad (crashes, ANR, Vitals) cuando aplique. En code review, pregunta siempre por ciclo de vida, testabilidad y si la solución escala cuando el equipo crece.
+
+Durante la entrevista, estructura la respuesta en definición, ejemplo concreto de tu experiencia o proyecto demo, y trade-offs frente a alternativas. Mencionar versiones recientes de API o biblioteca (Material3, Paging 3, Hilt 2.x) demuestra que sigues el ecosistema, sin necesidad de memorizar números de versión exactos.
+
+Para profundizar tras la entrevista, revisa documentación oficial, codelabs y el código fuente de tu propio proyecto Entrevista aplicando el concepto en un flujo mínimo reproducible. La práctica deliberada con tests unitarios refuerza la confianza al explicar el tema en viva voz.
+
+En el contexto de proyectos Android reales, combina esta idea con las guías oficiales de Android Developers y con métricas de calidad (crashes, ANR, Vitals) cuando aplique. En code review, pregunta siempre por ciclo de vida, testabilidad y si la solución escala cuando el equipo crece.
+
+Durante la entrevista, estructura la respuesta en definición, ejemplo concreto de tu experiencia o proyecto demo, y trade-offs frente a alternativas. Mencionar versiones recientes de API o biblioteca (Material3, Paging 3, Hilt 2.x) demuestra que sigues el ecosistema, sin necesidad de memorizar números de versión exactos.
+
+Para profundizar tras la entrevista, revisa documentación oficial, codelabs y el código fuente de tu propio proyecto Entrevista aplicando el concepto en un flujo mínimo reproducible. La práctica deliberada con tests unitarios refuerza la confianza al explicar el tema en viva voz.
+
+Cuándo usarlo:
+Apps Android estándar salvo marca muy custom (aún inspirarse en patrones). Compose Material3 es default recomendado.
+
+Ejemplo:
+@Composable
+fun AppTheme(content: @Composable () -> Unit) {
+    val scheme = if (isSystemInDarkTheme()) darkColorScheme() else lightColorScheme()
+    MaterialTheme(
+        colorScheme = scheme,
+        typography = Typography,
+        content = content
+    )
+}
+
+Consejo para entrevista:
+M3 vs M2, dynamic color, tokens. Menciona accesibilidad. No confundas Material con Compose (Compose puede sin Material pero raro).

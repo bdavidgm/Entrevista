@@ -1,0 +1,48 @@
+Concepto:
+FusedLocationProviderClient es la API de Google Play Services Location que fusiona señales de GPS, red y sensores para ofrecer la mejor ubicación disponible con menor consumo de batería que usar LocationManager por separado.
+
+Explicación detallada:
+Obtención:
+LocationServices.getFusedLocationProviderClient(context)
+
+Métodos principales:
+- getLastLocation(): última conocida, puede ser null o antigua.
+- getCurrentLocation(priority, cancellationToken): lectura actualizada bajo demanda (API moderna preferida).
+- requestLocationUpdates(LocationRequest, callback, looper): stream de actualizaciones.
+- removeLocationUpdates(callback)
+
+LocationRequest (LocationRequest.Builder):
+- setIntervalMillis, setMinUpdateIntervalMillis
+- setPriority(PRIORITY_HIGH_ACCURACY, BALANCED, LOW_POWER, PASSIVE)
+
+Requisitos:
+- Google Play Services en el dispositivo (la mayoría con GMS).
+- Permisos ACCESS_FINE_LOCATION o COARSE según precisión.
+- Dependency play-services-location.
+
+Integración con corrutinas:
+- await() de kotlinx-coroutines-play-services en getCurrentLocation suspend.
+
+Cuándo usarlo:
+Cualquier app con GMS que necesite ubicación; es el estándar recomendado por Google frente a LocationManager directo.
+
+Ejemplo:
+class LocationRepository @Inject constructor(
+    @ApplicationContext private val context: Context
+) {
+    private val client = LocationServices.getFusedLocationProviderClient(context)
+
+    suspend fun currentLocation(): Location? {
+        if (!hasFineLocation(context)) return null
+        return client.getCurrentLocation(
+            Priority.PRIORITY_BALANCED_POWER_ACCURACY,
+            CancellationTokenSource().token
+        ).await()
+    }
+}
+
+// build.gradle
+// implementation("com.google.android.gms:play-services-location:21.3.0")
+
+Consejo para entrevista:
+Explica fusión de proveedores y prioridades de batería. Contrasta con LocationManager. Menciona getCurrentLocation vs lastLocation obsoleto para UX.

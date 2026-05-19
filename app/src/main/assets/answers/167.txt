@@ -1,0 +1,58 @@
+Concepto:
+ConnectivityManager.NetworkCallback es una interfaz de callback que el sistema invoca cuando cambia el estado de una red registrada: disponible, perdida o con capacidades modificadas (Wi‑Fi, celular, VPN, metered, validación de Internet).
+
+Explicación detallada:
+A partir de Android 7 (API 24), la forma recomendada de observar conectividad no es consultar getActiveNetworkInfo() (obsoleto), sino registrar un NetworkCallback sobre ConnectivityManager. Defines qué redes te interesan con NetworkRequest (transporte, capacidades como NET_CAPABILITY_INTERNET o NET_CAPABILITY_VALIDATED) y el sistema te notifica de forma eficiente sin polling.
+
+Los métodos principales son:
+- onAvailable(Network): la red cumple el request; puedes obtener NetworkCapabilities y LinkProperties.
+- onLost(Network): la red dejó de estar disponible para tu request.
+- onCapabilitiesChanged(Network, NetworkCapabilities): cambió algo relevante (p. ej. pasó de celular a Wi‑Fi, o la red ganó validación DNS).
+- onLinkPropertiesChanged: cambios en rutas, DNS, etc.
+- onBlockedStatusChanged (API 29+): la app puede estar bloqueada en esa red por políticas del usuario o del sistema.
+
+Puedes registrar con registerNetworkCallback(request, callback) para redes que coincidan con el filtro, o registerDefaultNetworkCallback(callback) para seguir la red por defecto del dispositivo. Desde Android 10 conviene usar ConnectivityManager.NetworkCallback con Context.registerComponentCallbacks o lifecycle-aware: en onStart registra y en onStop unregisterNetworkCallback para evitar fugas y consumo en segundo plano.
+
+NetworkCapabilities permite saber si hay Internet real (VALIDATED), si la red es de pago (NOT_METERED / METERED), ancho de banda estimado, etc. Esto es clave para pausar sincronización pesada en datos móviles o reanudar cuando vuelve Wi‑Fi.
+
+Cuándo usarlo:
+- Mostrar banner “sin conexión” o estado offline en tiempo real.
+- Pausar/reanudar descargas, colas de subida o reintentos de API.
+- Decidir si usar calidad de imagen alta solo en Wi‑Fi.
+- Sincronización diferida cuando onCapabilitiesChanged indica red validada.
+- Evitar WorkManager o AlarmManager para “escuchar red”; NetworkCallback es el mecanismo correcto en primer plano o con restricciones claras en background.
+
+Ejemplo:
+class NetworkMonitor(
+    context: Context,
+    private val connectivity: ConnectivityManager =
+        context.getSystemService(ConnectivityManager::class.java)
+) {
+    private val request = NetworkRequest.Builder()
+        .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+        .addCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+        .build()
+
+    private val callback = object : ConnectivityManager.NetworkCallback() {
+        override fun onAvailable(network: Network) {
+            // Red usable: reanudar cola
+        }
+        override fun onLost(network: Network) {
+            // Pausar operaciones de red
+        }
+        override fun onCapabilitiesChanged(
+            network: Network,
+            caps: NetworkCapabilities
+        ) {
+            val unmetered = caps.hasCapability(
+                NetworkCapabilities.NET_CAPABILITY_NOT_METERED
+            )
+        }
+    }
+
+    fun start() = connectivity.registerNetworkCallback(request, callback)
+    fun stop() = connectivity.unregisterNetworkCallback(callback)
+}
+
+Consejo para entrevista:
+Menciona deprecación de APIs antiguas, diferencia entre “tener interfaz de red” y NET_CAPABILITY_VALIDATED (captive portal), siempre desregistrar el callback, y combinar con WorkManager Constraints.NETWORK_CONNECTED para trabajo en background. Demuestra que entiendes Android moderno (NetworkRequest + NetworkCapabilities), no solo “¿hay Wi‑Fi?”.

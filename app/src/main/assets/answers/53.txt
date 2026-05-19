@@ -1,0 +1,35 @@
+Concepto:
+LaunchedEffect es un Composable side-effect que lanza una corrutina asociada al Composition: se ejecuta cuando entra en el árbol o cuando cambian sus keys, y cancela la corrutina al salir o antes de relanzar si cambian keys.
+
+Explicación detallada:
+Uso típico: cargar datos una vez por pantalla, collect Flow del ViewModel con snapshotFlow, mostrar snackbar tras evento, navegación one-shot. Keys: LaunchedEffect(userId) { load(userId) }.
+
+No sustituye lógica que debe vivir en ViewModel (repo calls pueden iniciarse en init del ViewModel); LaunchedEffect para puente UI-eventos o collectAsState alternativas. SideEffect es síncrono cada recomposition; LaunchedEffect es suspend.
+
+En entrevistas: LaunchedEffect(Unit) vs key; por qué no lanzar corrutina en onClick sin scope (usa rememberCoroutineScope). DisposableEffect para cleanup no suspend.
+
+En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
+
+En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
+
+Cuándo usarlo:
+Eventos ligados a composición, collectors de one-shot UI events, animaciones suspend. Evita LaunchedEffect(true) sin keys si dependes de parámetros que cambian.
+
+Ejemplo:
+@Composable
+fun ProfileScreen(userId: String, viewModel: ProfileViewModel = hiltViewModel()) {
+    LaunchedEffect(userId) {
+        viewModel.load(userId)
+    }
+    LaunchedEffect(Unit) {
+        viewModel.events.collect { event ->
+            when (event) {
+                is ProfileEvent.ShowToast -> { /* snackbar */ }
+            }
+        }
+    }
+    ProfileContent(viewModel.state.collectAsStateWithLifecycle().value)
+}
+
+Consejo para entrevista:
+Cancelación automática al desmontar. Keys obligatorias si usas parámetros. Comparar rememberCoroutineScope.launch en callback vs LaunchedEffect.

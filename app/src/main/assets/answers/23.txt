@@ -1,0 +1,39 @@
+Concepto:
+reified es un modificador de parámetros de tipo genérico en funciones inline que preserva la información del tipo real T en tiempo de ejecución en el sitio de llamada, algo que la JVM normalmente borra por type erasure. Solo puede usarse en funciones o propiedades inline porque el compilador duplica el cuerpo especializado por cada tipo concreto invocado.
+
+Explicación detallada:
+Sin reified, no puedes hacer T::class.java dentro de una función genérica común. Con inline fun <reified T>, sí: startActivity<T>(), gson.fromJson<T>(), navegación tipada. El compilador genera versiones concretas para cada T usado, con implicaciones de tamaño si abusas de muchos tipos distintos.
+
+Casos Android: intents con Activity::class.java sustituidos por inline fun <reified T : Activity> Context.startActivity(); Retrofit no usa reified en runtime igual; Moshi/ kotlinx.serialization combinan con inline + reified para parseo; Navigation Compose type-safe routes en APIs modernas.
+
+reified no convierte todos los genéricos en reflexión completa: solo el tipo T reificado en ese call site. No puedes reificar parámetros de clase genérica de la clase contenedora sin inline en cada función.
+
+Alternativas sin reified: pasar KClass<T>, Class<T>, o TypeToken de Gson. En entrevistas valoran saber por qué Java necesita Class<T> explícito y Kotlin lo simplifica con reified en inline.
+
+En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
+
+Cuándo usarlo:
+Utilidades de framework internas, navegación, parseo JSON genérico en capa infra, ViewModel delegate viewModels<T>(). No reifiques decenas de tipos en una sola función pública de librería sin medir impacto DEX.
+
+Ejemplo:
+inline fun <reified T : Activity> Context.launchActivity(
+    configure: Intent.() -> Unit = {}
+) {
+    val intent = Intent(this, T::class.java).apply(configure)
+    startActivity(intent)
+}
+
+inline fun <reified T> Bundle.getParcelableCompat(key: String): T? {
+    return if (Build.VERSION.SDK_INT >= 33) {
+        getParcelable(key, T::class.java)
+    } else {
+        @Suppress("DEPRECATION")
+        getParcelable(key) as? T
+    }
+}
+
+// Uso
+launchActivity<ProfileActivity> { putExtra("id", userId) }
+
+Consejo para entrevista:
+reified requiere inline. Explica type erasure JVM. Preguntan límites: no en clases normales no inline. Menciona KClass como alternativa explícita.

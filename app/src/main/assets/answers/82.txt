@@ -1,0 +1,47 @@
+Concepto:
+Job representa un trabajo cancelable en el árbol de coroutines: controla el ciclo de vida, permite cancel() y join(), y forma la jerarquía padre-hijo de structured concurrency. Cancelar un Job padre cancela todos los hijos de forma cooperativa.
+
+Explicación detallada:
+Cada coroutine tiene Job. viewModelScope contiene un Job que se cancela en onCleared(). job.cancel() solicita cancelación; el código suspend debe cooperar (isActive, yield, funciones de kotlinx cancelables).
+
+CancellationException no siempre se loguea como error: es flujo normal. finally con NonCancellable para persistir estado crítico.
+
+SupervisorJob: un hijo fallido no cancela hermanos (útil en scope raíz de UI). Job() simple: fallo hijo cancela padre.
+
+job.join() suspende hasta completar. children y parent en depuración. attach a Handler si legacy.
+
+En UI: al salir de pantalla viewModelScope cancela peticiones obsoletas evitando actualizar UI destruida si el ViewModel se destruye (no en rotación si ViewModel persiste).
+
+En el contexto de proyectos Android reales, combina esta idea con las guías oficiales de Android Developers y con métricas de calidad (crashes, ANR, Vitals) cuando aplique. En code review, pregunta siempre por ciclo de vida, testabilidad y si la solución escala cuando el equipo crece.
+
+Durante la entrevista, estructura la respuesta en definición, ejemplo concreto de tu experiencia o proyecto demo, y trade-offs frente a alternativas. Mencionar versiones recientes de API o biblioteca (Material3, Paging 3, Hilt 2.x) demuestra que sigues el ecosistema, sin necesidad de memorizar números de versión exactos.
+
+Para profundizar tras la entrevista, revisa documentación oficial, codelabs y el código fuente de tu propio proyecto Entrevista aplicando el concepto en un flujo mínimo reproducible. La práctica deliberada con tests unitarios refuerza la confianza al explicar el tema en viva voz.
+
+En el contexto de proyectos Android reales, combina esta idea con las guías oficiales de Android Developers y con métricas de calidad (crashes, ANR, Vitals) cuando aplique. En code review, pregunta siempre por ciclo de vida, testabilidad y si la solución escala cuando el equipo crece.
+
+Durante la entrevista, estructura la respuesta en definición, ejemplo concreto de tu experiencia o proyecto demo, y trade-offs frente a alternativas. Mencionar versiones recientes de API o biblioteca (Material3, Paging 3, Hilt 2.x) demuestra que sigues el ecosistema, sin necesidad de memorizar números de versión exactos.
+
+Para profundizar tras la entrevista, revisa documentación oficial, codelabs y el código fuente de tu propio proyecto Entrevista aplicando el concepto en un flujo mínimo reproducible. La práctica deliberada con tests unitarios refuerza la confianza al explicar el tema en viva voz.
+
+Cuándo usarlo:
+Gestionar trabajo largo cancelable, tests que verifican cancelación, combinar jobs con + operator. Usuario pulsa "atrás" durante carga: cancelar scope o Job específico.
+
+Ejemplo:
+val job = viewModelScope.launch {
+    try {
+        val data = repository.longPoll()
+        _state.value = data
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        _state.value = ErrorState(e)
+    }
+}
+
+fun onCancelClick() {
+    job.cancel()
+}
+
+Consejo para entrevista:
+Explica cooperativa vs forzada, SupervisorJob, y onCleared. Pregunta: ¿cancel detiene hilo? No, solo señala cooperación en coroutines.

@@ -1,0 +1,54 @@
+Concepto:
+Un memory leak (fuga de memoria) en Android ocurre cuando objetos que ya no deberían usarse siguen referenciados y no pueden ser recolectados por el GC, provocando crecimiento de memoria, lentitud y eventual OutOfMemoryError.
+
+Explicación detallada:
+El garbage collector libera objetos sin referencias fuertes desde GC roots. Una fuga mantiene viva una cadena de referencias hacia Activity, Fragment, View o Context destruidos.
+
+Causas típicas en Android:
+- Listener o callback registrado en singleton o objeto de larga vida que captura Activity (this implícito en clase interna no estática).
+- Handler con mensajes pendientes que retienen Activity (usar Handler(Looper.getMainLooper()) y removeCallbacks en onDestroy, o WeakReference).
+- Coroutine o Job sin cancelar ligada al lifecycle (usar lifecycleScope, viewModelScope).
+- LiveData.observe sin LifecycleOwner o con referencia a View destruida.
+- Static fields que guardan Context (usar applicationContext solo si imprescindible, mejor no guardar Context).
+- Bitmap grande retenido tras rotación si no se libera.
+- Hilt/Dagger mal usado con scope incorrecto reteniendo UI.
+
+Detección:
+- Android Studio Profiler (Memory): heap dump, ver instancias huérfanas de Activity.
+- LeakCanary en debug: notifica con cadena de referencias.
+- StrictMode y logs de GC en dispositivos de prueba.
+
+Prevención:
+- Observar con lifecycleScope y repeatOnLifecycle.
+- Usar viewModelScope para trabajo de pantalla.
+- Evitar pasar Activity a capas de datos; inyectar Application o interfaces.
+- Limpiar binding en onDestroyView en Fragments.
+
+Cuándo usarlo:
+El concepto aplica siempre al diseñar listeners, async y DI. En entrevistas suelen pedir ejemplos concretos y cómo los evitarías.
+
+Ejemplo:
+// Mal: fuga
+class BadManager {
+    companion object {
+        var activityRef: Activity? = null
+    }
+}
+
+// Mejor
+class GoodRepository @Inject constructor(
+    @ApplicationContext private val context: Context
+) { /* context de aplicación, no Activity */ }
+
+class MyActivity : AppCompatActivity() {
+  private val job = SupervisorJob()
+  private val scope = CoroutineScope(Dispatchers.Main + job)
+
+  override fun onDestroy() {
+    job.cancel()
+    super.onDestroy()
+  }
+}
+
+Consejo para entrevista:
+Cita Activity retenida por static/singleton/Handler y corrutinas sin cancelar. Menciona LeakCanary y lifecycle-aware components. Demuestra que entiendes la diferencia entre Context de Activity y Application.

@@ -1,0 +1,31 @@
+Concepto:
+En Kotlin, == es la comparación estructural (equivalencia de valor) que delega en equals() del operando izquierdo. === compara identidad de referencia: true solo si ambas referencias apuntan al mismo objeto en memoria. Para tipos primitivos en JVM, == se compila a comparación de valores primitivos gracias a smart boxing.
+
+Explicación detallada:
+Para Int, Boolean, etc., == compara valores. Para String y data class, == usa equals (contenido). === es el equivalente a == en Java para referencias. En Android, usa == para comparar strings de contenido (Kotlin optimiza con equals intrínseco); no uses === para strings salvo que busques la misma instancia en caché (raro).
+
+Pitfall Java: en Java, == en objetos compara referencias; en Kotlin == en objetos compara equals por diseño. === sustituye el == de Java para identidad. null == null es true; null === null es true. Con tipos nullable, == maneja null de forma segura: null == "a" es false.
+
+En entrevistas pueden dar snippet con String interning o Integer cache (-128 a 127) para confundir: === puede ser true para Int cacheados. En código real Android, casi siempre quieres == para datos y === solo para singletons, listeners registrados/desregistrados, o comparar si dos referencias son la misma instancia de ViewModel store, etc.
+
+Casos Android: comparar referencias de callback registrado para evitar doble unregister; === entre instancias de singleton inyectado. Para contenido de datos (String, data class), usa ==. Integer cache -128..127 en JVM puede hacer === true para boxed ints en ese rango: truco de entrevista. En Kotlin, equals estructural en data class compara componentes del primario, no identidad. Arrays usan contentEquals para contenido, == compara referencia del array.
+
+En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
+
+Cuándo usarlo:
+== para igualdad de negocio, estados, IDs en data class, contenido de listas si equals está bien definido. === para comprobar si es la misma instancia (doble check de listener, WeakReference, comparar this en callbacks). En enums, == compara la constante (puede usar === internamente pero usa == por estilo).
+
+Ejemplo:
+val a = "Hola"
+val b = String("Hola".toCharArray())
+println(a == b)   // true (mismo contenido)
+println(a === b)  // false (distintas instancias en heap)
+
+data class Id(val value: String)
+val id1 = Id("42")
+val id2 = Id("42")
+check(id1 == id2)
+check(id1 !== id2)
+
+Consejo para entrevista:
+Memoriza: == equals, === identidad. Pregunta clásica con Integer.valueOf(127) vs 128. En Kotlin evita usar referential equality para strings de usuario.

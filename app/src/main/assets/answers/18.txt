@@ -1,0 +1,35 @@
+Concepto:
+let es una scope function estándar que ejecuta un lambda con el objeto como argumento it (o nombre explícito) y devuelve el resultado del lambda. Su contrato típico: tomar un valor nullable, hacer algo si no es null, y devolver un resultado transformado o Unit.
+
+Explicación detallada:
+Firma conceptual: inline fun <T, R> T.let(block: (T) -> R): R. Si llamas en nullable, el bloque no se ejecuta si el receptor es null y devuelve null (para R nullable) o simplemente no entra — en realidad para T?, let solo se invoca en no-null cuando usas safe call: x?.let { }. Dentro del bloque, it es no anulable si entraste por safe call con smart cast limitado.
+
+let contrasta con apply (retorna el receptor), also (retorna el receptor, efecto lateral), run (contexto this). Usa let para mapear o acotar scope: obtener resultado de transformación, registrar analytics con objeto temporal, parsear strings.
+
+En Android: parsear respuestas, convertir Bundle a modelo, ejecutar acción una vez si hay permiso concedido, encadenar después de repository.get()?.let { mapper(it) }. No abuses de let anidados; tres niveles degradan legibilidad frente a variables locales o función extract.
+
+En corrutinas, let no es asíncrono; no confundir con suspend. Para bloques suspend en nullable usa let dentro de withContext o funciones suspend dedicadas.
+
+En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
+
+Cuándo usarlo:
+Transformar T en R, ejecutar bloque solo si no null (con ?.let), evitar variable temporal de un solo uso. Si solo configuras propiedades del mismo objeto, apply suele leer mejor.
+
+Ejemplo:
+fun displayGreeting(name: String?) {
+    val message = name?.let { "Hola, $it" } ?: "Hola, invitado"
+    textView.text = message
+}
+
+suspend fun loadProfile(id: String?) {
+    id?.let { userId ->
+        val profile = repository.getProfile(userId)
+        _uiState.value = UiState.Success(profile)
+    } ?: run { _uiState.value = UiState.Error("Id inválido") }
+}
+
+// Transformación
+val domain = dto?.let { mapper.toDomain(it) }
+
+Consejo para entrevista:
+Preguntan let vs apply vs also con tabla de retorno y receptor (it vs this). let retorna resultado del lambda. Menciona que let no es exclusivo de nullables: "Hola".let { println(it) } también es válido.
