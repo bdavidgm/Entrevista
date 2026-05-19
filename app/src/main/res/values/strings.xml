@@ -1,3 +1,15 @@
 <resources>
     <string name="app_name">Entrevista</string>
+    <string name="home_title">Inicio</string>
+    <string name="continue_where_left">Continuar donde lo dejaste</string>
+    <string name="saved_for_later">Guardado para ver después</string>
+    <string name="no_last_question">Aún no has abierto ninguna pregunta</string>
+    <string name="no_saved_questions">No tienes preguntas guardadas</string>
+    <string name="browse_all_questions">Ver todas las preguntas</string>
+    <string name="save_for_later">Guardar para ver después</string>
+    <string name="remove_from_saved">Quitar de guardados</string>
+    <string name="saved">Guardada</string>
+    <string name="previous">Anterior</string>
+    <string name="view_later">Ver después</string>
+    <string name="next">Siguiente</string>
 </resources>
