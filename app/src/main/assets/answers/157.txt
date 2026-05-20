@@ -1,42 +1,50 @@
 Concepto:
-Destructuring (desestructuración) en Kotlin permite extraer componentes de un objeto en variables individuales en una sola declaración, usando la convención componentN() de data class o operator componentN definido.
+Un módulo en Android (Gradle module) es una unidad de compilación separada con su propio build.gradle.kts, código fuente y dependencias, que el proyecto ensambla en una librería (AAR) o aplicación (APK/AAB).
 
 Explicación detallada:
-Data class genera component1(), component2(), ... automáticamente.
+Tipos comunes:
+- :app — application module, punto de entrada, applicationId.
+- Library modules (com.android.library): features, core, data — generan AAR consumidos por otros.
+- Dynamic feature modules (opcional): entrega bajo demanda.
 
-Sintaxis:
-val (name, age) = person
-for ((index, value) in list.withIndex()) { }
+settings.gradle.kts:
+include(":app", ":core:ui", ":feature:login")
 
-En parámetros:
-fun printUser((name, id): Pair<String, String>) — menos común.
+Dependencias entre módulos:
+implementation(project(":core:network"))
+- api vs implementation: api expone transitivamente al consumidor.
 
-Map:
-for ((key, value) in map) { }
+Ventajas modularización:
+- Tiempos de compilación incrementales.
+- Límites de arquitectura (feature no depende de otra feature directamente).
+- Reutilización y equipos por módulo.
+- Test por módulo.
 
-Cuándo no funciona:
-- Clases normales sin componentN.
-- Tipos con muchos campos: desestructurar todo reduce legibilidad; usar propiedades nombradas.
-
-En Android:
-- Pair/Triple de resultados locales.
-- Entidades data class en loops.
-- Entries de mapa de configuración.
+Convenciones:
+- :core:model, :core:data, :feature:* 
+- Evitar dependencias circulares.
 
 Cuándo usarlo:
-when, loops y asignaciones donde los nombres de componentes son claros y el tipo es data class o tiene componentN.
+Proyectos medianos/grandes, multi-feature, compartir SDK interno. Apps triviales pueden ser monolito single-module.
 
 Ejemplo:
-data class LatLng(val lat: Double, val lng: Double)
+// settings.gradle.kts
+include(":app")
+include(":core:domain")
+include(":core:data")
+include(":feature:profile")
 
-fun distance(a: LatLng, b: LatLng): Double {
-    val (lat1, lng1) = a
-    val (lat2, lng2) = b
-    return haversine(lat1, lng1, lat2, lng2)
+// app/build.gradle.kts
+dependencies {
+    implementation(project(":feature:profile"))
+    implementation(project(":core:data"))
 }
 
-val response = api.fetch() // data class UserResponse(val user: User, val meta: Meta)
-val (user, meta) = response
+// feature/profile/build.gradle.kts
+plugins { alias(libs.plugins.android.library) }
+dependencies {
+    implementation(project(":core:domain"))
+}
 
 Consejo para entrevista:
-Menciona que requiere data class o componentN. Ejemplo con for en map. No abuses en funciones públicas con muchos valores anónimos.
+Diferencia app vs library module. Menciona implementation vs api y compilación incremental. Relaciona con Clean Architecture por capas físicas.

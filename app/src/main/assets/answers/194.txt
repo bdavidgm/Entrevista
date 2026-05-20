@@ -1,42 +1,43 @@
 Concepto:
-Git es un sistema de control de versiones distribuido que registra historial de cambios, permite ramas paralelas, fusión y colaboración; en Android es indispensable junto con Gradle para flujos de equipo y CI/CD.
+Estructuras de datos y algoritmos (EDA) son la base para escribir código eficiente, elegir colecciones adecuadas, diseñar pantallas escalables y resolver problemas de entrevista técnica sin cuellos de botella en dispositivos móviles.
 
 Explicación detallada:
-Conceptos clave:
-- Repository: .git con commits, objetos, refs.
-- Commit: snapshot con mensaje, autor, hash SHA.
-- Branch: línea de desarrollo (main, develop, feature/login).
-- Merge vs rebase: integrar historias (rebase reescribe commits; cuidado en ramas públicas).
-- Remote (origin): GitHub/GitLab; push/pull, PRs.
-- .gitignore: build/, .gradle/, local.properties, *.apk, .idea/* personales, keystores.
+En Android no implementas quicksort diariamente, pero sí aplicas complejidad y estructuras constantemente:
 
-Flujo Android típico:
-1) Rama feature desde main
-2) Commits atómicos (fix: crash login, feat: add Room entity)
-3) PR con revisión, CI ejecuta ./gradlew test lint assembleDebug
-4) Merge squash o merge commit según política del equipo
-5) Tag/release para versiones en Play (versionCode bump en build.gradle.kts)
+1) Colecciones Kotlin/Java: List vs Set vs Map; HashMap O(1) para búsqueda por id frente a List O(n); LinkedHashMap para orden de inserción; ArrayDeque para colas. En RecyclerView/DiffUtil, mapas por id aceleran diff.
 
-Archivos que NO versionar: google-services.json a veces sí en equipos cerrados (debate); keystores nunca; secretos en local.properties o CI secrets.
+2) Listas grandes: paginación (Paging 3) en lugar de cargar 10k items en memoria; LazyColumn solo compone visibles pero tu ViewModel no debe retener listas enormes sin necesidad.
 
-Comandos útiles: status, diff, log --oneline, stash, cherry-pick, revert (seguro en main), bisect para encontrar regresión.
+3) Algoritmos de UI: DiffUtil (Myers) para actualizaciones mínimas; orden estable; comparadores eficientes en areItemsTheSame/areContentsTheSame.
 
-Integración Android Studio: VCS menu, diff visual, resolve conflicts en merges de recursos (strings.xml, colors).
+4) Concurrencia: entender race conditions, inmutabilidad, estructuras thread-safe; por qué no mutar lista compartida desde múltiples corrutinas sin sincronización.
+
+5) Grafos y árboles: navegación (back stack), deep links, jerarquías de composición; árbol de dependencias Gradle.
+
+6) Entrevistas coding: two pointers, sliding window, BFS/DFS en grids (apps mapas, juegos), heap para “top K”. Complejidad temporal y espacial — en móvil importa memoria (OOM en bitmaps).
+
+7) Caché: LRU (LruCache, Coil disk cache), políticas de eviction; trade-off memoria vs red.
+
+8) Procesamiento en background: dividir trabajo O(n) pesado con coroutines y chunks para no bloquear UI.
 
 Cuándo usarlo:
-- Siempre en proyectos profesionales y personales.
-- Trabajo en equipo, code review, releases.
-- Rollback cuando un cambio rompe producción.
+- Optimizar listas con miles de elementos.
+- Diseñar capa de datos (índices Room, claves primarias).
+- Pasar entrevistas técnicas (LeetCode medio).
+- Depurar ANR por trabajo O(n²) en main thread.
 
 Ejemplo:
-# Flujo diario
-git checkout -b feature/notifications
-# ... editar código ...
-git add app/src/main/java/...
-git commit -m "feat: add notification channel for orders"
-git push -u origin feature/notifications
-# Abrir PR en GitHub; tras review:
-git checkout main && git pull
+// Buscar duplicados O(n) con Set vs O(n²) nested loops
+fun hasDuplicate(ids: List<String>): Boolean {
+    val seen = HashSet<String>(ids.size)
+    for (id in ids) {
+        if (!seen.add(id)) return true
+    }
+    return false
+}
+
+// Mapa para lookup en adapter
+val productsById = products.associateBy { it.id }
 
 Consejo para entrevista:
-Menciona branching strategy (GitFlow simplificado o trunk-based), .gitignore Android, y que CI compila en cada PR. Si preguntan conflictos: priorizar entender merge en XML/resources. No hables de rebase --force en main.
+Relaciona EDA con Android real: DiffUtil, Paging, LruCache de bitmaps, no bloquear Main. Si piden complejidad, explica Big-O del enfoque elegido. Muestra que practicas problemas pero entiendes impacto en batería y memoria móvil.

@@ -1,43 +1,41 @@
 Concepto:
-Un Service iniciado (started) ejecuta tareas en background tras startService/startForegroundService hasta que se detiene con stopSelf/stopService; un Service enlazado (bound) ofrece API a clientes mediante bindService y vive mientras haya conexiones activas.
+La ruta de aprendizaje Android (p. ej. roadmap.sh/android) organiza competencias en fases progresivas: fundamentos del lenguaje y plataforma, UI, arquitectura, datos, async, calidad y publicación hasta nivel senior.
 
 Explicación detallada:
-Started service:
-- onCreate → onStartCommand(intent, flags, startId) por cada start.
-- Retorna START_STICKY (reinicia si sistema mata), START_NOT_STICKY, START_REDELIVER_INTENT.
-- No expone binder; cliente no llama métodos directamente.
-- Debe migrar a foreground con notificación si trabajo visible al usuario o restricciones background (Android 8+).
-- stopSelf(startId) cuando termina trabajo.
+Fases típicas de un roadmap moderno:
 
-Bound service:
-- onBind devuelve IBinder; cliente obtiene interfaz local y llama métodos.
-- Muere cuando último cliente unbind (a menos que también esté started).
-- Patrón: música, IPC en misma app, servicios en proceso local.
+1) Prerrequisitos: Git, Kotlin básico (null safety, colecciones, OOP), Gradle intro, estructuras de datos.
 
-Started + bound combinados posibles.
+2) Fundamentos Android: Activity, Fragment, ciclo de vida, Intent, permisos, Context, manifest, layouts XML o introducción Compose.
 
-Alternativas modernas: WorkManager para trabajo deferible; Foreground Service tipado para GPS/media; coroutines en proceso con ProcessLifecycleOwner para tareas cortas.
+3) UI: Views (RecyclerView, ConstraintLayout) o Jetpack Compose (estado, recomposición, navegación); Material Design; adaptabilidad tablet.
+
+4) Arquitectura: MVVM, capa Repository, inyección (Hilt), principios SOLID, Clean Architecture ligera, UDF/MVI opcional.
+
+5) Datos: Room, DataStore, Retrofit/OkHttp, caching, offline-first, Paging 3.
+
+6) Concurrencia: coroutines, Flow, StateFlow, dispatchers, testing con Turbine.
+
+7) Calidad: JUnit, MockK, Espresso, CI, Lint, Profiler, Crashlytics.
+
+8) Sistema y APIs: notificaciones, WorkManager, background limits, seguridad (Keystore, permisos).
+
+9) Publicación: AAB, Play Console, firma, R8, vitals.
+
+10) Senior: modularización, performance (Baseline Profiles), KMP opcional, liderazgo técnico.
+
+El roadmap no es checklist lineal: se iteran temas con proyectos (app notas, clima, ecommerce mini).
 
 Cuándo usarlo:
-- Started: descarga legacy, sincronización antes de WorkManager (evitar hoy).
-- Bound: API en segundo plano mientras UI conectada (servicio de descarga con progreso callback).
-- Foreground started: reproducción audio, tracking navegación.
+- Planificar estudios 6-12 meses para junior→mid.
+- Entrevistas: demostrar conocimiento del ecosistema completo, no solo tutorial aislado.
 
 Ejemplo:
-// Started
-class SyncService : Service() {
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        // hacer trabajo; stopSelf(startId)
-        return START_NOT_STICKY
-    }
-    override fun onBind(intent: Intent?) = null
-}
-
-// Bound
-class LocalBinder : Binder() {
-    fun getService(): MusicService = this@MusicService
-}
-override fun onBind(intent: Intent) = LocalBinder()
+// Proyecto por fase (portfolio)
+// Fase UI: app lista tareas Compose + Room
+// Fase red: mismo + Retrofit + Repository + Hilt
+// Fase calidad: tests ViewModel + Espresso login
+// Fase release: AAB en Play internal track
 
 Consejo para entrevista:
-Tabla started vs bound vs foreground. Di que WorkManager reemplaza muchos started services. Menciona onStartCommand flags y que bound muere al unbind. Android 8+ limitaciones en background.
+Menciona roadmap.sh como guía, no como biblia. Relaciona tu experiencia con fases concretas (“domino MVVM y coroutines, profundizando en modularización”). Muestra proyecto end-to-end en portfolio.

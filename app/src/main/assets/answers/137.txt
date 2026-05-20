@@ -1,52 +1,45 @@
 Concepto:
-TypeConverter en Room convierte entre tipos de Kotlin/Java que SQLite no soporta nativamente (Date, UUID, enums, listas) y tipos que sí almacena (TEXT, INTEGER, REAL, BLOB).
+@Insert en Room es la anotación de un método DAO que inserta una o más filas en una tabla; Room genera la implementación SQL INSERT en tiempo de compilación.
 
 Explicación detallada:
-SQLite solo tiene tipos almacenados limitados. Room persiste columnas como INTEGER, REAL, TEXT, BLOB.
+Variantes:
+- @Insert suspend fun insert(user: User): Long — retorna rowId.
+- @Insert(onConflict = OnConflictStrategy.REPLACE) fun insertAll(users: List<User>)
+- Estrategias: ABORT, REPLACE, IGNORE, FAIL.
 
-Implementación:
-class Converters {
-    @TypeConverter
-    fun fromTimestamp(value: Long?): Date? = value?.let { Date(it) }
+Puede insertar:
+- Una entidad, List, array.
+- Múltiples tipos si el DAO define varios @Insert.
 
-    @TypeConverter
-    fun dateToTimestamp(date: Date?): Long? = date?.time
-}
+Transacciones:
+- Múltiples operaciones atómicas: @Transaction en función que llama varios @Insert/@Update.
 
-Registro:
-@Database(entities = [...], version = 1)
-@TypeConverters(Converters::class)
-abstract class AppDatabase : RoomDatabase()
+Validación en compilación:
+- Room verifica que los campos de la entidad mapean a columnas.
+- TypeConverters aplican para tipos no primitivos.
 
-También a nivel de campo o clase con @TypeConverters en Entity o DAO.
-
-Casos comunes:
-- Instant / LocalDateTime (java.time) a Long o String ISO.
-- Enum a String.
-- List<String> a JSON con Moshi/Gson en converter.
-
-Buenas prácticas:
-- Converters stateless y rápidos.
-- Migraciones si cambias formato de serialización.
-- Para relaciones complejas usar tablas relacionadas en lugar de JSON blob (normalización).
+Comparación:
+- @Update: filas existentes por primary key.
+- @Upsert (Room 2.5+): insert or update en una operación.
 
 Cuándo usarlo:
-Siempre que una propiedad de @Entity no sea primitiva ni String directamente mapeable.
+Persistir entidades desde Repository en corrutinas (suspend) o Rx (si legacy). Elegir onConflict según reglas de negocio (cache vs error en duplicado).
 
 Ejemplo:
-enum class Status { ACTIVE, ARCHIVED }
+@Dao
+interface UserDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(user: User): Long
 
-class StatusConverter {
-    @TypeConverter fun toString(s: Status) = s.name
-    @TypeConverter fun fromString(v: String) = Status.valueOf(v)
+    @Insert
+    suspend fun insertAll(users: List<User>): List<Long>
 }
 
-@Entity
-@TypeConverters(StatusConverter::class)
-data class Task(
-    @PrimaryKey val id: String,
-    val status: Status
-)
+class UserRepository @Inject constructor(private val dao: UserDao) {
+    suspend fun save(user: User) {
+        dao.insert(user)
+    }
+}
 
 Consejo para entrevista:
-Explica por qué hace falta (limitaciones SQLite). Menciona registro global vs local y riesgo de cambiar formato sin migración.
+Menciona onConflict, suspend DAO y @Transaction para operaciones compuestas. Contrasta con @Query INSERT manual si necesitas SQL complejo.

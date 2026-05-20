@@ -1,37 +1,48 @@
 Concepto:
-El modo batería (Battery Saver) y las restricciones de segundo plano de Android limitan la ejecución de apps cuando el dispositivo busca ahorrar energía o cuando la app no está en primer plano, afectando jobs, alarmas, red y ubicación.
+Certificate pinning (fijación de certificado) es una técnica de seguridad que restringe las conexiones TLS de la app a confiar solo en certificados o claves públicas específicas del servidor, mitigando ataques con CAs comprometidas o proxies maliciosos.
 
 Explicación detallada:
-Battery Saver / Doze:
-- Retrasa jobs de red, alarma y sync en batch cuando pantalla apagada y dispositivo inmóvil.
-- App Standby Buckets: ACTIVE, WORKING_SET, FREQUENT, RARE — limitan jobs y FCM.
+TLS normal confía en cualquier certificado firmado por una CA del sistema. Un atacante con CA instalada (corporate proxy, malware) puede hacer MITM.
 
-Restricciones relevantes:
-- Background execution limits (Android 8+): servicios en background restringidos; usar WorkManager o Foreground Service con tipo declarado.
-- Exact alarms: SCHEDULE_EXACT_ALARM permiso en API 31+.
-- Ubicación en background: permiso ACCESS_BACKGROUND_LOCATION aparte.
-- Foreground Service types (Android 14+): declarar location, dataSync, etc.
+Pinning:
+- Pin del certificado completo (menos flexible, expira con cert).
+- Pin de clave pública (SPKI hash) — más común; sobrevive renovación si la misma clave.
 
-WorkManager:
-- Respeta constraints (batería, red, carga) y es la vía recomendada para trabajo diferible.
-
-Detección:
-- PowerManager.isPowerSaveMode
-- Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS (usar con ética, no abusar whitelist).
-
-Cuándo usarlo:
-Diseñar features offline-first, sincronización con WorkManager, informar al usuario si la funcionalidad requiere desactivar optimización (raro). Probar en Doze con adb shell dumpsys deviceidle.
-
-Ejemplo:
-val work = OneTimeWorkRequestBuilder<SyncWorker>()
-    .setConstraints(
-        Constraints.Builder()
-            .setRequiredNetworkType(NetworkType.CONNECTED)
-            .setRequiresBatteryNotLow(true)
+OkHttp CertificatePinner:
+val client = OkHttpClient.Builder()
+    .certificatePinner(
+        CertificatePinner.Builder()
+            .add("api.example.com", "sha256/AAAAAAAA...")
             .build()
     )
     .build()
-WorkManager.getInstance(context).enqueue(work)
+
+Network Security Config (Android 7+):
+- res/xml/network_security_config.xml con pin-set y backup pins.
+- android:networkSecurityConfig en manifest.
+
+Riesgos operativos:
+- Si el servidor rota certificado sin actualizar la app, las peticiones fallan hasta actualización.
+- Planificar backup pins y ventana de migración.
+
+No sustituye:
+- Validación de servidor correcta, OAuth, almacenamiento seguro de tokens.
+
+Cuándo usarlo:
+Apps bancarias, salud, datos muy sensibles. Evaluar coste de mantenimiento vs amenaza.
+
+Ejemplo:
+// network_security_config.xml
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <domain-config>
+        <domain includeSubdomains="true">api.example.com</domain>
+        <pin-set expiration="2027-01-01">
+            <pin digest="SHA-256">base64EncodedPin=</pin>
+            <pin digest="SHA-256">backupPin=</pin>
+        </pin-set>
+    </domain-config>
+</network-security-config>
 
 Consejo para entrevista:
-Menciona Doze, App Standby y por qué AlarmManager/Service crudo falla. WorkManager y FCM high priority como alternativas legítimas. No prometas bypass agresivo de batería.
+Explica MITM y diferencia CA trust vs pin. Menciona rotación de certs y backup pins. No digas que reemplaza HTTPS.

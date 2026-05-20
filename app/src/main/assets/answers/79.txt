@@ -1,16 +1,14 @@
 Concepto:
-launch y async son builders de coroutines en un CoroutineScope: launch inicia una coroutine sin devolver resultado útil (efectos secundarios); async devuelve Deferred<T> para obtener un valor más tarde con await(), útil para paralelizar tareas independientes.
+suspend es un modificador de Kotlin que marca una función que puede pausar y reanudar de forma segura dentro de una coroutine, sin bloquear el hilo subyacente. Solo puede llamarse desde otra función suspend o desde un coroutine builder como launch.
 
 Explicación detallada:
-launch { } es fire-and-forget dentro del scope: si falla y no hay handler, puede propagar según el scope. Ideal para actualizar UI state tras operaciones, escribir en BD, o disparar eventos.
+El compilador transforma suspend en máquina de estados (continuations). Cuando la función espera IO, libera el hilo para otras coroutines. Retrofit con suspend fun, Room con suspend DAO, y delay() son ejemplos idiomáticos.
 
-async { } calcula valor en paralelo; await() suspende hasta completar. Paralelizar dos redes: val a = async { api1() }; val b = async { api2() }; val result = a.await() to b.await() en el mismo scope.
+Llamar suspend desde código no suspend requiere launch o runBlocking (tests). Encadenar varias suspend es código lineal legible frente a callbacks hell.
 
-Structured concurrency: async hijos se cancelan si el scope padre cancela antes de await. No uses async sin await (fugas y excepciones silenciosas).
+suspendCancellableCoroutine convierte callbacks legacy a suspend. withTimeout y withContext son suspend estándar.
 
-Diferencia con runBlocking: builders para scopes con lifecycle, no bloquean el caller thread salvo runBlocking.
-
-En ViewModel: launch en viewModelScope es lo más común; async para combinar repositorios. supervisorScope si un hijo falla y otros deben continuar.
+Cancellation: las suspend deben ser cooperativas; revisar isActive o usar funciones cancelables de kotlinx.coroutines.
 
 En el contexto de proyectos Android reales, combina esta idea con las guías oficiales de Android Developers y con métricas de calidad (crashes, ANR, Vitals) cuando aplique. En code review, pregunta siempre por ciclo de vida, testabilidad y si la solución escala cuando el equipo crece.
 
@@ -23,16 +21,25 @@ En el contexto de proyectos Android reales, combina esta idea con las guías ofi
 Durante la entrevista, estructura la respuesta en definición, ejemplo concreto de tu experiencia o proyecto demo, y trade-offs frente a alternativas. Mencionar versiones recientes de API o biblioteca (Material3, Paging 3, Hilt 2.x) demuestra que sigues el ecosistema, sin necesidad de memorizar números de versión exactos.
 
 Para profundizar tras la entrevista, revisa documentación oficial, codelabs y el código fuente de tu propio proyecto Entrevista aplicando el concepto en un flujo mínimo reproducible. La práctica deliberada con tests unitarios refuerza la confianza al explicar el tema en viva voz.
+
+Preguntas de seguimiento frecuentes en entrevistas para este tema incluyen comparación con alternativas del ecosistema, implicaciones en testing y en el ciclo de vida de Android, y cómo lo aplicarías en una app modular con varios flavors. Si el entrevistador pide profundidad, menciona herramientas de diagnóstico (Profiler, Lint, StrictMode, Layout Inspector) y cómo validarías en CI que no hay regresiones.
+
+En proyectos reales, documenta decisiones en ADR breves o en README del módulo para que el equipo no revierta el patrón por desconocimiento. La mejor respuesta de entrevista combina definición precisa, ejemplo Kotlin o Compose concreto y honestidad sobre límites: ninguna solución es gratis en complejidad o tamaño de APK.
+
+Relaciona este concepto con los demás bloques del manifiesto Entrevista (arquitectura, corrutinas, seguridad, build) para demostrar visión de sistema completo, no conocimiento aislado de una API.
 
 Cuándo usarlo:
-launch para trabajo sin retorno a caller; async cuando necesitas resultado combinado o paralelismo medible. Un solo suspend secuencial no necesita async.
+APIs que esperan resultado único async. Para streams usar Flow, no suspend repetido en loop manual.
 
 Ejemplo:
-viewModelScope.launch {
-    val profile = async(Dispatchers.IO) { userRepo.profile() }
-    val orders = async(Dispatchers.IO) { orderRepo.recent() }
-    _uiState.value = HomeUiState(profile.await(), orders.await())
+interface ApiService {
+    @GET("users/{id}")
+    suspend fun getUser(@Path("id") id: Long): UserDto
+}
+
+suspend fun loadUser(id: Long): User = withContext(Dispatchers.IO) {
+    api.getUser(id).toDomain()
 }
 
 Consejo para entrevista:
-launch vs async = sin vs con Deferred. Menciona await y cancelación. Trampa: async en GlobalScope sin await.
+Define suspend como pausable, no como async automático en otro hilo (el dispatcher decide). Pregunta: ¿puedo llamar suspend desde onClick directo? No, necesitas scope.launch.

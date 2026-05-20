@@ -1,42 +1,51 @@
 Concepto:
-El modificador out en tipos genéricos de Kotlin declara covarianza: el tipo solo aparece en posiciones de salida (productor); puedes tratar Producer<Cat> como Producer<Animal> si Cat es subtipo de Animal.
+La delegación por clase en Kotlin (class delegation con by) implementa una interfaz delegando todas o parte de sus métodos a otra instancia, reduciendo boilerplate respecto a reenviar manualmente cada método.
 
 Explicación detallada:
-Variance en genéricos responde: si B es subtipo de A, ¿G<B> es subtipo de G<A>?
+Sintaxis:
+class PrinterImpl : Printer by DefaultPrinter()
 
-Covarianza (out):
-- interface Producer<out T> { fun get(): T }
-- Solo T en retornos y posiciones out; no puedes tener fun set(value: T) con T en parámetro de entrada (sería inseguro).
-- List<out E> en Kotlin es interface List<out E> — solo lectura a nivel de API de List (MutableList es invariante).
+El compilador genera métodos que invocan al delegado DefaultPrinter. Puedes sobrescribir métodos concretos y usar super<Interface> o el delegado según necesites.
 
-Analogía: puedes leer un canal que entrega gatos como canal que entrega animales; no puedes escribir un animal genérico en un canal de gatos.
+Diferencia con delegated properties (by lazy, by viewModels):
+- Class delegation: patrón de diseño a nivel de clase/interfaz.
+- Property delegation: getters/setters generados para una propiedad.
 
-En Android:
-- LiveData y Flow exponen valores producidos (out conceptual).
-- PagingSource y APIs de solo lectura.
-- Definir interfaces de repositorio que solo devuelven T: interface ReadStore<out T>
+Casos de uso:
+- Decorator: class LoggingRepository(repo: UserRepository) : UserRepository by repo { override suspend fun getUser() { log(); return repo.getUser() } } — en Kotlin el override explícito reenvía al delegado.
+- Composición sobre herencia: cumples interfaz sin extender clase concreta.
+- Android: delegar en wrappers de sistema poco frecuente; más común en dominio y testing.
 
-Sin out, List<Cat> no sería subtipo de List<Animal> porque List es mutable en Java y sería inseguro añadir Animal a List<Cat>.
+Limitaciones:
+- Solo interfaces (no delegar implementación de clase concreta con by en la misma forma).
+- Métodos no declarados en la interfaz no se delegan.
+- Múltiples interfaces: class Foo : A by a, B by b
 
 Cuándo usarlo:
-Al diseñar APIs que solo producen T y nunca lo consumen como parámetro de escritura. Marca out en el tipo del parámetro genérico de la interfaz o clase.
+Cuando una clase debe cumplir una interfaz y la mayoría de métodos son idénticos al de un colaborador interno; decoradores, proxies y fakes parciales.
 
 Ejemplo:
-interface Producer<out T> {
-    fun produce(): T
+interface Repository {
+    suspend fun load(): List<Item>
+    suspend fun save(item: Item)
 }
 
-open class Animal
-class Cat : Animal()
-
-fun feed(animals: Producer<Animal>) {
-    val a: Animal = animals.produce()
+class DatabaseRepository @Inject constructor(
+    private val dao: ItemDao
+) : Repository {
+    override suspend fun load() = dao.getAll()
+    override suspend fun save(item: Item) { dao.insert(item) }
 }
 
-val catProducer: Producer<Cat> = object : Producer<Cat> {
-    override fun produce() = Cat()
+class CachingRepository(
+    private val inner: Repository,
+    private val cache: MutableList<Item> = mutableListOf()
+) : Repository by inner {
+    override suspend fun load(): List<Item> {
+        if (cache.isEmpty()) cache.addAll(inner.load())
+        return cache
+    }
 }
-feed(catProducer) // OK por out
 
 Consejo para entrevista:
-Usa PECS mentalmente: Producer Extends (out). Contrasta con in (contravariante) e invariante sin modificador. Ejemplo List solo lectura vs MutableList.
+No confundas class delegation (by en clase) con property delegation (by lazy). Menciona patrón Decorator y que el compilador genera el forwarding.

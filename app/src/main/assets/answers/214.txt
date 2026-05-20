@@ -1,32 +1,35 @@
 Concepto:
-Firebase App Distribution distribuye builds de prueba (APK/AAB) a testers internos o QA vía enlace o email, integrado con Firebase Console y Gradle plugin, antes de publicar en Play.
+Publicar en Google Play Store implica preparar un Android App Bundle firmado, crear la ficha en Play Console, cumplir políticas, pruebas internas/cerradas/abiertas y enviar a revisión de producción.
 
 Explicación detallada:
-Flujo:
-1) Registrar app en Firebase proyecto vinculado.
-2) Plugin appdistribution en Gradle; configurar groups/testers en console.
-3) Tras assembleRelease o bundle, task appDistributionUploadRelease sube binario.
-4) Testers reciben invitación, instalan App Distribution helper o descargan directo (según versión).
-5) Feedback y notas de release por build.
+Pasos principales:
 
-Ventajas vs Play internal testing: rápido para equipo pequeño, sin esperar revisión Play para cada build diario; útil para stakeholders no en lista Play.
+1) Cuenta desarrollador Google Play (pago único).
 
-Limitaciones: no sustituye Play Console para producción; testers deben confiar en fuente Firebase; gestión de versiones manual.
+2) Preparar app: applicationId único, versionCode/versionName, iconos, feature graphic, screenshots, descripción, categoría, clasificación de contenido, política de privacidad (URL).
+
+3) Firma: keystore upload key; Play App Signing recomendado (Google guarda clave de firma). build.gradle signingConfigs release; no subir keystore a git.
+
+4) Build release: ./gradlew bundleRelease genera .aab; activar R8/ProGuard si aplica; subir mapping a Crashlytics.
+
+5) Play Console → Crear app → Producción o prueba interna → subir AAB → completar Store listing, Data safety form, permisos sensibles justificados, declaración de anuncios, acceso a cuenta de prueba si login.
+
+6) Pre-launch report y pruebas en dispositivos reales.
+
+7) Enviar a revisión; tiempos variables (horas a días).
+
+8) Tras publicación: staged rollout (1%-100%), monitorear vitals (ANR, crashes).
+
+Actualizaciones: incrementar versionCode, nuevo AAB, notas de versión.
 
 Cuándo usarlo:
-- CI sube nightly a QA.
-- Demos a cliente antes de beta cerrada en Play.
-- Combinar con Crashlytics mismo proyecto para ver crashes de builds internos.
+- Lanzamiento comercial o closed beta con testers.
 
 Ejemplo:
-// app/build.gradle.kts
-plugins { id("com.google.firebase.appdistribution") }
-firebaseAppDistribution {
-    releaseNotes = "Fix login crash"
-    groups = "qa-team"
-    testers = "dev@company.com"
-}
-// ./gradlew assembleDebug appDistributionUploadDebug
+# Terminal release build
+./gradlew clean bundleRelease
+# Artefacto: app/build/outputs/bundle/release/app-release.aab
+# Subir manualmente en Play Console o con Play Developer API / fastlane supply
 
 Consejo para entrevista:
-Contrasta App Distribution con Play internal/open testing (revisión, vitals, staged rollout). Menciona grupos de testers y automatización CI. No confundas con Firebase Hosting.
+Menciona AAB no APK a producción, Play App Signing, tracks de testing, Data safety y versionCode obligatorio. Conoce diferencia internal testing vs production. Menciona fastlane como automatización opcional.

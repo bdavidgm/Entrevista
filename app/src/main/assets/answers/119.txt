@@ -1,47 +1,47 @@
 Concepto:
-Android App Bundle (AAB) es el formato de publicación en Google Play: un paquete que Play Store usa para generar APKs optimizados por dispositivo (ABI, densidad, idioma), en lugar de subir un APK monolítico.
+Un deep link (enlace profundo) es un URI o App Link que abre directamente una pantalla o flujo específico dentro de la app, en lugar de solo lanzar la Activity principal.
 
 Explicación detallada:
-Al subir un .aab, Google Play aplica Dynamic Delivery:
-- Split APKs por arquitectura (arm64-v8a, armeabi-v7a, x86_64): el usuario descarga solo su ABI.
-- Configuration APKs por densidad de pantalla e idioma: reduce tamaño vs APK universal con todos los recursos.
-- Asset packs y feature modules para entrega bajo demanda (Play Feature Delivery).
+Tipos:
+- Deep link clásico: intent-filter con scheme custom (myapp://product/42). Puede mostrar selector de apps si varias coinciden.
+- App Links (Android 6+): https con autoVerify="true" y Digital Asset Links en el dominio. Abren tu app sin diálogo si la verificación es correcta.
+- Dynamic Links (Firebase, legacy) y enlaces de marketing que redirigen al destino in-app.
 
-El desarrollador compila con:
-./gradlew bundleRelease
-El artefacto está en app/build/outputs/bundle/release/
+Configuración en AndroidManifest:
+- intent-filter con action VIEW, categorías DEFAULT y BROWSABLE.
+- data: scheme, host, pathPrefix o pathPattern.
 
-Play App Signing: Google puede firmar el APK final; subes el AAB firmado con upload key. Los usuarios instalan APKs firmados por la clave de distribución de Play.
+Navigation Component:
+- <deepLink app:uri="https://example.com/item/{id}" /> en el destino.
+- navController.handleDeepLink(intent) en onCreate/onNewIntent.
 
-AAB no se instala directamente en dispositivos de desarrollo habitualmente; para pruebas locales usas bundletool build-apks o instala vía Play Internal Testing.
+Flujo típico: usuario toca enlace en email o web -> sistema resuelve Intent -> Activity host del NavHost -> grafo navega al destino con argumentos.
 
-Ventajas:
-- Menor tamaño de descarga e instalación.
-- Requisito para publicaciones nuevas en Play Console.
-- Soporte de módulos dinámicos.
-
-Limitaciones:
-- Solo distribución vía Google Play (otras tiendas pueden requerir APK).
-- Builds de debug siguen siendo APK para rapidez en IDE.
+Consideraciones:
+- Estado cold start: la app puede no tener sesión; redirigir a login y guardar destino pendiente.
+- onNewIntent si la Activity existe con launchMode singleTop.
+- Pruebas con adb shell am start -a android.intent.action.VIEW -d "https://..."
 
 Cuándo usarlo:
-Siempre para producción en Play Store desde 2021 (nuevas apps deben usar AAB). Para sideload o CI interno puedes generar APK desde bundle.
+Compartir contenido, campañas, recuperación de carrito, notificaciones que abren pantalla concreta, integración web-to-app.
 
 Ejemplo:
-// build.gradle.kts
-android {
-    defaultConfig { ... }
-    buildTypes {
-        release {
-            isMinifyEnabled = true
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
-        }
-    }
+// AndroidManifest.xml dentro de activity
+<intent-filter android:autoVerify="true">
+    <action android:name="android.intent.action.VIEW" />
+    <category android:name="android.intent.category.DEFAULT" />
+    <category android:name="android.intent.category.BROWSABLE" />
+    <data android:scheme="https"
+          android:host="example.com"
+          android:pathPrefix="/product" />
+</intent-filter>
+
+// Activity
+override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
+    setContent { App(navController) }
+    navController.handleDeepLink(intent)
 }
-// Terminal: ./gradlew :app:bundleRelease
 
 Consejo para entrevista:
-Explica que AAB no es el APK que instala el usuario; Play lo divide. Menciona tamaño, Play Signing y diferencia con APK universal. No confundas con Android Instant (deprecated) salvo que pregunten histórico.
+Diferencia deep link custom vs App Links verificados. Menciona handleDeepLink, cold start y prueba con adb. Si hablas de notificaciones, enlaza con PendingIntent que lleva el URI.

@@ -1,12 +1,12 @@
 Concepto:
-ANR (Application Not Responding) ocurre cuando el hilo principal no procesa eventos de entrada o el broadcast receiver en ~5 segundos (varía por tipo). El sistema muestra diálogo "La aplicación no responde" y puede cerrar el proceso.
+El hilo principal (UI thread) en Android es responsable de dibujar frames, despachar eventos táctiles y ejecutar callbacks de Activity. Realizar trabajo largo o bloqueante en Main provoca jank, frames perdidos y ANR (Application Not Responding).
 
 Explicación detallada:
-Causas: bloqueo en onCreate, JSON parsing enorme en UI, deadlock en synchronized main, operación síncrona de BD en main (si permitida), bucle infinito en UI thread. Input dispatching ANR: usuario toca pero main está ocupado.
+Regla histórica: NetworkOnMainThreadException en API estricta para red en main. Room y muchas APIs modernas exigen background. Compose recomposición y medición ocurren en Main; cálculos pesados en composición bloquean 16ms por frame.
 
-BroadcastReceiver onReceive tiene límite ~10s en foreground; debe delegar trabajo a goAsync o WorkManager. Foreground service tiene reglas propias.
+Solución: coroutines withContext(IO), Executor, WorkManager para deferible. Actualizar UI solo en Main tras resultado. StrictMode detecta disk/network en main en debug.
 
-Diagnóstico: traces ANR en Play Console, bugreport, StrictMode. Solución: mover trabajo, reducir trabajo en onCreate (App Startup ligero), paginar listas.
+Perfis: Systrace, Android Studio Profiler CPU. ANR trace muestra main bloqueado.
 
 En el contexto de proyectos Android reales, combina esta idea con las guías oficiales de Android Developers y con métricas de calidad (crashes, ANR, Vitals) cuando aplique. En code review, pregunta siempre por ciclo de vida, testabilidad y si la solución escala cuando el equipo crece.
 
@@ -21,20 +21,20 @@ Durante la entrevista, estructura la respuesta en definición, ejemplo concreto 
 Para profundizar tras la entrevista, revisa documentación oficial, codelabs y el código fuente de tu propio proyecto Entrevista aplicando el concepto en un flujo mínimo reproducible. La práctica deliberada con tests unitarios refuerza la confianza al explicar el tema en viva voz.
 
 Cuándo usarlo:
-Nunca bloquear main; aplica esta regla en todo el ciclo de vida de la Activity y en callbacks de UI. Prefetch y skeleton UI mientras carga async. Para tareas largas: WorkManager o FGS con notificación.
+Siempre offload IO y CPU pesado. Lectura rápida DataStore ya es async. Imagen: Coil en background automático.
 
 Ejemplo:
-// Provoca ANR
-override fun onCreate(savedInstanceState: Bundle?) {
-    super.onCreate(savedInstanceState)
-    val all = database.dao().getAllSync() // miles de filas en main
+// Mal
+fun onClick() {
+    val json = URL(url).readText() // ANR risk
+    textView.text = json
 }
 
-// Correcto
-lifecycleScope.launch {
-    val all = withContext(Dispatchers.IO) { database.dao().getAll() }
-    adapter.submitList(all)
+// Bien
+fun onClick() = lifecycleScope.launch {
+    val json = withContext(Dispatchers.IO) { api.fetch() }
+    textView.text = json
 }
 
 Consejo para entrevista:
-Cita tiempos aproximados (5s input). Diferencia ANR vs crash. Menciona Play Vitals ANR rate.
+Menciona 16ms frame budget y ANR. Herramientas: StrictMode, Profiler. Compose: no parses JSON en @Composable body.

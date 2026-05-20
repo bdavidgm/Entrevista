@@ -1,45 +1,42 @@
 Concepto:
-Handler y Looper son el mecanismo clásico de Android para encolar y ejecutar mensajes Runnable en un hilo específico; el Looper hace girar la cola de mensajes y el Handler publica trabajo en ese Looper.
+Destructuring (desestructuración) en Kotlin permite extraer componentes de un objeto en variables individuales en una sola declaración, usando la convención componentN() de data class o operator componentN definido.
 
 Explicación detallada:
-Main Looper:
-- Cada app tiene un hilo principal con Looper.getMainLooper().
-- Toda actualización de UI debe ocurrir en ese hilo.
+Data class genera component1(), component2(), ... automáticamente.
 
-Handler(Looper):
-- handler.post { textView.text = "Hi" }
-- handler.postDelayed({ }, 3000)
+Sintaxis:
+val (name, age) = person
+for ((index, value) in list.withIndex()) { }
 
-Message y MessageQueue:
-- Internamente Runnable y Messages en cola FIFO por hilo.
+En parámetros:
+fun printUser((name, id): Pair<String, String>) — menos común.
 
-Relación con corrutinas:
-- Dispatchers.Main usa el Main Looper bajo el capó.
-- Preferir corrutinas en código nuevo; Handler sigue en APIs legacy y View.post.
+Map:
+for ((key, value) in map) { }
 
-Riesgos:
-- Handler con referencia implícita a Activity + mensajes pendientes -> leak (usar static Handler + WeakReference o cancelar en onDestroy).
-- postDelayed sin cancelar tras destruir pantalla.
+Cuándo no funciona:
+- Clases normales sin componentN.
+- Tipos con muchos campos: desestructurar todo reduce legibilidad; usar propiedades nombradas.
+
+En Android:
+- Pair/Triple de resultados locales.
+- Entidades data class en loops.
+- Entries de mapa de configuración.
 
 Cuándo usarlo:
-Integración con APIs que devuelven callbacks en background thread y requieren post al main; código legacy. En código nuevo: withContext(Main) o MainScope.
+when, loops y asignaciones donde los nombres de componentes son claros y el tipo es data class o tiene componentN.
 
 Ejemplo:
-// Publicar en UI desde callback en background
-val handler = Handler(Looper.getMainLooper())
-api.fetchUser { user ->
-    handler.post {
-        binding.nameText.text = user.name
-    }
+data class LatLng(val lat: Double, val lng: Double)
+
+fun distance(a: LatLng, b: LatLng): Double {
+    val (lat1, lng1) = a
+    val (lat2, lng2) = b
+    return haversine(lat1, lng1, lat2, lng2)
 }
 
-// Equivalente moderno
-lifecycleScope.launch(Dispatchers.IO) {
-    val user = api.fetchUserSuspend()
-    withContext(Dispatchers.Main) {
-        binding.nameText.text = user.name
-    }
-}
+val response = api.fetch() // data class UserResponse(val user: User, val meta: Meta)
+val (user, meta) = response
 
 Consejo para entrevista:
-Explica Looper por hilo y Main thread. Menciona fugas con Handler y que corrutinas son el estándar actual. View.post { } es variante simple.
+Menciona que requiere data class o componentN. Ejemplo con for en map. No abuses en funciones públicas con muchos valores anónimos.

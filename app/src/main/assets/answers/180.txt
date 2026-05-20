@@ -1,36 +1,37 @@
 Concepto:
-InputMethodManager (IMM) controla el teclado virtual (IME): mostrarlo, ocultarlo y consultar métodos de entrada disponibles, asociado al Context de una Activity con ventana enfocada.
+ClipboardManager gestiona el portapapeles del sistema: copiar y leer texto (y en APIs recientes, tipos enriquecidos) entre apps, obtenido con getSystemService(CLIPBOARD_SERVICE).
 
 Explicación detallada:
-El flujo de entrada de texto pasa por EditText/Compose TextField → InputConnection → IME del usuario (Gboard, SwiftKey). IMM métodos habituales:
-- showSoftInput(view, flags): muestra teclado para una View con foco.
-- hideSoftInputFromWindow(windowToken, flags): oculta usando token de la ventana.
-- toggleSoftInput(show, hideSoftInputOnly)
-- isActive(view): si hay IME activo para esa vista.
+ClipData encapsula uno o más items (texto plano, URI, intent). Métodos:
+- setPrimaryClip(clip): reemplaza contenido (desde Android 10 el acceso en background está restringido).
+- getPrimaryClip() / getPrimaryClipDescription(): leer si tu app está en foreground o cumples restricciones.
+- addPrimaryClipChangedListener: notificación cuando cambia (uso limitado en background).
 
-En Compose, el enfoque moderno es LocalSoftwareKeyboardController (show/hide) en lugar de IMM directo, pero internamente sigue el mismo stack.
+Privacidad Android 10+: las apps no pueden leer el portapapeles en segundo plano; solo cuando es foreground o hay foco. Android 13+ muestra toast al usuario cuando otra app pega contenido sensible si hay políticas del OEM.
 
-Flags: SHOW_IMPLICIT, HIDE_NOT_ALWAYS. Para ScrollView con campos, ajusta windowSoftInputMode en manifest (adjustResize, adjustPan) o WindowInsets en Compose (imePadding()).
-
-Problemas comunes: llamar showSoftInput antes de que la View tenga foco (post { requestFocus(); show }); fugas si guardas Activity en listener; teclado que tapa botones (solución: insets, no hacks de margin fijos).
+Buenas prácticas:
+- Copiar solo lo necesario (código de verificación, enlace); no contraseñas sin aviso.
+- Para pegar, ofrece botón explícito en lugar de leer clipboard al abrir (mejor UX y privacidad).
+- Usa ClipData.newPlainText(label, text) con label descriptivo para accesibilidad.
 
 Cuándo usarlo:
-- Botón “Buscar” que abre teclado explícitamente.
-- Cerrar teclado al enviar formulario o navegar.
-- Pantallas login con auto-focus en primer campo (con retraso post-layout).
+- Copiar enlace, número de pedido, código promocional.
+- Editores que soporten pegar desde portapapeles con acción del usuario.
+- Evitar monitoreo continuo del clipboard (anti-patrón y bloqueado).
 
 Ejemplo:
-// Views tradicional
-val imm = getSystemService(InputMethodManager::class.java)
-editText.requestFocus()
-imm.showSoftInput(editText, InputMethodManager.SHOW_IMPLICIT)
+fun copyToClipboard(context: Context, label: String, text: String) {
+    val clipboard = context.getSystemService(ClipboardManager::class.java)
+    val clip = ClipData.newPlainText(label, text)
+    clipboard.setPrimaryClip(clip)
+}
 
-// Ocultar
-imm.hideSoftInputFromWindow(editText.windowToken, 0)
-
-// Compose
-val keyboard = LocalSoftwareKeyboardController.current
-keyboard?.hide()
+fun readClipboardText(context: Context): String? {
+    val clipboard = context.getSystemService(ClipboardManager::class.java)
+    val clip = clipboard.primaryClip ?: return null
+    if (clip.itemCount == 0) return null
+    return clip.getItemAt(0).coerceToText(context)?.toString()
+}
 
 Consejo para entrevista:
-Prefiere WindowInsets/imePadding en Compose y windowSoftInputMode bien elegido. Si mencionas IMM, demuestra conocer windowToken y foco. Contrasta con enableEdgeToEdge y Behavior del IME en Material3.
+Menciona restricciones de background desde Android 10 y enfoque “user-initiated paste”. No digas que leerás el clipboard al iniciar la app para “detectar enlaces” sin consentimiento.

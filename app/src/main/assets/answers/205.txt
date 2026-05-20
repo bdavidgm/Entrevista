@@ -1,35 +1,44 @@
 Concepto:
-OkHttp es el cliente HTTP eficiente de Square usado por Retrofit: connection pooling, interceptors, caché, TLS, timeouts y soporte HTTP/2.
+Retrofit es una biblioteca de Square que genera implementaciones de interfaces HTTP a partir de anotaciones (@GET, @POST, @Path, @Query, @Body), integrándose con convertidores (Moshi/Gson) y OkHttp.
 
 Explicación detallada:
-Capas:
-- Interceptor chain: logging, auth headers, retry, mocking en tests.
-- Authenticator: reintento tras 401 con nuevo token.
-- Cache: Cache(CacheDirectory, maxSize) para respuestas con Cache-Control.
-- Timeouts: connect, read, write, call.
+Defines ApiService como interfaz Kotlin/Java. Retrofit.Builder configura baseUrl, call adapters (CoroutineCallAdapter, RxJava), converter factories.
 
-Request/Response model: cuerpos como ResponseBody; usar try/finally close.
+Ventajas: código declarativo, tipado, fácil mockear en tests, interceptors OkHttp para auth/logging, soporte suspend para coroutines sin Callback.
 
-En Android, OkHttp corre en background; nunca en main thread para llamadas síncronas (Retrofit suspend ya cambia contexto).
+Componentes típicos:
+- Retrofit.create(ApiService::class.java)
+- OkHttpClient con timeouts, certificate pinning, logging HttpLoggingInterceptor (solo debug)
+- MoshiConverterFactory para JSON Kotlin-friendly
 
-Debugging: HttpLoggingInterceptor solo en debug; riesgo de filtrar tokens en logs.
+Manejo errores: HttpException en códigos 4xx/5xx; IOException red; envolver en Result o sealed class en repositorio.
 
 Cuándo usarlo:
-- Siempre detrás de Retrofit (configuración centralizada).
-- Descargas directas, uploads multipart, WebSockets (okhttp3 WebSocket).
-- Certificate pinning para APIs sensibles.
+- Casi todo cliente REST en Android profesional.
+- Alternativas: Ktor client (Kotlin puro), Apollo para GraphQL.
 
 Ejemplo:
-val client = OkHttpClient.Builder()
-    .connectTimeout(30, TimeUnit.SECONDS)
-    .readTimeout(30, TimeUnit.SECONDS)
-    .addInterceptor { chain ->
-        val request = chain.request().newBuilder()
-            .addHeader("Authorization", "Bearer $token")
-            .build()
-        chain.proceed(request)
-    }
+interface ApiService {
+    @GET("users/{id}")
+    suspend fun getUser(@Path("id") id: Long): UserDto
+
+    @POST("users")
+    suspend fun createUser(@Body body: CreateUserRequest): UserDto
+}
+
+val okHttp = OkHttpClient.Builder()
+    .addInterceptor(HttpLoggingInterceptor().apply {
+        level = HttpLoggingInterceptor.Level.BODY
+    })
     .build()
 
+val retrofit = Retrofit.Builder()
+    .baseUrl("https://api.example.com/")
+    .client(okHttp)
+    .addConverterFactory(MoshiConverterFactory.create())
+    .build()
+
+val api = retrofit.create(ApiService::class.java)
+
 Consejo para entrevista:
-Explica interceptors vs network interceptors, pooling, y que Retrofit es capa de declaración sobre OkHttp. Menciona no loguear secrets y pinning en banca. Conecta con WorkManager para reintentos de negocio, no solo HTTP retry.
+Menciona OkHttp debajo, suspend, interceptors para token refresh, y capa Repository que no expone Retrofit a UI. Habla de manejo de errores y timeouts. Si preguntan GraphQL, cita Apollo.

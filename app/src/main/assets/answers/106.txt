@@ -1,12 +1,12 @@
 Concepto:
-El modo oscuro (dark theme) es una variante de tema UI con fondos oscuros y texto claro que reduce fatiga visual en poca luz, puede ahorrar batería en pantallas OLED y respeta la preferencia del sistema o del usuario en la app.
+La accesibilidad (a11y) en Android garantiza que personas con discapacidad visual, motriz, auditiva o cognitiva puedan usar la app mediante TalkBack, ampliación, contrastes, navegación por teclado/switch y ajustes del sistema.
 
 Explicación detallada:
-Android 10+ soporta forceDark y configuración uiMode UI_MODE_NIGHT_YES. Material3: darkColorScheme() vs lightColorScheme(). En Compose: isSystemInDarkTheme() o estado guardado en DataStore para override manual (Sistema / Claro / Oscuro).
+contentDescription en Icon/Image para TalkBack; null si decorativo. Semantics en Compose: mergeDescendants, heading, stateDescription. Touch target mínimo 48dp. Contraste de color suficiente en light/dark.
 
-themes.xml: Theme.Material3.DayNight sin parent fijo light. values-night/ para recursos alternativos. Status bar y navigation bar icons contrast con WindowInsetsController.
+Escalable texto: sp no px; respeta fontScale del usuario. No deshabilitar zoom salvo UX justificada. Focus order lógico en formularios.
 
-Evita imágenes solo para light sin variante. Prueba contraste accesibilidad en ambos modos. dynamic color adapta paleta en ambos.
+Pruebas: TalkBack manual, Accessibility Scanner, checks Lint. Estados anunciados (loading, error). Live regions para cambios dinámicos.
 
 En el contexto de proyectos Android reales, combina esta idea con las guías oficiales de Android Developers y con métricas de calidad (crashes, ANR, Vitals) cuando aplique. En code review, pregunta siempre por ciclo de vida, testabilidad y si la solución escala cuando el equipo crece.
 
@@ -21,17 +21,18 @@ Durante la entrevista, estructura la respuesta en definición, ejemplo concreto 
 Para profundizar tras la entrevista, revisa documentación oficial, codelabs y el código fuente de tu propio proyecto Entrevista aplicando el concepto en un flujo mínimo reproducible. La práctica deliberada con tests unitarios refuerza la confianza al explicar el tema en viva voz.
 
 Cuándo usarlo:
-Toda app moderna debe soportar dark o DayNight. Ofrece toggle en ajustes si producto lo requiere además del sistema.
+Siempre; requisitos legales en muchos mercados y Play policies. Prioriza flujos core login/checkout.
 
 Ejemplo:
-@Composable
-fun EntrevistaTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    content: @Composable () -> Unit
-) {
-    val colors = if (darkTheme) darkColorScheme() else lightColorScheme()
-    MaterialTheme(colorScheme = colors, content = content)
+Icon(
+    imageVector = Icons.Default.Delete,
+    contentDescription = stringResource(R.string.delete_item)
+)
+
+Modifier.semantics {
+    contentDescription = "Carrito, ${cart.count} artículos"
+    stateDescription = if (cart.isEmpty) "vacío" else "con artículos"
 }
 
 Consejo para entrevista:
-DayNight, darkColorScheme, preferencia usuario + sistema. Menciona OLED battery. No hardcodear colores fuera de tokens.
+contentDescription, 48dp, sp, TalkBack, Semantics Compose. Menciona inclusión como calidad, no extra opcional.

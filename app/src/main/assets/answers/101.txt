@@ -1,12 +1,12 @@
 Concepto:
-ProGuard y R8 son herramientas de ofuscación, reducción y optimización de bytecode en builds release de Android. R8 es el shrinker por defecto que elimina código no usado, renombra clases/métodos y optimiza dex, integrado en el pipeline de Gradle.
+Los datos sensibles (tokens, contraseñas, claves API, PII) no deben almacenarse en texto plano en SharedPreferences sin cifrar, archivos externos legibles, logs ni código fuente. Se usan Android Keystore, EncryptedSharedPreferences/DataStore, servidor remoto y principio de mínimo privilegio.
 
 Explicación detallada:
-minifyEnabled true activa R8. shrinkResources elimina recursos huérfanos tras análisis de código. Reglas -keep en proguard-rules.pro protegen reflexión (Retrofit, Room, Parcelable, Hilt, Serializable) de rotura.
+Keystore genera claves hardware-backed difíciles de extraer en dispositivos compatibles. EncryptedSharedPreferences (Security crypto) cifra valores. Para tokens OAuth: almacenar refresh token cifrado; access token corta vida en memoria si posible.
 
-Ofuscación dificulta ingeniería inversa pero no es seguridad fuerte. mapping.txt subir a Play para deobfuscate crashes. fullMode y reglas específicas por librería.
+Nunca hardcodear API secrets en APK (reverse engineering con apktool). Usa backend proxy o Play App Signing + remote config con rotación. certificate pinning para MITM.
 
-Debug no minifica para stack traces legibles. Errores ClassNotFound en release suelen ser reglas -keep faltantes.
+Logs: desactivar body en OkHttp producción. excludeFromBackup en manifest para backups cloud. BiometricPrompt antes de mostrar datos ultra sensibles.
 
 En el contexto de proyectos Android reales, combina esta idea con las guías oficiales de Android Developers y con métricas de calidad (crashes, ANR, Vitals) cuando aplique. En code review, pregunta siempre por ciclo de vida, testabilidad y si la solución escala cuando el equipo crece.
 
@@ -27,26 +27,18 @@ En proyectos reales, documenta decisiones en ADR breves o en README del módulo 
 Relaciona este concepto con los demás bloques del manifiesto Entrevista (arquitectura, corrutinas, seguridad, build) para demostrar visión de sistema completo, no conocimiento aislado de una API.
 
 Cuándo usarlo:
-Siempre release producción. Probar release build en QA. Mantener reglas documentadas por dependencia.
+Cualquier credencial, salud, financiero. DataStore normal para tema oscuro; Keystore para secrets.
 
 Ejemplo:
-// proguard-rules.pro
--keep class com.example.data.api.** { *; }
--keepclassmembers class * {
-    @com.google.gson.annotations.SerializedName <fields>;
-}
+val masterKey = MasterKey.Builder(context)
+    .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+    .build()
 
-android {
-    buildTypes {
-        release {
-            isMinifyEnabled = true
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
-        }
-    }
-}
+val securePrefs = EncryptedSharedPreferences.create(
+    context, "secure_prefs", masterKey,
+    EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+    EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+)
 
 Consejo para entrevista:
-R8 reemplaza ProGuard; shrink + obfuscate. Menciona mapping.txt. No confundas con Baseline Profile.
+Keystore + encrypted prefs + no logs + no hardcode. OWASP Mobile mención breve. Root bypass: defensa en profundidad, no absoluta.

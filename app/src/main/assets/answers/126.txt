@@ -1,43 +1,40 @@
 Concepto:
-Context en Android es el handle que proporciona acceso a recursos, sistema de archivos, servicios, temas y componentes de la plataforma; representa información sobre el entorno de ejecución de la app.
+El modificador in en tipos genéricos de Kotlin declara contravarianza: el tipo solo aparece en posiciones de entrada (consumidor); puedes tratar Consumer<Animal> como Consumer<Cat> si Cat es subtipo de Animal.
 
 Explicación detallada:
-Jerarquía:
-- Context abstracto: operaciones base (getString, getResources, startActivity, getSystemService, openFileOutput).
-- ContextWrapper: delega en base (Activity, Service, Application son wrappers).
-- Application: contexto global de la app, vive todo el proceso.
-- Activity: contexto con tema de Activity, lanzamiento de intents desde UI, permisos ligados a ventana.
+Contravarianza (in):
+- interface Consumer<in T> { fun accept(item: T) }
+- T solo en parámetros y posiciones in; no puedes devolver T (salvo en posiciones donde no expone T al llamador de forma covariante problemática — el compilador restringe).
 
-Regla crítica: no retener referencia a Activity Context en objetos de larga vida (singleton, ViewModel no debe guardar Activity). Usar applicationContext para cosas que vivan más que la Activity (singleton de DB a veces, pero preferir inyección con @ApplicationContext).
+Intuición: un consumidor de animales puede aceptar gatos; un Consumer<Animal> puede usarse donde se espera Consumer<Cat>.
 
-Usos comunes:
-- Inflar layouts: LayoutInflater.from(context)
-- Acceder a strings y dimensiones: context.getString(R.string.app_name)
-- startActivity, registerReceiver (con cuidado en versiones nuevas)
-- getSystemService(Context.CONNECTIVITY_SERVICE) etc.
+Comparación:
+- out T: productor, covariante (List como solo lectura de E).
+- in T: consumidor, contravariante.
+- Sin modificador: invariante (T en in y out), necesario para estructuras mutables como MutableList<T>.
 
-En Compose: LocalContext.current como CompositionLocal.
-
-Hilt inyecta @ApplicationContext Context para capas que necesitan contexto sin acoplar a Activity.
+En Android y Kotlin estándar:
+- Comparable<in T> en la biblioteca (simplificado conceptualmente).
+- Observers y listeners que reciben eventos de tipo T.
+- Handlers que procesan mensajes de un tipo base.
 
 Cuándo usarlo:
-Siempre que interactúes con recursos Android, servicios del sistema o arranques de componentes. Elige el Context de menor alcance necesario (Activity para diálogos con tema de Activity, Application para caches de app).
+Interfaces que solo reciben T y no lo producen como tipo principal de retorno. Menos frecuente que out en APIs de lectura, pero aparece en diseño de frameworks y comparadores.
 
 Ejemplo:
-class TokenStorage @Inject constructor(
-    @ApplicationContext private val context: Context
-) {
-    private val prefs = context.getSharedPreferences("auth", Context.MODE_PRIVATE)
-    fun saveToken(token: String) = prefs.edit().putString("token", token).apply()
+interface Consumer<in T> {
+    fun consume(item: T)
 }
 
-@Composable
-fun MyScreen() {
-    val context = LocalContext.current
-    Button(onClick = {
-        context.startActivity(Intent(context, SettingsActivity::class.java))
-    }) { Text("Ajustes") }
+open class Animal
+class Cat : Animal()
+
+fun registerCatHandler(handler: Consumer<Cat>) { ... }
+
+val animalConsumer: Consumer<Animal> = object : Consumer<Animal> {
+    override fun consume(item: Animal) { println(item) }
 }
+registerCatHandler(animalConsumer) // OK: Consumer<Animal> es Consumer<Cat>
 
 Consejo para entrevista:
-Explica jerarquía y fugas por retener Activity. Menciona applicationContext vs Activity context y @ApplicationContext en Hilt.
+Empareja out (productor) con in (consumidor). PECS en Java: Consumer super (in). Si mezclas in y out en la misma interfaz mutable, suele ser invariante.

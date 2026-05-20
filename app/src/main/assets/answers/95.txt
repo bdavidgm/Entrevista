@@ -1,14 +1,12 @@
 Concepto:
-ViewHolder en RecyclerView es el objeto que mantiene referencias a las Views de un ítem de lista (findViewById cacheado). RecyclerView recicla ViewHolders al hacer scroll para evitar inflar XML repetidamente y mejorar rendimiento y memoria.
+ANR (Application Not Responding) ocurre cuando el hilo principal no procesa eventos de entrada o el broadcast receiver en ~5 segundos (varía por tipo). El sistema muestra diálogo "La aplicación no responde" y puede cerrar el proceso.
 
 Explicación detallada:
-Adapter onCreateViewHolder infla layout una vez por tipo de vista; onBindViewHolder asocia datos al holder existente. Sin ViewHolder (anti-patrón antiguo ListView) cada scroll llamaba findViewById costoso.
+Causas: bloqueo en onCreate, JSON parsing enorme en UI, deadlock en synchronized main, operación síncrona de BD en main (si permitida), bucle infinito en UI thread. Input dispatching ANR: usuario toca pero main está ocupado.
 
-ViewTypes múltiples cuando hay layouts distintos (header, item, ad). DiffUtil calcula diferencias y anima cambios eficientemente con ListAdapter.
+BroadcastReceiver onReceive tiene límite ~10s en foreground; debe delegar trabajo a goAsync o WorkManager. Foreground service tiene reglas propias.
 
-En Compose, LazyColumn con key estable cumple rol similar de reciclaje interno; conceptualmente sigue siendo pregunta clásica de entrevista Views.
-
-Pool de scrap views limitado; demasiados view types reduce reciclaje.
+Diagnóstico: traces ANR en Play Console, bugreport, StrictMode. Solución: mover trabajo, reducir trabajo en onCreate (App Startup ligero), paginar listas.
 
 En el contexto de proyectos Android reales, combina esta idea con las guías oficiales de Android Developers y con métricas de calidad (crashes, ANR, Vitals) cuando aplique. En code review, pregunta siempre por ciclo de vida, testabilidad y si la solución escala cuando el equipo crece.
 
@@ -23,22 +21,20 @@ Durante la entrevista, estructura la respuesta en definición, ejemplo concreto 
 Para profundizar tras la entrevista, revisa documentación oficial, codelabs y el código fuente de tu propio proyecto Entrevista aplicando el concepto en un flujo mínimo reproducible. La práctica deliberada con tests unitarios refuerza la confianza al explicar el tema en viva voz.
 
 Cuándo usarlo:
-RecyclerView en código legacy. En Compose explica equivalencia LazyColumn + keys.
+Nunca bloquear main; aplica esta regla en todo el ciclo de vida de la Activity y en callbacks de UI. Prefetch y skeleton UI mientras carga async. Para tareas largas: WorkManager o FGS con notificación.
 
 Ejemplo:
-class ProductVH(private val binding: ItemProductBinding) :
-    RecyclerView.ViewHolder(binding.root) {
-    fun bind(item: Product) {
-        binding.title.text = item.name
-    }
+// Provoca ANR
+override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
+    val all = database.dao().getAllSync() // miles de filas en main
 }
 
-class ProductAdapter : ListAdapter<Product, ProductVH>(DIFF) {
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) =
-        ProductVH(ItemProductBinding.inflate(LayoutInflater.from(parent.context), parent, false))
-    override fun onBindViewHolder(holder: ProductVH, position: Int) =
-        holder.bind(getItem(position))
+// Correcto
+lifecycleScope.launch {
+    val all = withContext(Dispatchers.IO) { database.dao().getAll() }
+    adapter.submitList(all)
 }
 
 Consejo para entrevista:
-Explica reciclaje y DiffUtil. Pregunta: ¿cuántas inflaciones? Una por tipo visible aproximadamente, no una por ítem de datos.
+Cita tiempos aproximados (5s input). Diferencia ANR vs crash. Menciona Play Vitals ANR rate.

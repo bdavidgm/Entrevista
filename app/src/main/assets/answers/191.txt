@@ -1,34 +1,49 @@
 Concepto:
-Android Studio es el IDE oficial basado en IntelliJ IDEA, mantenido por Google, optimizado para desarrollo Android con SDK integrado, emulador, Layout Inspector, Profiler y soporte first-class de Kotlin y Jetpack Compose.
+AudioManager gestiona el flujo de audio del dispositivo: volumen por stream (música, ring, alarma), modo (normal, vibración, silencio), audio focus y rutas (altavoz, auricular, Bluetooth).
 
 Explicación detallada:
-Razones por las que es el estándar de la industria:
+Streams principales (STREAM_*):
+- STREAM_MUSIC: media, juegos.
+- STREAM_RING / STREAM_NOTIFICATION / STREAM_ALARM.
+- STREAM_VOICE_CALL: llamadas.
 
-1) Integración con el ecosistema Android: SDK Manager para plataformas y herramientas build; AVD Manager para emuladores con Google Play; Device Manager para dispositivos físicos; Logcat filtrado por app; APK Analyzer y App Bundle tools.
+Métodos:
+- setStreamVolume / getStreamVolume / getMaxVolume
+- adjustStreamVolume(ADJUST_RAISE/LOWER, flags)
+- getRingerMode / setRingerMode (puede estar restringido)
+- requestAudioFocus / abandonAudioFocus (OnAudioFocusChangeListener): pausar cuando otra app reproduce o hay llamada.
 
-2) Herramientas de UI: Layout Editor para XML (aunque Compose predomina), Compose Preview con @Preview multiparamétrico, Animation Preview, tema en tiempo real.
+Modo comunicación: MODE_IN_COMMUNICATION para VoIP; setSpeakerphoneOn; routing Bluetooth SCO para headsets.
 
-3) Build y dependencias: Gradle integrado, asistente de dependencias, variantes build (debug/release), product flavors visualizados, sincronización con version catalog (libs.versions.toml).
+MediaPlayer/ExoPlayer integran audio focus automáticamente si configuras AudioAttributes (USAGE_MEDIA, CONTENT_TYPE_MUSIC).
 
-4) Calidad y rendimiento: Android Profiler (CPU, memoria, energía, red); Lint con reglas Android; Baseline Profile generator; emulador con snapshots y sensores simulados.
-
-5) Productividad Kotlin: refactorings, nullability, coroutines debugger limitado, plantillas Activity/Compose, Navigation safe args plugin.
-
-6) Testing: ejecutar unit/instrumented tests, emulador headless en CI (aunque CI suele usar línea de comandos ./gradlew).
-
-Alternativas (VS Code, Fleet) carecen de integración profunda con emulador, layout tools y asistentes oficiales. Para entrevistas, reconoce que el build es Gradle y puede automatizarse sin IDE, pero el desarrollo diario Android casi siempre es Android Studio.
+Do Not Disturb: NotificationManager.Policy puede afectar si suena notificación.
 
 Cuándo usarlo:
-- Desarrollo Android nativo profesional.
-- Depuración visual, perfiles de rendimiento, diseño Compose/XML.
-- Publicación: Generate Signed Bundle, Play App Signing asistente.
+- App de música/podcast: focus y pausa en llamadas entrantes.
+- Ajustar volumen solo de tu stream con UI custom (raro).
+- VoIP: gestión de modo y altavoz.
+
+Evitar: manipular ringer global sin permiso o sin UX clara; ignorar audio focus (dos apps sonando).
 
 Ejemplo:
-// No hay “código” obligatorio; flujo típico en proyecto:
-// File → New → Activity → Empty Compose Activity
-// Build → Make Project (Ctrl+F9)
-// Run → app en emulador API 34
-// View → Tool Windows → App Inspection (DB, DataStore en versiones recientes)
+val am = context.getSystemService(AudioManager::class.java)
+val focusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+    .setAudioAttributes(
+        AudioAttributes.Builder()
+            .setUsage(AudioAttributes.USAGE_MEDIA)
+            .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+            .build()
+    )
+    .setOnAudioFocusChangeListener { change ->
+        when (change) {
+            AudioManager.AUDIOFOCUS_LOSS -> player.pause()
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> player.pause()
+            AudioManager.AUDIOFOCUS_GAIN -> player.play()
+        }
+    }
+    .build()
+am.requestAudioFocus(focusRequest)
 
 Consejo para entrevista:
-Menciona herramientas concretas que usas: Logcat, Profiler, Layout/Compose Preview, Device File Explorer, AGP Upgrade Assistant. Di que conoces Gradle por línea de comandos para CI. No critiques otros IDEs sin motivo; centra “oficial + integración + soporte Compose/Kotlin”.
+Explica audio focus como concepto central, streams distintos, y ExoPlayer para reproducción real. Menciona que no necesitas AudioManager para sonidos UI cortos (SoundPool). Conecta con foreground service tipo mediaPlayback.

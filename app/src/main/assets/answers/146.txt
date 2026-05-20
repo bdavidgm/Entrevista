@@ -1,48 +1,43 @@
 Concepto:
-Un test de integración verifica que varios componentes reales o casi reales trabajan juntos correctamente (varias capas, BD, red simulada, DI), a diferencia del test unitario que aísla una unidad con mocks.
+catch en Flow es un operador que intercepta excepciones lanzadas en operadores upstream y permite emitir valores de recuperación o re-lanzar, sin cancelar necesariamente todo el collector si manejas el error.
 
 Explicación detallada:
-Pirámide de testing en Android:
-- Unit tests (JVM): ViewModel, UseCase, mappers — rápidos, MockK/fakes.
-- Integration tests: Repository + Room en memoria, DAO + migraciones, módulos Hilt de test.
-- Instrumented/UI tests (androidTest): Espresso, Compose Test, dispositivo/emulador.
+flow {
+    emit(api.load())
+}.catch { e ->
+    emit(emptyList()) // valor fallback
+    // o log y no emitir
+}.collect { list -> updateUi(list) }
 
-Ejemplos de integración:
-- Room con base in-memory y verificar que Repository persiste y lee.
-- Retrofit con MockWebServer + Repository real.
-- WorkManager TestListenableWorkerBuilder.
+Comportamiento:
+- Solo captura excepciones del upstream, no del propio collector (las del collect van fuera).
+- Es terminal en el sentido de manejo de error en la cadena; después de catch puedes usar onCompletion.
 
-Características:
-- Más lentos y frágiles que unitarios.
-- Menos mocks; más fidelidad al comportamiento de producción.
-- Requieren androidTest si usan Context real o Room instrumentado (Room también permite JVM con Robolectric en algunos casos).
+Otros operadores relacionados:
+- retry(n) { cause -> delay(1000); true }
+- onEach, onCompletion { cause -> } para logging.
+
+En ViewModel:
+repository.users()
+    .catch { e -> _uiState.value = UiState.Error(e.message) }
+    .collect { _uiState.value = UiState.Success(it) }
+
+Diferencia con try/catch alrededor de collect:
+- catch en Flow integra con operadores y múltiples emisiones.
+- try/catch en collect captura también errores del lambda collect.
 
 Cuándo usarlo:
-Validar contratos entre capas, migraciones SQL, serialización JSON real, configuración de módulos DI de integración.
+Streams largos donde quieres degradación graceful (lista vacía, mensaje de error en UiState) sin tumbar la corrutina entera.
 
 Ejemplo:
-@RunWith(AndroidJUnit4::class)
-class UserDaoIntegrationTest {
-    private lateinit var db: AppDatabase
-    private lateinit var dao: UserDao
-
-    @Before
-    fun setup() {
-        val context = ApplicationProvider.getApplicationContext<Context>()
-        db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java)
-            .allowMainThreadQueries()
-            .build()
-        dao = db.userDao()
-    }
-
-    @Test
-    fun insertAndRead() = runBlocking {
-        dao.insert(User("1", "Ana"))
-        val users = dao.getAll()
-        assertEquals(1, users.size)
-        assertEquals("Ana", users[0].name)
-    }
-}
+fun observeUser(id: String): Flow<User> = flow {
+    emit(api.getUser(id))
+}.flowOn(Dispatchers.IO)
+ .retry(2) { it is IOException }
+ .catch { e ->
+     if (e is HttpException && e.code() == 404) emit(User.guest())
+     else throw e
+ }
 
 Consejo para entrevista:
-Define integración vs unitario vs UI. Menciona Room in-memory, MockWebServer y que no todo debe ser integración por velocidad CI.
+Contrasta catch vs try en collect. Menciona retry y que las excepciones en collect no las atrapa catch del upstream anterior sin relanzar.

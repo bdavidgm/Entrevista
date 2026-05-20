@@ -1,22 +1,22 @@
 Concepto:
-MVVM (Model-View-ViewModel) es un patrón de arquitectura de presentación donde la View solo muestra datos y reenvía interacciones, el ViewModel expone estado y lógica de UI sin conocer Android Views, y el Model representa datos y reglas de negocio. En Android moderno se combina con Jetpack ViewModel, Flow y Compose o XML.
+El patrón ViewModel en Compose separa la lógica de presentación y el estado observable de la UI declarativa: el Composable solo lee estado y envía eventos; el ViewModel sobrevive cambios de configuración y expone StateFlow o uiState para recomposición vía collectAsStateWithLifecycle.
 
 Explicación detallada:
-La View (Activity, Fragment o Composable) observa el ViewModel vía LiveData, StateFlow o uiState. El ViewModel sobrevive rotaciones, obtiene datos del Repository y transforma eventos de usuario en actualizaciones de estado. No debe referenciar Context de UI ni navegar directamente en código limpio: los eventos de navegación se exponen como efectos secundarios observables o callbacks inyectados en capa UI.
+En Compose no hay vínculo automático oculto: conectas el ViewModel con viewModel() o hiltViewModel() dentro del Composable o lo recibes desde Activity o NavBackStackEntry. El ViewModel expone un UiState inmutable (data class) o StateFlow; la UI hace val state by viewModel.uiState.collectAsStateWithLifecycle().
 
-El Model no es solo una clase de datos: incluye entidades de dominio, use cases y el repository que abstrae fuentes (red, BD, preferencias). MVVM no define capas de dominio completas como Clean Architecture, pero la separación View-ViewModel-Model ya mejora testabilidad: puedes unit-testear ViewModel con repositorios fake sin Espresso.
+Eventos de una sola vez (snackbar, navegación) no deben modelarse como State permanente: usa Channel, SharedFlow con replay 0, o patrones de evento consumido para evitar repetición tras rotación. La entrada del usuario llega con funciones onEvent(UserAction) que actualizan estado con copy() inmutable.
 
-Flujo típico: usuario pulsa "actualizar" -> View llama viewModel.refresh() -> ViewModel lanza coroutine, llama repository -> emite loading/success/error en StateFlow -> View recomponer o actualiza UI. Binding unidireccional: estado baja, eventos suben.
+hiltViewModel() requiere @HiltViewModel y Activity o destino con @AndroidEntryPoint. El scope del ViewModel es el NavBackStackEntry o la Activity según dónde se solicite; dos pantallas del mismo grafo pueden compartir ViewModel con navGraphViewModels.
 
-Comparación en entrevista: MVP usa Presenter con referencia a View (más acoplamiento); MVI usa intents y reduce a un solo state inmutable con ciclo cerrado; MVVM es más flexible y el estándar de facto con Jetpack. MVVM con UiState data class evita múltiples LiveData sueltos.
+Testing: el ViewModel se prueba con TestDispatcher sin Compose; la UI con ComposeTestRule y ViewModel fake. Nunca guardes Context ni referencias Composable en el ViewModel: provoca memory leaks y código no testeable.
 
-Anti-patrones: "God ViewModel" con toda la lógica de la app, lógica de negocio compleja sin use cases, y exponer MutableStateFlow público. Usa funciones y StateFlow de solo lectura.
+State hoisting frente a ViewModel: hoisting para componentes reutilizables sin lógica de negocio; ViewModel cuando hay coroutines, repository o supervivencia de configuración. derivedStateOf en la UI para derivar filtros del state expuesto sin duplicar lógica en el ViewModel si es puramente presentacional.
 
-En el contexto de proyectos Android reales, combina esta idea con las guías oficiales de Android Developers y con métricas de calidad (crashes, ANR, Vitals) cuando aplique. En code review, pregunta siempre por ciclo de vida, testabilidad y si la solución escala cuando el equipo crece.
+Unidirectional Data Flow (UDF) encaja naturalmente: eventos suben al ViewModel, estado baja como uiState. Compose solo renderiza state; no llama repository directamente. Esto simplifica previews con datos fake pasando parámetros al Composable sin ViewModel.
 
-Durante la entrevista, estructura la respuesta en definición, ejemplo concreto de tu experiencia o proyecto demo, y trade-offs frente a alternativas. Mencionar versiones recientes de API o biblioteca (Material3, Paging 3, Hilt 2.x) demuestra que sigues el ecosistema, sin necesidad de memorizar números de versión exactos.
+Preview y testing: extrae Screen(state, onEvent) stateless y mantén ProductListScreen como wrapper con hiltViewModel. Los @Preview en Android Studio aceleran iteración UI.
 
-Para profundizar tras la entrevista, revisa documentación oficial, codelabs y el código fuente de tu propio proyecto Entrevista aplicando el concepto en un flujo mínimo reproducible. La práctica deliberada con tests unitarios refuerza la confianza al explicar el tema en viva voz.
+Errores comunes en entrevista: exponer MutableStateFlow público, olvidar collectAsStateWithLifecycle (collect sin lifecycle recomponer en background), y poner lógica de Android (Toast, navegación) dentro del ViewModel sin abstracción de efectos.
 
 Preguntas de seguimiento frecuentes en entrevistas para este tema incluyen comparación con alternativas del ecosistema, implicaciones en testing y en el ciclo de vida de Android, y cómo lo aplicarías en una app modular con varios flavors. Si el entrevistador pide profundidad, menciona herramientas de diagnóstico (Profiler, Lint, StrictMode, Layout Inspector) y cómo validarías en CI que no hay regresiones.
 
@@ -25,20 +25,33 @@ En proyectos reales, documenta decisiones en ADR breves o en README del módulo 
 Relaciona este concepto con los demás bloques del manifiesto Entrevista (arquitectura, corrutinas, seguridad, build) para demostrar visión de sistema completo, no conocimiento aislado de una API.
 
 Cuándo usarlo:
-Proyectos Android medianos y grandes, equipos que usan Jetpack y testing de presentación. Es el patrón por defecto recomendado por Google para apps nuevas. Para flujos muy predecibles con muchos estados discretos, MVI puede ser alternativa.
+Siempre que la pantalla tenga lógica, IO o estado que sobreviva rotación. Componentes puros sin red ni persistencia pueden usar solo remember y callbacks con state hoisting.
 
 Ejemplo:
-data class HomeUiState(val items: List<Item> = emptyList(), val loading: Boolean = false)
+@HiltViewModel
+class ProductListViewModel @Inject constructor(
+    private val repo: ProductRepository
+) : ViewModel() {
+    private val _uiState = MutableStateFlow(ProductListUiState())
+    val uiState: StateFlow<ProductListUiState> = _uiState.asStateFlow()
 
-class HomeViewModel(private val repo: ItemRepository) : ViewModel() {
-    private val _state = MutableStateFlow(HomeUiState())
-    val state = _state.asStateFlow()
+    fun load() = viewModelScope.launch {
+        _uiState.update { it.copy(loading = true) }
+        runCatching { repo.getProducts() }
+            .onSuccess { list -> _uiState.update { it.copy(loading = false, items = list) } }
+            .onFailure { e -> _uiState.update { it.copy(loading = false, error = e.message) } }
+    }
+}
 
-    fun onRefresh() = viewModelScope.launch {
-        _state.update { it.copy(loading = true) }
-        _state.update { it.copy(loading = false, items = repo.fetch()) }
+@Composable
+fun ProductListScreen(vm: ProductListViewModel = hiltViewModel()) {
+    val state by vm.uiState.collectAsStateWithLifecycle()
+    LaunchedEffect(Unit) { vm.load() }
+    when {
+        state.loading -> CircularProgressIndicator()
+        else -> LazyColumn { items(state.items) { Text(it.name) } }
     }
 }
 
 Consejo para entrevista:
-Dibuja el flujo unidireccional y menciona que ViewModel no conoce View. Pregunta clásica: diferencia MVP/MVI/MVVM en una frase cada uno. Evita decir que MVVM obliga a LiveData; StateFlow es igualmente válido.
+Enfatiza UiState inmutable, eventos one-shot, scope de hiltViewModel, y que el ViewModel no conoce Composable. La comparación con MVP o MVI suele ser pregunta de seguimiento natural.

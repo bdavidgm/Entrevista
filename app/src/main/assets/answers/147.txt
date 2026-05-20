@@ -1,45 +1,48 @@
 Concepto:
-MainDispatcherRule (o MainCoroutineRule) es una regla de JUnit que sustituye Dispatchers.Main por un TestDispatcher en tests unitarios, permitiendo controlar y avanzar corrutinas sin depender del hilo principal de Android.
+Un test de integración verifica que varios componentes reales o casi reales trabajan juntos correctamente (varias capas, BD, red simulada, DI), a diferencia del test unitario que aísla una unidad con mocks.
 
 Explicación detallada:
-ViewModels y clases que usan Dispatchers.Main fallan en JVM puro porque Main no está definido.
+Pirámide de testing en Android:
+- Unit tests (JVM): ViewModel, UseCase, mappers — rápidos, MockK/fakes.
+- Integration tests: Repository + Room en memoria, DAO + migraciones, módulos Hilt de test.
+- Instrumented/UI tests (androidTest): Espresso, Compose Test, dispositivo/emulador.
 
-Solución kotlinx-coroutines-test:
-@get:Rule
-val mainDispatcherRule = MainDispatcherRule()
+Ejemplos de integración:
+- Room con base in-memory y verificar que Repository persiste y lee.
+- Retrofit con MockWebServer + Repository real.
+- WorkManager TestListenableWorkerBuilder.
 
-Implementación típica con UnconfinedTestDispatcher o StandardTestDispatcher:
-- Dispatchers.setMain(dispatcher) en starting
-- Dispatchers.resetMain() en finished
-
-Con StandardTestDispatcher:
-- advanceUntilIdle() para ejecutar corrutinas pendientes.
-- runCurrent() para un paso.
-
-En tests de ViewModel:
-@Test
-fun loadsData() = runTest {
-    val vm = MyViewModel(fakeRepo)
-    advanceUntilIdle()
-    assertEquals(UiState.Success, vm.state.value)
-}
-
-Alternativa: inyectar Dispatcher en producción (@MainDispatcher Qualifier en Hilt) y pasar TestDispatcher en test sin regla global.
+Características:
+- Más lentos y frágiles que unitarios.
+- Menos mocks; más fidelidad al comportamiento de producción.
+- Requieren androidTest si usan Context real o Room instrumentado (Room también permite JVM con Robolectric en algunos casos).
 
 Cuándo usarlo:
-Todo test JVM que ejecute viewModelScope, withContext(Main) o Dispatchers.Main explícito.
+Validar contratos entre capas, migraciones SQL, serialización JSON real, configuración de módulos DI de integración.
 
 Ejemplo:
-class MainDispatcherRule(
-    private val testDispatcher: TestDispatcher = UnconfinedTestDispatcher()
-) : TestWatcher() {
-    override fun starting(description: Description) {
-        Dispatchers.setMain(testDispatcher)
+@RunWith(AndroidJUnit4::class)
+class UserDaoIntegrationTest {
+    private lateinit var db: AppDatabase
+    private lateinit var dao: UserDao
+
+    @Before
+    fun setup() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java)
+            .allowMainThreadQueries()
+            .build()
+        dao = db.userDao()
     }
-    override fun finished(description: Description) {
-        Dispatchers.resetMain()
+
+    @Test
+    fun insertAndRead() = runBlocking {
+        dao.insert(User("1", "Ana"))
+        val users = dao.getAll()
+        assertEquals(1, users.size)
+        assertEquals("Ana", users[0].name)
     }
 }
 
 Consejo para entrevista:
-Explica por qué falla Main en unit tests. Menciona runTest, advanceUntilIdle y opción de inyectar dispatchers (mejor diseño).
+Define integración vs unitario vs UI. Menciona Room in-memory, MockWebServer y que no todo debe ser integración por velocidad CI.

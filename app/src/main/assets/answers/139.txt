@@ -1,46 +1,47 @@
 Concepto:
-SavedStateHandle es un contenedor de Bundle-like que sobrevive a muerte de proceso y rotación de configuración, inyectado en ViewModel para guardar y restaurar estado de navegación o argumentos procesados.
+Una migración en Room es el mecanismo para actualizar el esquema de la base de datos local cuando incrementas version en @Database sin perder datos del usuario (ALTER TABLE, nuevas tablas, índices).
 
 Explicación detallada:
-Proporcionado por lifecycle-viewmodel-savedstate.
-- viewModels() y hiltViewModel() pueden recibir SavedStateHandle.
-- get/set con claves String; soporte LiveData y StateFlow helpers.
+@Database(version = 2, ...)
+Al subir version, Room exige Migration object o fallback destructivo.
 
-Persistencia:
-- Sobrevive rotación (ViewModel en store).
-- Sobrevive process death si el sistema mató el proceso y restauró la Activity con saved state (no garantiza todos los casos; datos críticos también en BD).
+Migration explícita:
+val MIGRATION_1_2 = object : Migration(1, 2) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE user ADD COLUMN avatar TEXT")
+    }
+}
 
-Uso típico:
-- Restaurar scroll position, texto de búsqueda, tab seleccionado.
-- Leer argumentos de Navigation: savedStateHandle.get<String>("userId") con navArgs.
+Room.databaseBuilder(context, AppDatabase::class.java, "db")
+    .addMigrations(MIGRATION_1_2)
+    .build()
 
-API:
-savedStateHandle["query"] = "kotlin"
-val query = savedStateHandle.get<String>("query") ?: ""
+Auto Migration (Room 2.4+):
+- @AutoMigration(from = 1, to = 2) con esquemas exportados si cambios son compatibles.
+- Especificar @DeleteTable, @RenameColumn cuando haga falta.
 
-getStateFlow("key", initial) para exponer a UI reactiva.
+Destructive migration:
+- fallbackToDestructiveMigration() borra BD en upgrade — solo desarrollo o datos cacheables.
 
-Límites de tamaño: como Bundle, no guardar objetos enormes; usar IDs y cargar desde repo.
+Export schema:
+- room { schemaDirectory ... } para revisar diffs en PR y CI.
+
+Testing:
+- MigrationTestHelper en androidTest ejecuta migraciones contra versión anterior.
 
 Cuándo usarlo:
-Estado de UI que debe sobrevivir rotación/process death pero no justifica tabla en Room. Complementa UiState en memoria del ViewModel.
+Cada cambio de entidades, índices o columnas en producción. Nunca subir version sin plan de migración salvo datos desechables.
 
 Ejemplo:
-@HiltViewModel
-class SearchViewModel @Inject constructor(
-    private val savedStateHandle: SavedStateHandle,
-    private val repository: SearchRepository
-) : ViewModel() {
-
-    private val queryFlow = savedStateHandle.getStateFlow("query", "")
-    val results = queryFlow.flatMapLatest { q ->
-        repository.search(q)
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
-
-    fun onQueryChange(q: String) {
-        savedStateHandle["query"] = q
+val MIGRATION_2_3 = object : Migration(2, 3) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS bookmark (" +
+            "id TEXT NOT NULL PRIMARY KEY, " +
+            "userId TEXT NOT NULL)"
+        )
     }
 }
 
 Consejo para entrevista:
-Diferencia SavedStateHandle vs Room vs rememberSaveable en Compose. Menciona process death y getStateFlow.
+Contrasta migración explícita vs destructive. Menciona Auto Migration, export schema y tests de migración. Error típico: IllegalStateException schema changed sin migration.

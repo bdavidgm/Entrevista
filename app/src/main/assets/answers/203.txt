@@ -1,39 +1,41 @@
 Concepto:
-MVC en Android clásico asigna Model (datos), View (layouts/widgets) y Controller (Activity/Fragment) que recibe eventos, actualiza Model y refresca View; en la práctica Activity suele acumular demasiada lógica (“fat Activity”).
+MVP (Model-View-Presenter) separa la UI pasiva (View) de la lógica de presentación (Presenter) que orquesta el Model; el Presenter no conoce detalles de Android framework salvo contrato con View.
 
 Explicación detallada:
-Variante Android informal:
-- Model: POJOs, SQLite, API clients, repositorios.
-- View: XML layouts + widgets; a veces se considera que Activity es parte de la View.
-- Controller: Activity/Fragment maneja onClick, AsyncTask/coroutines, navegación, permisos.
+Roles:
+- Model: datos y reglas de negocio (repositorio, API, Room).
+- View: Activity/Fragment que implementa interfaz IView (showLoading, showError, renderList); solo UI y delega eventos.
+- Presenter: recibe eventos (onLoginClicked), llama Model, actualiza View en hilo principal; en tests se mockea View y Model.
 
-Problema: sin disciplina, el Controller crece con cientos de líneas mezclando UI, red y estado. Testing difícil sin extraer capas.
+Flujo login: View.notify click → Presenter.login(user, pass) → Model.authenticate → callback → Presenter.view.hideLoading(); view.navigateHome() o view.showError().
 
-Evolución en Google samples: MVP luego MVVM con ViewModel que sobrevive rotación y expone UI state observable.
+Ventajas: testabilidad del Presenter sin instrumentación; separación clara en proyectos pre-Architecture Components.
 
-MVC puro (como en web server-side) no mapea 1:1 porque Activity es controlador Y punto de entrada del sistema.
+Desventajas: mucho boilerplate (interfaces View/Presenter); Presenter debe desacoplarse del ciclo de vida (memory leaks si View retiene Activity); duplicación con configuración changes si no usas ViewModel.
+
+Hoy MVVM + ViewModel + StateFlow reemplaza MVP en la mayoría de apps nuevas; MVP sigue en entrevistas y código legacy.
 
 Cuándo usarlo:
-- Entender críticas históricas al “todo en Activity”.
-- Comparar en entrevistas con MVVM/MVI/Clean.
-- Refactorizar fat Activity hacia capas.
+- Mantenimiento de apps antiguas con MVP.
+- Entender evolución hacia MVVM/MVI.
+- Equipos que testean lógica de UI sin Robolectric pesado (Presenter unit tests).
 
 Ejemplo:
-// Anti-patrón MVC acoplado
-class UserActivity : AppCompatActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        binding.btnLoad.setOnClickListener {
-            lifecycleScope.launch {
-                binding.progress.visible()
-                val users = api.getUsers() // Model+red en Activity
-                binding.list.adapter = Adapter(users) // View update
-                binding.progress.gone()
-            }
+interface LoginView {
+    fun showError(msg: String)
+    fun openHome()
+}
+class LoginPresenter(
+    private val view: LoginView,
+    private val repo: AuthRepository
+) {
+    fun onLogin(email: String, pass: String) {
+        repo.login(email, pass) { result ->
+            if (result.isSuccess) view.openHome()
+            else view.showError("Credenciales inválidas")
         }
     }
 }
-// Mejor: ViewModel como presentación, Activity solo observa state
 
 Consejo para entrevista:
-Admite que Android MVC es ambiguo y suele degenerar en fat Activity. Explica cómo migrarías a MVVM (ViewModel, Repository, unidirectional data). No defiendas MVC para apps nuevas.
+Contrasta MVP con MVVM: Presenter vs ViewModel, View activa vs pasiva, supervivencia a rotación (ViewModel + SavedState). Di que conoces MVP pero implementarías MVVM con UDF en proyectos nuevos.

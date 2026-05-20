@@ -1,14 +1,14 @@
 Concepto:
-withContext es una función suspend que cambia el CoroutineContext (típicamente el Dispatcher) para el bloque que ejecuta y restaura el contexto anterior al terminar. Permite escribir código secuencial que corre en IO o Main según la fase sin bloquear hilos.
+CoroutineScope define el ámbito y ciclo de vida de las coroutines hijas: agrupa jobs y aplica structured concurrency (cancelación en cascada). En Android, scopes típicos son viewModelScope, lifecycleScope y applicationScope.
 
 Explicación detallada:
-withContext(Dispatchers.IO) { heavyWork() } mueve la ejecución al pool IO y devuelve el resultado al caller. Tras el bloque, vuelves al dispatcher del scope padre (por ejemplo Main si launch fue en viewModelScope con Main implícito en actualización UI).
+Un scope = CoroutineContext (Job + Dispatcher + opcional name). Al cancelar el Job del scope, todas las coroutines hijas reciben cancelación cooperativa. viewModelScope usa SupervisorJob en implementación que permite un hijo fallar sin cancelar hermanos según configuración.
 
-Uso típico en ViewModel: launch en viewModelScope (Default o Main) -> withContext(IO) para red/BD -> actualizar StateFlow (thread-safe con update). No mezcles Dispatchers.IO en cada línea si un bloque entero es IO.
+lifecycleScope en Activity/Fragment cancela al destruir DESTROYED. repeatOnLifecycle(Lifecycle.State.STARTED) para collect Flow solo cuando visible.
 
-withContext es preferible a launch anidado cuando necesitas el resultado de forma secuencial. Para paralelo usa async.
+No crear scopes globales sin Job vinculado a lifecycle. CoroutineScope(Dispatchers.Main + job) manual requiere cancelar en onDestroy.
 
-NonCancellable: contexto especial para flush de datos tras cancelación del usuario. test: StandardTestDispatcher con runTest.
+Testing: TestScope y runTest controlan tiempo virtual. backgroundScope en runTest para trabajo async.
 
 En el contexto de proyectos Android reales, combina esta idea con las guías oficiales de Android Developers y con métricas de calidad (crashes, ANR, Vitals) cuando aplique. En code review, pregunta siempre por ciclo de vida, testabilidad y si la solución escala cuando el equipo crece.
 
@@ -23,17 +23,21 @@ Durante la entrevista, estructura la respuesta en definición, ejemplo concreto 
 Para profundizar tras la entrevista, revisa documentación oficial, codelabs y el código fuente de tu propio proyecto Entrevista aplicando el concepto en un flujo mínimo reproducible. La práctica deliberada con tests unitarios refuerza la confianza al explicar el tema en viva voz.
 
 Cuándo usarlo:
-Cambiar dispatcher para secciones concretas de trabajo suspend. Evita withContext(Main) innecesario si ya estás en Main y solo actualizas state.
+Siempre que uses launch/async; nunca GlobalScope en features de app. Elige scope según duración del trabajo: pantalla vs app vs test.
 
 Ejemplo:
-suspend fun fetchAndMap(): List<Item> = withContext(Dispatchers.IO) {
-    api.getItems().map { it.toDomain() }
+class MyViewModel : ViewModel() {
+    fun save() = viewModelScope.launch {
+        repository.save()
+    }
 }
 
-viewModelScope.launch {
-    val items = fetchAndMap()
-    _uiState.update { it.copy(items = items) }
+// Activity
+lifecycleScope.launch {
+    repeatOnLifecycle(Lifecycle.State.STARTED) {
+        viewModel.uiState.collect { render(it) }
+    }
 }
 
 Consejo para entrevista:
-Contrasta withContext vs launch anidado. Menciona que es suspend y devuelve valor. No confundas con flowOn (para Flow).
+Lista scopes Android y cuándo se cancelan. Pregunta viewModelScope vs lifecycleScope: ViewModel sobrevive rotación; lifecycleScope no para la misma Activity recreada igual... ViewModel persiste datos, lifecycleScope recolecta UI.

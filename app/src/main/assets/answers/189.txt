@@ -1,47 +1,40 @@
 Concepto:
-Vibrator (y VibratorManager en API 31+) produce feedback háptico: vibraciones simples, patrones o efectos predefinidos (VibrationEffect) según capacidades del hardware.
+PowerManager controla energía del dispositivo (modo Doze, idle, interactivo); WakeLock mantiene CPU o pantalla activa evitando sleep, y debe usarse con extrema cautela por impacto en batería.
 
 Explicación detallada:
-Obtención:
-- context.getSystemService(Vibrator::class.java)
-- API 31+: vibratorManager.defaultVibrator
+PowerManager ofrece:
+- isInteractive / isDeviceIdleMode / isPowerSaveMode: consultar estado.
+- wakeLock = powerManager.newWakeLock(PARTIAL_WAKE_LOCK, "tag")
+  acquire(timeout) / release() — PARTIAL mantiene CPU; SCREEN_BRIGHT/DIM obsoletos para mantener pantalla (usa FLAG_KEEP_SCREEN_ON en Window).
 
-Permiso VIBRATE en manifest (normal, concedido en install).
+Doze (Android 6+): agrupa red y jobs; App Standby limita apps poco usadas. No “despertar” con WakeLock para sync rutinario; usa WorkManager.
 
-Evolución:
-- vibrate(long milliseconds) — legacy.
-- vibrate(VibrationEffect) API 26+: createOneShot, createWaveform, createPredefined (EFFECT_CLICK, DOUBLE_CLICK, TICK).
-- Android 12+: VibrationAttributes (USAGE_TOUCH, USAGE_NOTIFICATION) para contexto semántico.
-- Compose: LocalHapticFeedback.performHapticFeedback (no siempre usa Vibrator directamente).
+WakeLock legítimo: reproductor de música con foreground service, navegación turn-by-turn, descarga crítica con notificación visible. Siempre timeout en acquire(long) y release en finally.
 
-hasVibrator() y areEffectsSupported() evitan fallos en tablets sin motor.
+Desde Android 12, restricciones adicionales a wake locks parciales en background.
 
-Buenas prácticas: vibraciones cortas para confirmación UI; no abusar en listas largas; respetar accesibilidad (algunos usuarios desactivan vibración); en juegos puede usarse más intensidad con patrones.
+Alternativas: Foreground Service con tipo adecuado (location, mediaPlayback), AlarmManager.setAlarmClock solo para alarmas usuario.
 
 Cuándo usarlo:
-- Confirmar acción (eliminar, enviar).
-- Alertas silenciosas en wearable companion (limitado).
-- Juegos y simulaciones.
-
-Evitar: vibración continua en background (batería y molestia).
+- Casi nunca en apps de negocio estándar.
+- Media, VOIP, fitness tracking en background con FGS y tipo declarado.
+- Debugging temporal (nunca en producción sin justificación).
 
 Ejemplo:
-val vibrator = context.getSystemService(Vibrator::class.java)
-if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-    vibrator.vibrate(
-        VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK)
-    )
-} else {
-    @Suppress("DEPRECATION")
-    vibrator.vibrate(50)
+val pm = context.getSystemService(PowerManager::class.java)
+val wl = pm.newWakeLock(
+    PowerManager.PARTIAL_WAKE_LOCK,
+    "Entrevista:Upload"
+)
+try {
+    wl.acquire(10 * 60_000L /* 10 min max */)
+    upload()
+} finally {
+    if (wl.isHeld) wl.release()
 }
 
-// Haptic en Compose
-val haptic = LocalHapticFeedback.current
-Button(onClick = {
-    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-    onConfirm()
-}) { Text("Confirmar") }
+// Mejor para video:
+window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
 Consejo para entrevista:
-Menciona VibrationEffect vs API antigua, permiso VIBRATE, y preferir HapticFeedback en Compose para botones. Di que compruebas hasVibrator() y que vibración larga en background es mala práctica.
+“WakeLock es último recurso.” Explica Doze, App Standby, y que Play penaliza mal uso de background. Menciona PARTIAL vs pantalla con FLAG_KEEP_SCREEN_ON. Conecta con restricciones Android 8+ en background services.

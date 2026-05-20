@@ -1,16 +1,16 @@
 Concepto:
-Un DAO (Data Access Object) en Room es una interfaz que declara métodos de acceso a datos SQL para una o más entidades: consultas, inserciones, actualizaciones y borrados. Room genera la implementación en tiempo de compilación a partir de anotaciones.
+Room es la capa de persistencia oficial de Android sobre SQLite: abstrae SQL con DAOs, entidades y compilación en tiempo de build que valida queries. Ofrece integración con Flow, LiveData, coroutines suspend y migraciones tipadas.
 
 Explicación detallada:
-@Dao en interface ProductDao. @Query("SELECT * FROM products WHERE category = :cat") suspend fun byCategory(cat: String): List<ProductEntity>. Parámetros enlazados evitan SQL injection. @Insert puede devolver Long o List<Long> de row ids; onConflict define REPLACE, IGNORE, ABORT.
+@Database declara entidades y versión. @Dao define @Insert, @Update, @Delete, @Query con SQL. Room genera implementación en compile-time (KSP/KAPT). @TypeConverter mapea tipos no soportados (Date, List<String>). Las relaciones complejas usan @Relation, @Embedded o JOIN en Query.
 
-Updates y deletes por entidad o por query @Query("DELETE FROM products WHERE id = :id"). @Transaction agrupa operaciones atómicas cuando un método llama a varios DAO o múltiples escrituras.
+Migraciones: Migration(1,2) { db.execSQL(...) } o AutoMigration en versiones recientes con reglas exportadas. Nunca version++ sin migración en producción o pierdes datos.
 
-Flow y LiveData en @Query hacen que Room re-emita al cambiar la tabla observada. PagingSource en @Query integra RecyclerView o LazyColumn con Paging 3.
+Room con coroutines: suspend fun insert; Flow<List<User>> observa cambios reactivos. Transacciones con @Transaction en funciones que llaman varios DAO.
 
-Raw queries: @RawQuery para SQL dinámico con SupportSQLiteQuery. Views: @DatabaseView para consultas precalculadas.
+Testing: inMemoryDatabaseBuilder para tests rápidos. No uses la misma instancia singleton entre tests sin cerrar.
 
-Buenas prácticas: un DAO por agregado o tabla según tamaño del proyecto; no mezclar lógica de negocio en DAO (solo acceso datos). Mappers convierten Entity a dominio fuera del DAO.
+Comparación DataStore: Room para datos estructurados relacionales; DataStore para preferencias clave-valor. Paging + Room es patrón común para listas grandes.
 
 En el contexto de proyectos Android reales, combina esta idea con las guías oficiales de Android Developers y con métricas de calidad (crashes, ANR, Vitals) cuando aplique. En code review, pregunta siempre por ciclo de vida, testabilidad y si la solución escala cuando el equipo crece.
 
@@ -18,24 +18,38 @@ Durante la entrevista, estructura la respuesta en definición, ejemplo concreto 
 
 Para profundizar tras la entrevista, revisa documentación oficial, codelabs y el código fuente de tu propio proyecto Entrevista aplicando el concepto en un flujo mínimo reproducible. La práctica deliberada con tests unitarios refuerza la confianza al explicar el tema en viva voz.
 
+En el contexto de proyectos Android reales, combina esta idea con las guías oficiales de Android Developers y con métricas de calidad (crashes, ANR, Vitals) cuando aplique. En code review, pregunta siempre por ciclo de vida, testabilidad y si la solución escala cuando el equipo crece.
+
+Durante la entrevista, estructura la respuesta en definición, ejemplo concreto de tu experiencia o proyecto demo, y trade-offs frente a alternativas. Mencionar versiones recientes de API o biblioteca (Material3, Paging 3, Hilt 2.x) demuestra que sigues el ecosistema, sin necesidad de memorizar números de versión exactos.
+
+Para profundizar tras la entrevista, revisa documentación oficial, codelabs y el código fuente de tu propio proyecto Entrevista aplicando el concepto en un flujo mínimo reproducible. La práctica deliberada con tests unitarios refuerza la confianza al explicar el tema en viva voz.
+
+Preguntas de seguimiento frecuentes en entrevistas para este tema incluyen comparación con alternativas del ecosistema, implicaciones en testing y en el ciclo de vida de Android, y cómo lo aplicarías en una app modular con varios flavors. Si el entrevistador pide profundidad, menciona herramientas de diagnóstico (Profiler, Lint, StrictMode, Layout Inspector) y cómo validarías en CI que no hay regresiones.
+
+En proyectos reales, documenta decisiones en ADR breves o en README del módulo para que el equipo no revierta el patrón por desconocimiento. La mejor respuesta de entrevista combina definición precisa, ejemplo Kotlin o Compose concreto y honestidad sobre límites: ninguna solución es gratis en complejidad o tamaño de APK.
+
+Relaciona este concepto con los demás bloques del manifiesto Entrevista (arquitectura, corrutinas, seguridad, build) para demostrar visión de sistema completo, no conocimiento aislado de una API.
+
 Cuándo usarlo:
-Siempre con Room; es la única forma de acceder a tablas definidas. La lógica "si vacío fetch red" va en Repository, no en DAO.
+Cualquier dato local estructurado, caché offline, historial. No para un solo flag booleano (DataStore). No para archivos grandes (almacenamiento de archivos).
 
 Ejemplo:
-@Dao
-interface UserDao {
-    @Query("SELECT * FROM users WHERE id = :userId")
-    suspend fun getById(userId: Long): UserEntity?
+@Entity(tableName = "products")
+data class ProductEntity(@PrimaryKey val id: Int, val name: String)
 
-    @Query("SELECT * FROM users ORDER BY name ASC")
-    fun observeAll(): Flow<List<UserEntity>>
+@Dao
+interface ProductDao {
+    @Query("SELECT * FROM products")
+    fun observeAll(): Flow<List<ProductEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsert(user: UserEntity)
+    suspend fun insertAll(items: List<ProductEntity>)
+}
 
-    @Query("DELETE FROM users WHERE id = :userId")
-    suspend fun deleteById(userId: Long)
+@Database(entities = [ProductEntity::class], version = 1)
+abstract class AppDatabase : RoomDatabase() {
+    abstract fun productDao(): ProductDao
 }
 
 Consejo para entrevista:
-Explica anotaciones principales y @Transaction. No confundas DAO con Repository. Seguimiento: ¿Puedo tener JOIN? Sí en @Query con data class de relación o @Relation.
+Menciona DAO, migraciones, Flow, y diferencia con SQLite crudo. Pregunta: ¿Room en main thread? Por defecto no con suspend/Flow bien usados; allowMainThreadQueries solo tests.

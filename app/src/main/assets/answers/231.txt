@@ -1,22 +1,19 @@
 Concepto:
-Un técnico Android en taller combina diagnóstico de hardware/software, restauración de firmware, gestión de cuenta (FRP), limpieza de almacenamiento y orientación al usuario.
+OEM unlock es la opción del fabricante que permite desbloquear el bootloader. Verified boot (AVB) comprueba la firma de cada partición en el arranque; dm-verity protege particiones montadas contra modificación.
 
 Explicación detallada:
-Tareas habituales: comprobar puerto USB y modo (MTP, PTP, solo carga), activar depuración si es posible, extraer logs con adb bugreport, reinstalar ROM oficial, reset de fábrica, sustitución de batería/pantalla, test de sensores en menú secreto (*#*#4636#*#* en algunos), verificar IMEI y bandas.
+Con bootloader bloqueado, solo imágenes firmadas arrancan. Tras unlock, el estado pasa a orange (Google) o advertencia en pantalla de inicio. Magisk puede parchear vbmeta para desactivar verificación en algunos casos (riesgo de seguridad).
 
-FRP (Factory Reset Protection): tras reset, pide cuenta Google previa; no se “salta” legalmente sin credenciales del dueño; técnico debe explicar al cliente.
+Play Integrity / SafetyNet evalúan bootloader, firma y root; apps bancarias pueden negar servicio.
 
-Herramientas por fabricante: Odin (Samsung), Mi Flash (Xiaomi), MSM Download Tool (OnePlus/OPPO), SP Flash Tool (MediaTek), HiSuite/Honor, EDL cables en Qualcomm.
-
-Modo download/EDL: arranque de emergencia cuando no enciende Android; requiere autorización y firmware firmado. Distinto de fastboot visible.
-
-Ética: solo operar en dispositivos de propiedad demostrada; respetar privacidad de datos.
+Para técnico: restaurar stock completo y volver a bloquear bootloader (si el OEM lo permite) puede ser necesario para devolver un equipo a garantía o cumplir política corporativa.
 
 Cuándo usarlo:
-Centros de servicio, reparación de móviles, soporte IT corporativo con dispositivos Android.
+Entender por qué root/ROM rompe apps con integridad; soporte avanzado de flasheo.
 
 Ejemplo:
-Diagnóstico: adb devices, cargador original, recovery wipe cache, flash ROM oficial del sitio del OEM
+fastboot flashing unlock
+fastboot getvar unlocked
 
 Consejo para entrevista:
-Menciona FRP, Odin/Mi Flash, y límites legales/éticos.
+Orange state, AVB, relación con Magisk y apps bancarias.

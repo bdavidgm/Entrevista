@@ -1,45 +1,46 @@
 Concepto:
-Inmutabilidad significa que un objeto o valor no puede modificarse después de crearse; cualquier cambio produce una nueva instancia en lugar de mutar la existente.
+El patrón Observer define una relación uno-a-muchos: cuando el sujeto (observable) cambia de estado, todos los observadores registrados son notificados automáticamente.
 
 Explicación detallada:
-En Kotlin: val fija la referencia; var permite reasignar. Las colecciones List son de solo lectura a nivel de API; copy() en data class crea variantes. Inmutabilidad profunda requiere que los campos internos tampoco sean mutables compartidos.
+Componentes clásicos:
+- Subject/Observable: mantiene estado y lista de observadores.
+- Observer: interfaz con update() o callback equivalente.
+- Implementaciones concretas en cada capa.
 
-Por qué importa en Android:
-- Concurrencia: con coroutines y varios hilos, objetos inmutables evitan condiciones de carrera sin synchronized.
-- UI predecible: RecyclerView DiffUtil, Compose y StateFlow asumen que un cambio de referencia o de estado dispara actualización; mutar una lista in-place sin notificar deja la UI inconsistente.
-- Depuración: cada snapshot de UiState es reproducible en tests.
-- Arquitectura: MVI, Redux-like y UiState data class fomentan transiciones de estado explícitas.
+En Android el Observer está omnipresente:
+- LiveData.observe(lifecycleOwner) { } notifica cambios de valor respetando el ciclo de vida.
+- StateFlow y SharedFlow: collectors reaccionan a cada emisión.
+- RxJava Observable con subscribe (legacy en muchos codebases).
+- ViewModel como productor de estado; Activity, Fragment o Compose como consumidores.
+- Listeners de sistema y vistas: OnClickListener, TextWatcher, addOnPropertyChangedCallback.
 
-Trade-offs: más objetos temporales y presión en GC; en listas muy grandes combinar inmutabilidad con estructuras eficientes (Paging, actualizaciones parciales, keys estables en LazyColumn).
+Ventajas: desacoplamiento entre quien produce datos y quien los muestra; varias pantallas o widgets pueden reaccionar al mismo estado (sincronización de tabs, widgets de escritorio).
 
-No confundir val con inmutabilidad total: val list: List<Int> puede envolver un MutableList si alguien expuso la referencia mutable.
+Riesgos frecuentes en entrevistas:
+- Memory leaks si el subject retiene la Activity o View destruida (registrar listener sin desregistrar, LiveData sin LifecycleOwner).
+- Actualizar UI desde un hilo de fondo (debe ser Main).
+- Cascadas de callbacks difíciles de seguir sin arquitectura clara.
+
+Variantes modernas: MVVM + StateFlow; Compose recompone cuando cambia el state observado (collectAsState). La idea Observer sigue siendo la base del reactive UI.
 
 Cuándo usarlo:
-Estado de pantalla expuesto por ViewModel, modelos de dominio entre capas, eventos en colas concurrentes, argumentos de navegación. La mutabilidad queda encapsulada en implementaciones internas (buffer, builder antes de publicar).
+Siempre que la interfaz deba reaccionar a datos asíncronos o que cambian con el tiempo: red, base de datos, ubicación, otro componente, usuario en otra pantalla.
 
 Ejemplo:
-data class CartUiState(
-    val items: List<CartItem> = emptyList(),
-    val total: Money = Money.ZERO,
-    val isLoading: Boolean = false
-)
+class UserRepository {
+    private val _user = MutableStateFlow<User?>(null)
+    val user: StateFlow<User?> = _user.asStateFlow()
 
-fun CartViewModel.addItem(item: CartItem) {
-    _uiState.update { state ->
-        state.copy(items = state.items + item)
+    suspend fun refresh() {
+        _user.value = api.fetchUser()
     }
 }
 
-// En Compose
 @Composable
-fun CartScreen(viewModel: CartViewModel) {
-    val state by viewModel.uiState.collectAsState()
-    LazyColumn {
-        items(state.items, key = { it.id }) { item ->
-            CartRow(item)
-        }
-    }
+fun ProfileScreen(viewModel: ProfileViewModel = hiltViewModel()) {
+    val user by viewModel.user.collectAsState()
+    Text(text = user?.name ?: "Cargando...")
 }
 
 Consejo para entrevista:
-Relaciona inmutabilidad con thread-safety, Compose (estabilidad de parámetros) y testing. Aclara que variables locales mutables en un algoritmo están bien; el estado compartido de la app debe ser inmutable o muy bien encapsulado.
+Empieza con la definición genérica Subject/Observer y luego mapea a LiveData, Flow y Compose. Menciona observación lifecycle-aware y cancelación de suscripciones para evitar fugas.

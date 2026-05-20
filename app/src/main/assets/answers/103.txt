@@ -1,14 +1,12 @@
 Concepto:
-Los permisos peligrosos (dangerous permissions) en Android protegen datos sensibles del usuario (cámara, ubicación, contactos, micrófono, SMS, etc.) y requieren declaración en el manifest más solicitud en tiempo de ejecución (runtime) con posible denegación y rationale.
+Android Keystore es el almacén seguro de claves criptográficas respaldado por hardware (TEE/StrongBox cuando disponible) que impide exportar la clave privada en claro. Se usa para cifrar datos locales, firmar, TLS client certs y autenticación biométrica vinculada.
 
 Explicación detallada:
-Normal permissions (INTERNET) se conceden en install. Dangerous: el usuario aprueba por sesión o permanentemente. registerForActivityResult con RequestPermission() o múltiple RequestMultiplePermissions.
+KeyGenParameterSpec genera clave AES o RSA dentro del Keystore. Las operaciones cifran/descifran sin exponer clave a la app. setUserAuthenticationRequired exige biometría o PIN reciente.
 
-shouldShowRequestPermissionRationale indica si mostrar explicación antes de volver a pedir. Denegación permanente: abrir ajustes con Intent ACTION_APPLICATION_DETAILS_SETTINGS.
+EncryptedSharedPreferences usa claves del Keystore. BiometricPrompt + CryptoObject descifra solo tras huella válida.
 
-Android 13+: permisos granulares (POST_NOTIFICATIONS, READ_MEDIA_IMAGES vs READ_EXTERNAL_STORAGE legacy). Background location requiere flujo en dos pasos y revisión Play.
-
-Principio mínimo: pide solo cuando la feature lo necesita (just-in-time), no al arranque.
+Limitaciones: emuladores, dispositivos sin TEE, backup. Rotación de claves y invalidación si cambian huellas registradas (setInvalidatedByBiometricEnrollment).
 
 En el contexto de proyectos Android reales, combina esta idea con las guías oficiales de Android Developers y con métricas de calidad (crashes, ANR, Vitals) cuando aplique. En code review, pregunta siempre por ciclo de vida, testabilidad y si la solución escala cuando el equipo crece.
 
@@ -23,22 +21,21 @@ Durante la entrevista, estructura la respuesta en definición, ejemplo concreto 
 Para profundizar tras la entrevista, revisa documentación oficial, codelabs y el código fuente de tu propio proyecto Entrevista aplicando el concepto en un flujo mínimo reproducible. La práctica deliberada con tests unitarios refuerza la confianza al explicar el tema en viva voz.
 
 Cuándo usarlo:
-Cualquier API que acceda datos privados o hardware sensible. Declara en manifest y maneja denegación con UX degradada.
+Secretos locales, PIN de app, cifrado de archivos sensibles. No para almacenar contraseña usuario en claro; hash en servidor.
 
 Ejemplo:
-val launcher = rememberLauncherForActivityResult(
-    ActivityResultContracts.RequestPermission()
-) { granted ->
-    if (granted) startCamera() else showPermissionDenied()
-}
-
-fun requestCamera() {
-    when {
-        ContextCompat.checkSelfPermission(ctx, Manifest.permission.CAMERA) ==
-            PackageManager.PERMISSION_GRANTED -> startCamera()
-        else -> launcher.launch(Manifest.permission.CAMERA)
-    }
-}
+val keyGenerator = KeyGenerator.getInstance(
+    KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore"
+)
+keyGenerator.init(
+    KeyGenParameterSpec.Builder(
+        "app_master_key",
+        KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
+    )
+        .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+        .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+        .build()
+)
 
 Consejo para entrevista:
-Normal vs dangerous, runtime, rationale, granular Android 13+. Menciona política Play para background location.
+Hardware-backed, no exportable. Contrasta con guardar AES key en prefs (inseguro). Seguimiento: EncryptedSharedPreferences.

@@ -1,39 +1,42 @@
 Concepto:
-Tasks y Back Stack son el mecanismo con el que Android organiza Activities en pilas (tasks) asociadas a apps recientes: cada startActivity puede apilar, reordenar o limpiar entradas según flags y launchMode.
+Git es un sistema de control de versiones distribuido que registra historial de cambios, permite ramas paralelas, fusión y colaboración; en Android es indispensable junto con Gradle para flujos de equipo y CI/CD.
 
 Explicación detallada:
-Task: colección de Activities en orden LIFO (última en entrar, primera en salir con Back). Una app puede tener varias tasks (document launch mode, intents con NEW_TASK).
+Conceptos clave:
+- Repository: .git con commits, objetos, refs.
+- Commit: snapshot con mensaje, autor, hash SHA.
+- Branch: línea de desarrollo (main, develop, feature/login).
+- Merge vs rebase: integrar historias (rebase reescribe commits; cuidado en ramas públicas).
+- Remote (origin): GitHub/GitLab; push/pull, PRs.
+- .gitignore: build/, .gradle/, local.properties, *.apk, .idea/* personales, keystores.
 
-Back Stack por task: A → B → C; Back desde C destruye C y muestra B. Si C es fin de task, usuario vuelve al launcher u otra app.
+Flujo Android típico:
+1) Rama feature desde main
+2) Commits atómicos (fix: crash login, feat: add Room entity)
+3) PR con revisión, CI ejecuta ./gradlew test lint assembleDebug
+4) Merge squash o merge commit según política del equipo
+5) Tag/release para versiones en Play (versionCode bump en build.gradle.kts)
 
-Intent flags que afectan la pila:
-- FLAG_ACTIVITY_NEW_TASK: nueva task o reutilizar según affinity.
-- FLAG_ACTIVITY_CLEAR_TOP: si Activity ya existe, destruye instancias encima y llama onNewIntent.
-- FLAG_ACTIVITY_SINGLE_TOP: si está en top, no crea otra instancia.
-- FLAG_ACTIVITY_CLEAR_TASK + NEW_TASK: reset total (splash/logout).
+Archivos que NO versionar: google-services.json a veces sí en equipos cerrados (debate); keystores nunca; secretos en local.properties o CI secrets.
 
-launchMode en manifest (ver pregunta 196): standard, singleTop, singleTask, singleInstance.
+Comandos útiles: status, diff, log --oneline, stash, cherry-pick, revert (seguro en main), bisect para encontrar regresión.
 
-Fragments: back stack propio gestionado por FragmentManager (addToBackStack); Navigation Component unifica popBackStack.
-
-Recents (multitarea): cada task tiene thumbnail; document mode muestra varias tasks de la misma app (navegador).
+Integración Android Studio: VCS menu, diff visual, resolve conflicts en merges de recursos (strings.xml, colors).
 
 Cuándo usarlo:
-- Diseñar flujos login → home sin volver a login con Back.
-- Deep links que deben abrir pantalla concreta sin duplicar home.
-- Evitar múltiples copias de MainActivity.
+- Siempre en proyectos profesionales y personales.
+- Trabajo en equipo, code review, releases.
+- Rollback cuando un cambio rompe producción.
 
 Ejemplo:
-// Tras login, limpiar stack y dejar Home
-val intent = Intent(this, HomeActivity::class.java).apply {
-    flags = Intent.FLAG_ACTIVITY_NEW_TASK or
-            Intent.FLAG_ACTIVITY_CLEAR_TASK
-}
-startActivity(intent)
-finish()
-
-// Navigation Component
-navController.popBackStack() // equivalente conceptual a desapilar fragmentos
+# Flujo diario
+git checkout -b feature/notifications
+# ... editar código ...
+git add app/src/main/java/...
+git commit -m "feat: add notification channel for orders"
+git push -u origin feature/notifications
+# Abrir PR en GitHub; tras review:
+git checkout main && git pull
 
 Consejo para entrevista:
-Dibuja la pila A-B-C. Explica diferencia task vs back stack de fragments. Menciona CLEAR_TASK tras auth y singleTask para “home raíz”. Conecta con predictive back (Android 13+).
+Menciona branching strategy (GitFlow simplificado o trunk-based), .gitignore Android, y que CI compila en cada PR. Si preguntan conflictos: priorizar entender merge en XML/resources. No hables de rebase --force en main.

@@ -1,44 +1,42 @@
 Concepto:
-getSystemService es el método de Context que devuelve gestores del sistema (ConnectivityManager, AlarmManager, SensorManager, etc.) registrados en el ServiceManager de Android, tipados con extensiones Kotlin o casting.
+Storage Access Framework (SAF) es el mecanismo mediante el cual el usuario elige archivos o carpetas mediante intents (ACTION_OPEN_DOCUMENT, CREATE_DOCUMENT, OPEN_DOCUMENT_TREE) y la app obtiene URIs persistentes con permisos, sin permisos de almacenamiento amplio.
 
 Explicación detallada:
-Android centraliza servicios del SO en procesos del sistema. La app no instancia estos objetos; los solicita al Context con una clave String (legacy) o Class (API 23+):
+SAF separa “dueño del archivo” (provider de documentos: Downloads, Drive, archivos locales) de “consumidor” (tu app). Tras el picker, recibes content:// Uri con flags persistibles (FLAG_GRANT_READ_URI_PERMISSION, takePersistableUriPermission).
 
-val cm = context.getSystemService(ConnectivityManager::class.java)
+Ventajas:
+- Privacidad: acceso solo a lo elegido.
+- Compatible con scoped storage y políticas de Play Store.
+- Soporta nubes y proveedores terceros que implementen DocumentsProvider.
 
-Equivalente antiguo: getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager.
+APIs clave:
+- ActivityResultContracts.OpenDocument() / CreateDocument() / OpenDocumentTree()
+- contentResolver.openInputStream(uri), openFileDescriptor
+- DocumentFile.fromTreeUri para navegar carpetas autorizadas
+- Persistencia: contentResolver.takePersistableUriPermission(uri, flags)
 
-Servicios frecuentes en entrevistas:
-- CONNECTIVITY_SERVICE → ConnectivityManager
-- ALARM_SERVICE → AlarmManager
-- NOTIFICATION_SERVICE → NotificationManager
-- ACTIVITY_SERVICE → ActivityManager
-- SENSOR_SERVICE → SensorManager
-- LOCATION_SERVICE → LocationManager (preferir FusedLocationProviderClient)
-- CLIPBOARD_SERVICE → ClipboardManager
-- INPUT_METHOD_SERVICE → InputMethodManager
-- WINDOW_SERVICE → WindowManager
-- POWER_SERVICE → PowerManager
-- DOWNLOAD_SERVICE → DownloadManager
-- AUDIO_SERVICE → AudioManager
-- VIBRATOR_SERVICE → Vibrator / VibratorManager (API 31+)
-- BIOMETRIC_SERVICE → BiometricManager
+Limitaciones: no es un sistema de archivos POSIX completo; operaciones dependen del provider; rendimiento variable en URIs remotos.
 
-El Context debe ser válido: Application context para servicios sin UI; Activity context para WindowManager o InputMethodManager ligados a ventana. Usar applicationContext donde no necesites tema o display de Activity evita fugas.
+Contraste: MediaStore para media conocido que tu app añade a colecciones estándar; SAF para “abrir PDF cualquiera” o exportar CSV a ubicación elegida por el usuario.
 
 Cuándo usarlo:
-- Siempre que integres una API de plataforma documentada como “system service”.
-- En helpers DI puedes envolver getSystemService en providers Hilt (@ApplicationContext).
+- Importar/exportar documentos (JSON, ZIP, PDF).
+- Elegir carpeta de sincronización (document tree).
+- Evitar MANAGE_EXTERNAL_STORAGE salvo casos excepcionales justificados.
 
 Ejemplo:
-class SystemServices @Inject constructor(
-    @ApplicationContext private val context: Context
-) {
-    val connectivity: ConnectivityManager
-        get() = context.getSystemService(ConnectivityManager::class.java)
-    val notifications: NotificationManager
-        get() = context.getSystemService(NotificationManager::class.java)
+val openDoc = registerForActivityResult(
+    ActivityResultContracts.OpenDocument()
+) { uri: Uri? ->
+    uri ?: return@registerForActivityResult
+    contentResolver.takePersistableUriPermission(
+        uri, Intent.FLAG_GRANT_READ_URI_PERMISSION
+    )
+    contentResolver.openInputStream(uri)?.use { stream ->
+        val text = stream.bufferedReader().readText()
+    }
 }
+// Lanzar: openDoc.launch(arrayOf("application/pdf", "text/*"))
 
 Consejo para entrevista:
-Lista tres servicios que hayas usado con nombres correctos. Aclara Context de Application vs Activity. Menciona que en tests se mockea Context o se usa Robolectric para getSystemService.
+“El usuario es el dueño del archivo.” Menciona persistable URI, contraste con READ_EXTERNAL_STORAGE masivo, y que WRITE_EXTERNAL_STORAGE ya no es el patrón en apps target 33+. Ejemplo de OpenDocument vs MediaStore.insert.

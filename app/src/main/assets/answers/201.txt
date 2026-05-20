@@ -1,39 +1,48 @@
 Concepto:
-DiffUtil calcula la diferencia mínima entre dos listas y emite actualizaciones granulares (insert/remove/move/change) para RecyclerView, evitando notifyDataSetChanged() y animaciones incorrectas.
+RecyclerView muestra listas largas reciclando vistas: el Adapter crea ViewHolders, los enlaza con datos en onBindViewHolder y el LayoutManager define disposición (linear, grid, staggered).
 
 Explicación detallada:
-Algoritmo de Eugene Myers: encuentra el patch más pequeño entre lista antigua y nueva. Requiere implementar:
-- areItemsTheSame(old, new): identidad estable (id).
-- areContentsTheSame(old, new): igualdad de contenido visible.
-- Opcional getChangePayload: actualización parcial en bind.
+Componentes:
+1) RecyclerView: contenedor; setLayoutManager, setAdapter, addItemDecoration, setHasFixedSize(true) si tamaño fijo optimiza.
+2) Adapter<VH>: getItemCount, onCreateViewHolder (inflar layout), onBindViewHolder (poblar datos), getItemViewType para múltiples layouts.
+3) ViewHolder: referencias a views (findViewById o ViewBinding) para evitar lookup repetido.
+4) LayoutManager: LinearLayoutManager, GridLayoutManager, StaggeredGridLayoutManager.
 
-Uso manual:
-val diff = DiffUtil.calculateDiff(object : DiffUtil.Callback() {
-    override fun getOldListSize() = old.size
-    override fun getNewListSize() = new.size
-    override fun areItemsTheSame(o, n) = old[o].id == new[n].id
-    override fun areContentsTheSame(o, n) = old[o] == new[n]
-})
-diff.dispatchUpdatesTo(adapter)
+Reciclaje: cuando una fila sale de pantalla, su ViewHolder se reutiliza para nuevos datos; onBind debe resetear estado (imágenes, listeners) para evitar bugs visuales.
 
-ListAdapter (RecyclerView) ejecuta DiffUtil en background thread automáticamente al llamar submitList(newList).
+Actualizaciones: notifyDataSetChanged() fuerza redraw completo (evitar); prefer notifyItemInserted/Removed/Changed o ListAdapter + DiffUtil.
 
-Beneficios: mejor rendimiento en listas grandes, animaciones por item, preservación de scroll si aplica, menos parpadeo.
+Lista con separadores: ItemDecoration.
+
+En arquitectura moderna: ListAdapter<T, VH> con DiffUtil.ItemCallback en background; ViewBinding; datos desde ViewModel LiveData/StateFlow.
+
+Compose equivalente: LazyColumn/LazyRow con items() y key estable.
 
 Cuándo usarlo:
-- Siempre que la lista cambie por datos de red o base de datos.
-- Chat, feeds, catálogos con actualizaciones parciales.
-
-Evitar: comparaciones costosas en areContentsTheSame (usar campos relevantes).
+- Cualquier lista scrollable en UI basada en Views.
+- Grids de productos, chats, settings.
 
 Ejemplo:
-val callback = object : DiffUtil.ItemCallback<Message>() {
-    override fun areItemsTheSame(a: Message, b: Message) = a.id == b.id
-    override fun areContentsTheSame(a: Message, b: Message) =
-        a.text == b.text && a.timestamp == b.timestamp
+class UserAdapter : ListAdapter<User, UserAdapter.VH>(DIFF) {
+    class VH(val binding: ItemUserBinding) : RecyclerView.ViewHolder(binding.root)
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
+        val binding = ItemUserBinding.inflate(
+            LayoutInflater.from(parent.context), parent, false
+        )
+        return VH(binding)
+    }
+    override fun onBindViewHolder(holder: VH, position: Int) {
+        val user = getItem(position)
+        holder.binding.name.text = user.name
+    }
+    companion object {
+        val DIFF = object : DiffUtil.ItemCallback<User>() {
+            override fun areItemsTheSame(a: User, b: User) = a.id == b.id
+            override fun areContentsTheSame(a: User, b: User) = a == b
+        }
+    }
 }
-val adapter = object : ListAdapter<Message, MsgVH>(callback) { ... }
-adapter.submitList(newMessages)
 
 Consejo para entrevista:
-Explica los dos métodos areItems/areContents y por qué notifyDataSetChanged es mala idea (pierde animación, rebind total). Menciona ListAdapter y AsyncListDiffer. En Compose, animaciones con LazyColumn key + AnimatedContent es el paralelo conceptual.
+Explica reciclaje, ViewHolder, DiffUtil vs notifyDataSetChanged. Menciona ListAdapter. Si preguntan Compose, contraste LazyColumn y recomposición vs reciclaje de vistas.

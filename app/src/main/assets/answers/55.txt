@@ -1,40 +1,37 @@
 Concepto:
-derivedStateOf crea un State cuyo valor se recalcula solo cuando cambian las dependencias de estado leídas durante el cálculo, evitando recomposiciones innecesarias cuando un estado intermedio cambia pero el resultado derivado no. Optimiza cálculos costosos o condiciones booleanas compuestas en Compose.
+En Jetpack Compose la UI es una función del estado: un Composable describe qué pintar para unos datos concretos. Cuando cambia un estado que Compose observa, se programa una recomposición y solo se vuelven a ejecutar las funciones Composable afectadas. remember memoriza valores entre recomposiciones; mutableStateOf (y variantes) define estado observable; rememberSaveable conserva ese estado a través de la muerte del proceso (rotación, falta de memoria). Juntos forman el flujo típico de pantalla: estado arriba, eventos abajo.
 
 Explicación detallada:
-Ejemplo: lista con scroll; firstVisibleIndex cambia a menudo pero boolean "showButton = index > 0" solo cambia en 0→1. derivedStateOf { listState.firstVisibleItemIndex > 0 } evita recomponer hijos que solo dependen del boolean cuando el índice sigue >0.
+Compose no “invalida vistas” como el View system: construye un árbol de UI y lo compara en recomposiciones. El runtime usa un sistema de snapshots: leer un State en composición registra una dependencia; al asignar un nuevo valor (state.value = x o state = x con delegado) se invalidan los lectores y se recomponen.
 
-Debe usarse dentro de remember { derivedStateOf { } } para persistir el cálculo entre recomposiciones. Lee estados snapshot durante la lambda; si el resultado es igual (equals), no notifica lectores.
+remember { ... } ejecuta el lambda solo en la primera composición de esa posición en el árbol (identificada por la llamada y la clave de composición). Las siguientes recomposiciones devuelven el valor guardado sin recrear el objeto. Por eso suele envolver mutableStateOf: si crearas un nuevo MutableState en cada recomposición, perderías el valor y no habría observadores estables.
 
-No confundir con map de Flow ni transform en ViewModel: derivedStateOf es optimización de capa UI local. Para lógica de negocio derivada, ViewModel + StateFlow.distinctUntilChanged puede ser más testeable.
+mutableStateOf (o mutableIntStateOf, etc.) devuelve un contenedor cuyo .value es observable. Patrones habituales: var text by remember { mutableStateOf("") } con delegado property, o val state = remember { mutableStateOf(UiState()) }. La UI lee el estado y Compose sabe qué recomponer cuando cambia.
 
-En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
+rememberSaveable usa el mecanismo de SavedState (Bundle) para serializar el estado con parcelables o la API saver/custom Saver. Sirve para campos de formulario o flags de UI que deben sobrevivir a activity recreada; no sustituye un ViewModel para lógica de negocio o datos remotos.
 
-En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
+Cómo “gobierna” la pantalla: defines un modelo de estado (data class o sealed class) que representa loading/success/error o los campos visibles. Los eventos (clicks, callbacks) llaman a funciones que actualizan ese estado. El Composable raíz de la pantalla solo observa estado y delega en hijos stateless cuando puedes (state hoisting). Para estado compartido entre pantallas o que sobrevive a rotación, el estado vive en un ViewModel expuesto como StateFlow y en Compose collectAsState() o collectAsStateWithLifecycle().
+
+Efectos (LaunchedEffect, SideEffect, DisposableEffect) no son estado: sincronizan Compose con el mundo exterior sin ser la fuente de verdad de la UI. Confundir estado con efectos es un error frecuente.
 
 Cuándo usarlo:
-Filtros derivados de estado que cambia frecuentemente, flags UI calculados, formatos derivados costosos. No uses para todo: añade complejidad; perfilar primero.
+remember + mutableStateOf para estado local de UI de una sola pantalla (texto de búsqueda, pestaña seleccionada). rememberSaveable cuando el usuario no debe perder el valor si el sistema mata el proceso. ViewModel + StateFlow para estado de negocio, navegación entre destinos y pruebas.
 
 Ejemplo:
 @Composable
-fun ChatList(messages: List<Message>) {
-    val listState = rememberLazyListState()
-    val showScrollToBottom by remember {
-        derivedStateOf {
-            listState.firstVisibleItemIndex > 0
-        }
-    }
-  Column {
-        LazyColumn(Modifier.weight(1f), state = listState) {
-            items(messages, key = { it.id }) { MessageBubble(it) }
-        }
-        if (showScrollToBottom) {
-            FloatingActionButton(onClick = {
-                // scroll to bottom
-            }) { Icon(Icons.Default.ArrowDownward, null) }
-        }
+fun CounterScreen() {
+    var count by remember { mutableStateOf(0) }
+    Column {
+        Text("Cuenta: $count")
+        Button(onClick = { count++ }) { Text("Más") }
     }
 }
 
+@Composable
+fun SearchField() {
+    var query by rememberSaveable { mutableStateOf("") }
+    TextField(value = query, onValueChange = { query = it }, label = { Text("Buscar") })
+}
+
 Consejo para entrevista:
-Cuándo derivedStateOf vs calcular directo en Composable. Ejemplo firstVisibleItemIndex. remember { derivedStateOf }. distinctUntilChanged en Flow como análogo en ViewModel.
+Enlaza en una frase: “recomposición = función del estado”; recuerda que remember no persiste proceso, rememberSaveable sí con Bundle; estado de app en ViewModel; no crear State fuera de remember salvo que la fuente sea estable (p. ej. ViewModel). Menciona snapshot y lectura/escritura en el mismo frame si te preguntan por qué a veces hace falta SideEffect.

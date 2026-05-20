@@ -1,51 +1,43 @@
 Concepto:
-La delegación por clase en Kotlin (class delegation con by) implementa una interfaz delegando todas o parte de sus métodos a otra instancia, reduciendo boilerplate respecto a reenviar manualmente cada método.
+Smart cast es la capacidad del compilador de Kotlin para tratar automáticamente una variable como un tipo más específico tras una comprobación is, null check o condición que garantiza el tipo en ese ámbito.
 
 Explicación detallada:
-Sintaxis:
-class PrinterImpl : Printer by DefaultPrinter()
+Tras if (x is String) { ... }, dentro del bloque x se usa como String sin cast explícito.
 
-El compilador genera métodos que invocan al delegado DefaultPrinter. Puedes sobrescribir métodos concretos y usar super<Interface> o el delegado según necesites.
+Condiciones para smart cast:
+- val o parámetro inmutable (no propiedad open con custom getter que pueda cambiar entre comprobación y uso).
+- Variable local no capturada por lambda que se ejecute async antes del uso.
+- when con is ramas exhaustivas en sealed class.
 
-Diferencia con delegated properties (by lazy, by viewModels):
-- Class delegation: patrón de diseño a nivel de clase/interfaz.
-- Property delegation: getters/setters generados para una propiedad.
+Ejemplos comunes:
+- if (value != null) { value.length } // value smart cast a no-null
+- when (state) { is Loading -> showSpinner(); is Success -> show(state.data) }
 
-Casos de uso:
-- Decorator: class LoggingRepository(repo: UserRepository) : UserRepository by repo { override suspend fun getUser() { log(); return repo.getUser() } } — en Kotlin el override explícito reenvía al delegado.
-- Composición sobre herencia: cumples interfaz sin extender clase concreta.
-- Android: delegar en wrappers de sistema poco frecuente; más común en dominio y testing.
+Sin smart cast usas as o as?:
+- Propiedad de clase: if (item is Product) { item.name } puede fallar smart cast si item es var; solución: val local = item; if (local is Product) ...
 
-Limitaciones:
-- Solo interfaces (no delegar implementación de clase concreta con by en la misma forma).
-- Métodos no declarados en la interfaz no se delegan.
-- Múltiples interfaces: class Foo : A by a, B by b
+En Android con sealed class UiState:
+when (state) {
+    is UiState.Loading -> CircularProgressIndicator()
+    is UiState.Error -> Text(state.message)
+    is UiState.Success -> UserList(state.users)
+}
+
+Smart cast mejora legibilidad y seguridad frente a casts manuales propensos a ClassCastException.
 
 Cuándo usarlo:
-Cuando una clase debe cumplir una interfaz y la mayoría de métodos son idénticos al de un colaborador interno; decoradores, proxies y fakes parciales.
+Diseña APIs con sealed class, interfaces cerradas y tipos nullable explícitos para aprovechar el compilador. Evita almacenar tipos en Any si puedes modelar uniones con sealed.
 
 Ejemplo:
-interface Repository {
-    suspend fun load(): List<Item>
-    suspend fun save(item: Item)
+sealed class Result<out T> {
+    data class Ok<T>(val value: T) : Result<T>()
+    data class Err(val message: String) : Result<Nothing>()
 }
 
-class DatabaseRepository @Inject constructor(
-    private val dao: ItemDao
-) : Repository {
-    override suspend fun load() = dao.getAll()
-    override suspend fun save(item: Item) { dao.insert(item) }
-}
-
-class CachingRepository(
-    private val inner: Repository,
-    private val cache: MutableList<Item> = mutableListOf()
-) : Repository by inner {
-    override suspend fun load(): List<Item> {
-        if (cache.isEmpty()) cache.addAll(inner.load())
-        return cache
-    }
+fun <T> Result<T>.getOrNull(): T? = when (this) {
+    is Result.Ok -> value  // smart cast a Ok
+    is Result.Err -> null
 }
 
 Consejo para entrevista:
-No confundas class delegation (by en clase) con property delegation (by lazy). Menciona patrón Decorator y que el compilador genera el forwarding.
+Explica por qué a veces no hay smart cast (var, propiedad open, lambda). Muestra sealed class + when como patrón idiomático en ViewModels Android.

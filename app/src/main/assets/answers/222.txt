@@ -1,51 +1,47 @@
 Concepto:
-Desde Android 8 (API 26) las apps en background no pueden iniciar servicios en segundo plano libremente; Android 12+ endurece FGS y Android 14 exige tipos declarados; el patrón recomendado es WorkManager, FGS tipado solo cuando el usuario percibe el trabajo.
+Los callbacks del ciclo de vida de un Service son onCreate, onStartCommand (started), onBind (bound), onUnbind, onRebind, onDestroy; el orden depende de si es started, bound o ambos.
 
 Explicación detallada:
-Android 8 Oreo:
-- BackgroundExecutionLimits: al ir a background, ventana breve luego se restringe.
-- startService() en background lanza IllegalStateException salvo excepciones (temp whitelist, foreground app).
-- Solución: startForegroundService + notificación pronto, o JobScheduler/WorkManager.
+Secuencia típica started:
+1) startService → onCreate (primera vez) → onStartCommand
+2) Más startService → solo onStartCommand (nuevo startId)
+3) stopSelf/stopService → onDestroy cuando no hay trabajo/startIds pendientes
 
-Android 9+: restricciones adicionales en acceso Wi‑Fi/scan en background.
+Secuencia bound:
+1) bindService → onCreate → onBind → cliente conectado
+2) unbind → onUnbind → onDestroy (si no started)
 
-Android 12:
-- Tiempo limitado para pasar a foreground tras startForegroundService.
-- Exact alarms y FGS desde background más estrictos.
+Started + bound: onDestroy cuando sin clients Y stopped.
 
-Android 14:
-- foregroundServiceType obligatorio y permisos por tipo (dataSync, location, etc.).
-- Restricción iniciar FGS desde background salvo casos documentados (user-visible action, high-priority FCM, etc.).
+onStartCommand flags: START_FLAG_REDELIVERY, START_FLAG_RETRY si proceso matado.
 
-Implicaciones prácticas:
-- Sync periódico → WorkManager con Constraints.
-- Ubicación continua → FGS tipo location + permiso foreground location + justificación Play.
-- Descarga archivo → WorkManager o DownloadManager, no Service started largo.
-- Boot completed → programar WorkManager, no arrancar red pesada al instante.
+onBind retorna null en pure started service.
 
-Excepciones whitelist corta: app temporalmente en lista tras acción usuario (botón), companion device, etc. — consultar documentación vigente.
+onRebind tras onUnbind cuando ACTIVITY_BIND_AUTO_CREATE y cliente vuelve.
+
+No confundir con Activity lifecycle; Service puede vivir con app en background limitado.
 
 Cuándo usarlo:
-- Diseñar cualquier feature background post-2017.
-- Auditar app para cumplir políticas Play y evitar kills.
+- Depurar fugas (Service no destruido).
+- Entender cuándo liberar recursos (sensor, player) en onDestroy.
+- Entrevistas de ciclo de vida Android.
 
 Ejemplo:
-// Mal (background startService)
-// context.startService(Intent(context, SyncService::class.java)) // puede fallar
-
-// Bien
-WorkManager.getInstance(context).enqueue(
-    OneTimeWorkRequestBuilder<SyncWorker>()
-        .setConstraints(
-            Constraints.Builder()
-                .setRequiredNetworkType(NetworkType.CONNECTED)
-                .build()
-        )
-        .build()
-)
-
-// Si usuario pulsa "Navegar"
-context.startForegroundService(Intent(context, NavigationService::class.java))
+class LogService : Service() {
+    override fun onCreate() {
+        super.onCreate()
+        // init recursos
+    }
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        // procesar intent; stopSelf(startId) al final
+        return START_NOT_STICKY
+    }
+    override fun onBind(intent: Intent?) = null
+    override fun onDestroy() {
+        // liberar recursos
+        super.onDestroy()
+    }
+}
 
 Consejo para entrevista:
-Cita Android 8 como punto de inflexión, FGS con notificación, tipos API 34, y WorkManager como default. Menciona que “background service” clásico está muerto para sync. Da ejemplo usuario-visible vs sync silencioso.
+Recita callbacks en orden lógico para started y bound por separado. Menciona startId y stopSelf. Conecta con ForegroundService añadiendo startForeground tras onCreate/onStartCommand.

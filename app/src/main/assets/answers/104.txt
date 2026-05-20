@@ -1,12 +1,14 @@
 Concepto:
-Material Design es el sistema de diseño de Google para interfaces coherentes en Android y web: principios de elevación, color, tipografía, motion y componentes (Material 3) que garantizan usabilidad y marca reconocible.
+Los permisos peligrosos (dangerous permissions) en Android protegen datos sensibles del usuario (cámara, ubicación, contactos, micrófono, SMS, etc.) y requieren declaración en el manifest más solicitud en tiempo de ejecución (runtime) con posible denegación y rationale.
 
 Explicación detallada:
-Material3 (M3) usa dynamic color (Material You) desde wallpaper en Android 12+, esquemas light/dark, tokens de color (primary, onPrimary, surface), tipografía escalable y formas redondeadas configurables. En Compose: material3 dependency con MaterialTheme, colorScheme, Typography, Shapes.
+Normal permissions (INTERNET) se conceden en install. Dangerous: el usuario aprueba por sesión o permanentemente. registerForActivityResult con RequestPermission() o múltiple RequestMultiplePermissions.
 
-Componentes: Button, FAB, NavigationBar, Card, Dialog, Snackbar alineados con accesibilidad y estados (pressed, disabled). XML: Material Components library con themes Theme.Material3.
+shouldShowRequestPermissionRationale indica si mostrar explicación antes de volver a pedir. Denegación permanente: abrir ajustes con Intent ACTION_APPLICATION_DETAILS_SETTINGS.
 
-No es solo estética: touch targets 48dp, contraste WCAG, motion significativa. Customización dentro de tokens, no romper patrones de navegación sin razón.
+Android 13+: permisos granulares (POST_NOTIFICATIONS, READ_MEDIA_IMAGES vs READ_EXTERNAL_STORAGE legacy). Background location requiere flujo en dos pasos y revisión Play.
+
+Principio mínimo: pide solo cuando la feature lo necesita (just-in-time), no al arranque.
 
 En el contexto de proyectos Android reales, combina esta idea con las guías oficiales de Android Developers y con métricas de calidad (crashes, ANR, Vitals) cuando aplique. En code review, pregunta siempre por ciclo de vida, testabilidad y si la solución escala cuando el equipo crece.
 
@@ -21,18 +23,22 @@ Durante la entrevista, estructura la respuesta en definición, ejemplo concreto 
 Para profundizar tras la entrevista, revisa documentación oficial, codelabs y el código fuente de tu propio proyecto Entrevista aplicando el concepto en un flujo mínimo reproducible. La práctica deliberada con tests unitarios refuerza la confianza al explicar el tema en viva voz.
 
 Cuándo usarlo:
-Apps Android estándar salvo marca muy custom (aún inspirarse en patrones). Compose Material3 es default recomendado.
+Cualquier API que acceda datos privados o hardware sensible. Declara en manifest y maneja denegación con UX degradada.
 
 Ejemplo:
-@Composable
-fun AppTheme(content: @Composable () -> Unit) {
-    val scheme = if (isSystemInDarkTheme()) darkColorScheme() else lightColorScheme()
-    MaterialTheme(
-        colorScheme = scheme,
-        typography = Typography,
-        content = content
-    )
+val launcher = rememberLauncherForActivityResult(
+    ActivityResultContracts.RequestPermission()
+) { granted ->
+    if (granted) startCamera() else showPermissionDenied()
+}
+
+fun requestCamera() {
+    when {
+        ContextCompat.checkSelfPermission(ctx, Manifest.permission.CAMERA) ==
+            PackageManager.PERMISSION_GRANTED -> startCamera()
+        else -> launcher.launch(Manifest.permission.CAMERA)
+    }
 }
 
 Consejo para entrevista:
-M3 vs M2, dynamic color, tokens. Menciona accesibilidad. No confundas Material con Compose (Compose puede sin Material pero raro).
+Normal vs dangerous, runtime, rationale, granular Android 13+. Menciona política Play para background location.

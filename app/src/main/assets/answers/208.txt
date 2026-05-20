@@ -1,38 +1,44 @@
 Concepto:
-Firebase Authentication provee login de usuarios con email/contraseña, teléfono, Google, Apple, anónimo y más, gestionando tokens y sesión integrada con otros productos Firebase.
+RxJava es una biblioteca de programación reactiva basada en Observable/Flowable que modela streams asíncronos con operadores (map, flatMap, subscribeOn/observeOn); fue muy popular en Android antes de coroutines.
 
 Explicación detallada:
-FirebaseAuth es el SDK:
-- createUserWithEmailAndPassword / signInWithEmailAndPassword
-- signInWithCredential (GoogleSignIn, OAuth)
-- signInAnonymously para pruebas o guest checkout
-- currentUser, idToken (JWT para backend propio)
-- addAuthStateListener para UI reactiva al login/logout
+Conceptos:
+- Observable emite 0..n items; Single uno; Completable ninguno; Maybe opcional.
+- Suscripción gestiona ciclo de vida; dispose en onDestroy para evitar leaks.
+- Schedulers: io() para red, computation() para CPU, mainThread() para UI (AndroidSchedulers).
 
-Backend propio: envía ID token al servidor y verifica con Firebase Admin SDK.
+Retrofit integración histórica: Observable<Usuario> o Single con RxJavaCallAdapterFactory.
 
-Integración UI: Google One Tap, Credential Manager; Phone Auth con verificación SMS.
+Ventajas: composición de streams, backpressure con Flowable, operadores potentes para combinar APIs.
 
-Seguridad: reglas en Firestore/Storage deben usar request.auth.uid; no confiar solo en cliente.
+Desventajas: curva de aprendizaje, stack traces complejos, fácil olvidar dispose, verbosidad vs coroutines/Flow.
 
-Cuándo usarlo:
-- MVPs y startups que quieren auth rápido sin servidor propio de identidad.
-- Apps que ya usan Firestore, Functions, FCM con mismo proyecto Firebase.
+Cuándo usarlo hoy:
+- Mantenimiento de codebases Rx existentes.
+- Streams de eventos muy complejos con combinaciones (debounce, zip) si el equipo domina Rx.
+- Proyectos nuevos: preferir Kotlin Flow + coroutines.
 
-Alternativas: Auth0, AWS Cognito, backend custom OAuth2/OIDC.
+Migración típica: Observable → Flow, Completable → suspend fun, CompositeDisposable → viewModelScope.
 
 Ejemplo:
-val auth = Firebase.auth
-auth.signInWithEmailAndPassword(email, password)
-    .addOnCompleteListener { task ->
-        if (task.isSuccessful) {
-            val user = auth.currentUser
-        } else {
-            // task.exception
-        }
+// RxJava (legacy)
+api.getUser(id)
+    .subscribeOn(Schedulers.io())
+    .observeOn(AndroidSchedulers.mainThread())
+    .subscribe(
+        { user -> view.show(user) },
+        { error -> view.showError(error) }
+    )
+
+// Equivalente coroutines
+viewModelScope.launch {
+    try {
+        val user = api.getUser(id)
+        view.show(user)
+    } catch (e: Exception) {
+        view.showError(e)
     }
-// Coroutines KTX:
-// auth.signInWithEmailAndPassword(email, pass).await()
+}
 
 Consejo para entrevista:
-Menciona AuthStateListener, ID token para API propia, y reglas de seguridad en Firestore. Di que auth en cliente no basta; backend debe validar token. Conoce límites (proveedores, coste según escala).
+Demuestra que entiendes Observable, schedulers y dispose, pero que elegirías coroutines en greenfield. Si preguntan Flow vs Observable, menciona backpressure y cancelación estructurada con coroutines.

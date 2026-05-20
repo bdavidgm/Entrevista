@@ -1,40 +1,44 @@
 Concepto:
-SplashScreen API (Android 12+, androidx.core:core-splashscreen) estandariza la pantalla de lanzamiento: icono de app, animación opcional y transición al contenido, sustituyendo temas splash ad-hoc y reduciendo parpadeos.
+App Shortcuts son accesos directos en el icono de la app (long-press en launcher) que lanzan intents concretos: estáticos (manifest), dinámicos (ShortcutManager) o pinned (usuario añade a home).
 
 Explicación detallada:
-Antes cada app usaba windowBackground con drawable en tema launchTheme; podía haber doble splash o flash blanco. Desde Android 12 el sistema muestra splash obligatorio con el icono adaptativo. La biblioteca androidx unifica comportamiento en versiones anteriores.
+Tipos:
+1) Static shortcuts: definidos en res/xml/shortcuts.xml referenciados en activity con meta-data android.app.shortcuts. Máximo ~5 visibles según launcher.
+2) Dynamic shortcuts: ShortcutManager.addDynamicShortcuts() en runtime según contexto (ej. “Último pedido”, contacto reciente). Límite total combinado (cuota, típicamente 5 activos destacados).
+3) Pinned shortcuts: requestPinShortcut() si el launcher soporta PIN_SHORTCUT_SUPPORTED; usuario confirma icono en escritorio.
 
-Pasos de integración:
-1) Dependencia core-splashscreen
-2) Tema Theme.SplashScreen (windowSplashScreenBackground, animatedIcon, postSplashScreenTheme)
-3) En Activity.onCreate, antes de setContent: installSplashScreen()
-4) Opcional: setKeepOnScreenCondition { viewModel.isLoading } para retener hasta datos listos
-5) setOnExitAnimationListener para animación personalizada al salir
+Cada shortcut tiene id, shortLabel, longLabel, icon, intents (o activity target). Para deep link interno, usa Intent con action VIEW y NavDeepLink o rutas explícitas.
 
-El splash del sistema no debe usarse como pantalla de marketing prolongada; Google desaconseja retardar más de lo necesario. Carga pesada en Application o Startup, no en splash artificial.
+Android 7.1+ (API 25). Actualiza dynamic shortcuts cuando cambian datos; removeDynamicShortcuts si ya no aplican.
 
-Compatibilidad: la lib replica splash en API < 31 con el mismo API installSplashScreen().
+Integración con notifications: Bubble shortcuts y conversaciones usan Person y categorías relacionadas.
 
 Cuándo usarlo:
-- Toda app target SDK 31+ en Play debería migrar.
-- Reemplazar launch screens custom que duplican el del sistema.
-- Coordinar primera pintura de Compose/Views con condición de keep.
+- Acciones frecuentes: “Nueva nota”, “Buscar”, “Escanear QR”.
+- Deep links a sección sin pasar por home.
+- Re-engagement: shortcuts dinámicos a contenido reciente.
 
 Ejemplo:
-// themes.xml
-<style name="Theme.App.Starting" parent="Theme.SplashScreen">
-    <item name="windowSplashScreenBackground">@color/splash_bg</item>
-    <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
-    <item name="postSplashScreenTheme">@style/Theme.App</item>
-</style>
+// shortcuts.xml
+<shortcuts>
+  <shortcut android:shortcutId="compose"
+      android:shortcutShortLabel="@string/compose"
+      android:icon="@drawable/ic_compose"
+      android:targetPackage="com.example"
+      android:targetClass="com.example.MainActivity">
+    <intent android:action="android.intent.action.VIEW"
+        android:data="myapp://compose" />
+  </shortcut>
+</shortcuts>
 
-// MainActivity
-override fun onCreate(savedInstanceState: Bundle?) {
-    val splash = installSplashScreen()
-    super.onCreate(savedInstanceState)
-    splash.setKeepOnScreenCondition { viewModel.state.value is Loading }
-    setContent { App() }
-}
+// Dinámico
+val shortcut = ShortcutInfo.Builder(context, "order_42")
+    .setShortLabel("Pedido #42")
+    .setIntent(Intent(Intent.ACTION_VIEW, Uri.parse("myapp://order/42")))
+    .setIcon(Icon.createWithResource(context, R.drawable.ic_order))
+    .build()
+context.getSystemService(ShortcutManager::class.java)
+    .addDynamicShortcuts(listOf(shortcut))
 
 Consejo para entrevista:
-Di installSplashScreen(), postSplashScreenTheme, y que no es lugar para anuncios. Menciona migración desde windowBackground legacy y alineación con políticas de Play sobre tiempo de inicio.
+Diferencia static vs dynamic vs pinned, menciona límite de shortcuts y que deben reflejar acciones reales (Play policy). Conecta con deep links y Nav Component para manejar el intent en cold start.

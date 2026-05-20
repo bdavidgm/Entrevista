@@ -1,34 +1,32 @@
 Concepto:
-Android App Bundle (AAB) es el formato de publicación obligatorio en Play que contiene módulos divididos; Google Play genera APKs optimizados por dispositivo (ABI, densidad, idioma) reduciendo descarga del usuario.
+Firebase App Distribution distribuye builds de prueba (APK/AAB) a testers internos o QA vía enlace o email, integrado con Firebase Console y Gradle plugin, antes de publicar en Play.
 
 Explicación detallada:
-Ventajas vs APK universal:
-- Dynamic delivery: feature modules on-demand (si usas Play Feature Delivery).
-- Split APKs por arquitectura (arm64-v8a vs armeabi) — usuario no descarga todas.
-- Asset packs para recursos grandes.
-- Play signing y optimizaciones automáticas.
+Flujo:
+1) Registrar app en Firebase proyecto vinculado.
+2) Plugin appdistribution en Gradle; configurar groups/testers en console.
+3) Tras assembleRelease o bundle, task appDistributionUploadRelease sube binario.
+4) Testers reciben invitación, instalan App Distribution helper o descargan directo (según versión).
+5) Feedback y notas de release por build.
 
-Build: bundleRelease produce .aab; no instalable directamente en dispositivo sin bundletool o Play.
+Ventajas vs Play internal testing: rápido para equipo pequeño, sin esperar revisión Play para cada build diario; útil para stakeholders no en lista Play.
 
-APK local debug sigue siendo .apk para desarrollo.
-
-Play Console requiere AAB para apps nuevas; excepciones muy limitadas.
-
-Relacionado con versionCode por módulo en dynamic features.
+Limitaciones: no sustituye Play Console para producción; testers deben confiar en fuente Firebase; gestión de versiones manual.
 
 Cuándo usarlo:
-- Siempre al subir a Play Store producción y tracks de prueba oficiales.
-- Cuando quieres reducir tamaño percibido y usar dynamic features.
+- CI sube nightly a QA.
+- Demos a cliente antes de beta cerrada en Play.
+- Combinar con Crashlytics mismo proyecto para ver crashes de builds internos.
 
 Ejemplo:
-android {
-    defaultConfig {
-        versionCode = 42
-        versionName = "2.1.0"
-    }
+// app/build.gradle.kts
+plugins { id("com.google.firebase.appdistribution") }
+firebaseAppDistribution {
+    releaseNotes = "Fix login crash"
+    groups = "qa-team"
+    testers = "dev@company.com"
 }
-// ./gradlew bundleRelease
-// Subir app-release.aab a Play Console
+// ./gradlew assembleDebug appDistributionUploadDebug
 
 Consejo para entrevista:
-Explica que AAB no es el archivo que compartes fuera de Play salvo testers con bundletool. Menciona splits por ABI y que el APK de debug local no invalida usar AAB en release. Conecta con pregunta 119/213.
+Contrasta App Distribution con Play internal/open testing (revisión, vitals, staged rollout). Menciona grupos de testers y automatización CI. No confundas con Firebase Hosting.

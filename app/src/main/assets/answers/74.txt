@@ -1,14 +1,22 @@
 Concepto:
-Navigation Component es la librería de Jetpack para gestionar navegación entre destinos (pantallas) con un grafo declarado, back stack consistente, argumentos, deep links y animaciones. Unifica Fragments (XML) y Compose (Navigation Compose) bajo el mismo NavController.
+Hilt es la capa de inyección de dependencias sobre Dagger optimizada para Android: genera el grafo de objetos en compile-time con anotaciones (@HiltAndroidApp, @AndroidEntryPoint, @HiltViewModel) y elimina mucho boilerplate de módulos manuales de Dagger puro.
 
 Explicación detallada:
-El grafo navigation.xml o Kotlin DSL define destinos y acciones. NavController.navigate(R.id.action) o navigate("route"). Safe Args genera clases tipadas para argumentos en Fragments. Deep links y nested graphs organizan flujos (onboarding, main).
+@HiltAndroidApp en Application inicializa el componente de aplicación. Activities y Fragments con @AndroidEntryPoint reciben inyección de campo si legacy, pero prefer constructor en ViewModels vía @HiltViewModel. @Module @InstallIn(SingletonComponent::class) provee Retrofit, Room, dispatchers.
 
-Con Fragments: NavHostFragment en layout; cada destino es fragment. Con Compose: NavHost composable. El back stack lo gestiona el componente; popBackStack vuelve atrás. Para bottom nav, evita crear back stack paralelos incorrectos usando múltiples graphs o saveState.
+Scopes: SingletonComponent (app), ActivityRetainedComponent, ViewModelComponent, etc. @Singleton para dependencias únicas costosas. @Binds asocia interfaz a implementación; @Provides para construcción manual.
 
-Integración ViewModel: ViewModel scoped al NavBackStackEntry sobrevive navegación dentro del mismo destino pero no necesariamente al pop. navGraphViewModels comparte entre destinos del mismo graph.
+Testing: @HiltAndroidTest, @BindValue, testInstallIn para reemplazar módulos. HiltWorkerFactory para WorkManager.
 
-Testing Navigation con TestNavHostController. Migración gradual: un NavHost con mix de fragment y composable destinations en versiones recientes.
+Comparación Koin: Hilt compile-time (errores antes de runtime), Koin runtime DSL más rápido de escribir pero fallos en ejecución. En entrevistas enterprise Hilt es más frecuente.
+
+Errores comunes: olvidar @AndroidEntryPoint en Activity que usa hiltViewModel(), módulos sin @InstallIn, proporcionar Context de Activity en Singleton.
+
+En el contexto de proyectos Android reales, combina esta idea con las guías oficiales de Android Developers y con métricas de calidad (crashes, ANR, Vitals) cuando aplique. En code review, pregunta siempre por ciclo de vida, testabilidad y si la solución escala cuando el equipo crece.
+
+Durante la entrevista, estructura la respuesta en definición, ejemplo concreto de tu experiencia o proyecto demo, y trade-offs frente a alternativas. Mencionar versiones recientes de API o biblioteca (Material3, Paging 3, Hilt 2.x) demuestra que sigues el ecosistema, sin necesidad de memorizar números de versión exactos.
+
+Para profundizar tras la entrevista, revisa documentación oficial, codelabs y el código fuente de tu propio proyecto Entrevista aplicando el concepto en un flujo mínimo reproducible. La práctica deliberada con tests unitarios refuerza la confianza al explicar el tema en viva voz.
 
 En el contexto de proyectos Android reales, combina esta idea con las guías oficiales de Android Developers y con métricas de calidad (crashes, ANR, Vitals) cuando aplique. En code review, pregunta siempre por ciclo de vida, testabilidad y si la solución escala cuando el equipo crece.
 
@@ -16,24 +24,27 @@ Durante la entrevista, estructura la respuesta en definición, ejemplo concreto 
 
 Para profundizar tras la entrevista, revisa documentación oficial, codelabs y el código fuente de tu propio proyecto Entrevista aplicando el concepto en un flujo mínimo reproducible. La práctica deliberada con tests unitarios refuerza la confianza al explicar el tema en viva voz.
 
-En el contexto de proyectos Android reales, combina esta idea con las guías oficiales de Android Developers y con métricas de calidad (crashes, ANR, Vitals) cuando aplique. En code review, pregunta siempre por ciclo de vida, testabilidad y si la solución escala cuando el equipo crece.
+Preguntas de seguimiento frecuentes en entrevistas para este tema incluyen comparación con alternativas del ecosistema, implicaciones en testing y en el ciclo de vida de Android, y cómo lo aplicarías en una app modular con varios flavors. Si el entrevistador pide profundidad, menciona herramientas de diagnóstico (Profiler, Lint, StrictMode, Layout Inspector) y cómo validarías en CI que no hay regresiones.
 
-Durante la entrevista, estructura la respuesta en definición, ejemplo concreto de tu experiencia o proyecto demo, y trade-offs frente a alternativas. Mencionar versiones recientes de API o biblioteca (Material3, Paging 3, Hilt 2.x) demuestra que sigues el ecosistema, sin necesidad de memorizar números de versión exactos.
+En proyectos reales, documenta decisiones en ADR breves o en README del módulo para que el equipo no revierta el patrón por desconocimiento. La mejor respuesta de entrevista combina definición precisa, ejemplo Kotlin o Compose concreto y honestidad sobre límites: ninguna solución es gratis en complejidad o tamaño de APK.
 
-Para profundizar tras la entrevista, revisa documentación oficial, codelabs y el código fuente de tu propio proyecto Entrevista aplicando el concepto en un flujo mínimo reproducible. La práctica deliberada con tests unitarios refuerza la confianza al explicar el tema en viva voz.
+Relaciona este concepto con los demás bloques del manifiesto Entrevista (arquitectura, corrutinas, seguridad, build) para demostrar visión de sistema completo, no conocimiento aislado de una API.
 
 Cuándo usarlo:
-Apps multi-pantalla con navegación compleja, deep links, o single-Activity. Evita Transaction manual fragmentManager si el grafo encaja.
+Proyectos medianos-grandes con arquitectura en capas. Apps minúsculas pueden usar factory manual; al crecer migrar a Hilt.
 
 Ejemplo:
-// navigation.xml simplificado + MainActivity
-val navController = findNavController(R.id.nav_host)
-navController.navigate(R.id.action_home_to_detail, bundleOf("id" to 42))
-
-// Compose
-navController.navigate("detail/42") {
-    launchSingleTop = true
+@Module
+@InstallIn(SingletonComponent::class)
+object NetworkModule {
+    @Provides @Singleton
+    fun provideApi(retrofit: Retrofit): ProductApi = retrofit.create()
 }
 
+@HiltViewModel
+class ShopViewModel @Inject constructor(
+    private val repo: ProductRepository
+) : ViewModel()
+
 Consejo para entrevista:
-Menciona grafo, back stack, Safe Args, deep links. Pregunta bottom navigation: un NavController o varios con restoreState. No confundas con Intent entre apps.
+Explica Dagger bajo el capó, scopes y @HiltViewModel. Comparación breve con Koin. No digas que Hilt es runtime DI.

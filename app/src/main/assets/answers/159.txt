@@ -1,50 +1,45 @@
 Concepto:
-CompositionLocal es el mecanismo de Jetpack Compose para propagar valores implícitos por el árbol de composición sin pasarlos explícitamente como parámetros a cada Composable hijo.
+Handler y Looper son el mecanismo clásico de Android para encolar y ejecutar mensajes Runnable en un hilo específico; el Looper hace girar la cola de mensajes y el Handler publica trabajo en ese Looper.
 
 Explicación detallada:
-Analogía: Context Theme en Views, pero type-safe y con providers locales.
+Main Looper:
+- Cada app tiene un hilo principal con Looper.getMainLooper().
+- Toda actualización de UI debe ocurrir en ese hilo.
 
-API:
-- staticCompositionLocalOf { default } — sin proveedor, usa default (puede fallar en debug).
-- compositionLocalOf { default } — no proveer causa error en runtime al leer.
-- CompositionLocalProvider(LocalX provides value) { children }
+Handler(Looper):
+- handler.post { textView.text = "Hi" }
+- handler.postDelayed({ }, 3000)
 
-Built-in:
-- LocalContext, LocalContentColor, LocalTextStyle, MaterialTheme usa locals internamente.
+Message y MessageQueue:
+- Internamente Runnable y Messages en cola FIFO por hilo.
 
-Custom:
-val LocalUserSession = compositionLocalOf<UserSession> {
-    error("No UserSession provided")
-}
-
-Ventajas:
-- Evita prop drilling de 10 niveles.
-- Temas y dependencias de UI scoped a subtree.
+Relación con corrutinas:
+- Dispatchers.Main usa el Main Looper bajo el capó.
+- Preferir corrutinas en código nuevo; Handler sigue en APIs legacy y View.post.
 
 Riesgos:
-- Abuso oculta dependencias (difícil saber qué necesita un Composable).
-- Testing: proveer valores fake con CompositionLocalProvider.
+- Handler con referencia implícita a Activity + mensajes pendientes -> leak (usar static Handler + WeakReference o cancelar en onDestroy).
+- postDelayed sin cancelar tras destruir pantalla.
 
 Cuándo usarlo:
-Temas, sesión de usuario en subtree, dimensiones específicas de feature, acceso controlado a callbacks de navegación en módulos UI.
+Integración con APIs que devuelven callbacks en background thread y requieren post al main; código legacy. En código nuevo: withContext(Main) o MainScope.
 
 Ejemplo:
-data class UserSession(val userId: String, val isPremium: Boolean)
-
-val LocalUserSession = staticCompositionLocalOf<UserSession?> { null }
-
-@Composable
-fun AppRoot(session: UserSession) {
-    CompositionLocalProvider(LocalUserSession provides session) {
-        MainNavHost()
+// Publicar en UI desde callback en background
+val handler = Handler(Looper.getMainLooper())
+api.fetchUser { user ->
+    handler.post {
+        binding.nameText.text = user.name
     }
 }
 
-@Composable
-fun PremiumBadge() {
-    val session = LocalUserSession.current ?: return
-    if (session.isPremium) Text("PRO")
+// Equivalente moderno
+lifecycleScope.launch(Dispatchers.IO) {
+    val user = api.fetchUserSuspend()
+    withContext(Dispatchers.Main) {
+        binding.nameText.text = user.name
+    }
 }
 
 Consejo para entrevista:
-Contrasta con parámetros explícitos. Menciona LocalContext y no abusar para lógica de negocio pesada. Proveer fakes en tests de UI Compose.
+Explica Looper por hilo y Main thread. Menciona fugas con Handler y que corrutinas son el estándar actual. View.post { } es variante simple.

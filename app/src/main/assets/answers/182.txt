@@ -1,50 +1,35 @@
 Concepto:
-BiometricPrompt es la API unificada de AndroidX Biometric para autenticación biométrica (huella, rostro, iris) o credencial del dispositivo, con UI del sistema y callbacks de éxito/error.
+WindowManager es el servicio que gestiona ventanas en pantalla: layout params, rotación, flags de ventana (fullscreen, keep screen on) y, en APIs avanzadas, añadir vistas overlay tipo SYSTEM_ALERT (con permisos restrictivos).
 
 Explicación detallada:
-Sustituye FingerprintManager antiguo. Componentes:
-- BiometricManager: canAuthenticate(authenticators) → BIOMETRIC_SUCCESS, ERROR_NONE_ENROLLED, ERROR_NO_HARDWARE, etc.
-- BiometricPrompt: muestra diálogo con título, subtítulo, negative button (cancelar; no uses “Usar contraseña” como negative si rediriges a PIN — usa CryptoObject o flujo propio).
+Cada Activity tiene una Window gestionada por WindowManager. Acceso típico:
+- activity.window o context.getSystemService(WindowManager::class.java)
+- window.attributes (LayoutParams): width, height, type, flags
+- window.setFlags(FLAG_FULLSCREEN, FLAG_FULLSCREEN) — muchas UIs usan WindowInsetsController ahora
+- window.addFlags(FLAG_KEEP_SCREEN_ON) para video o navegación
 
-Authenticators (flags combinables):
-- BIOMETRIC_STRONG / BIOMETRIC_WEAK
-- DEVICE_CREDENTIAL (PIN/patrón) con setAllowedAuthenticators
-- Clase 3 (strong) exigida para pagos según guía
+LayoutParams.type define capa: TYPE_APPLICATION para contenido normal; TYPE_APPLICATION_OVERLAY (API 26+) para burbujas flotantes con SETTINGS canDrawOverlays.
 
-BiometricPrompt.CryptoObject vincula cifrado (Cipher) a la autenticación para que la clave en Android Keystore solo se desbloquee tras biométrico válido.
+addView(view, params) añade vista al WM global (chat heads legacy); requiere permiso SYSTEM_ALERT_WINDOW, mal visto en Play Store salvo casos justificados.
 
-Flujo típico app bancaria/login:
-1) Comprobar canAuthenticate
-2) Opcional: generar clave en Keystore con setUserAuthenticationRequired
-3) Mostrar BiometricPrompt en main thread
-4) onAuthenticationSucceeded → desbloquear token o navegar
+En Compose y Material3, preferir Modifier.systemBarsPadding(), enableEdgeToEdge(), WindowCompat.setDecorFitsSystemWindows(window, false) en lugar de manipular flags manualmente.
 
-Errores: ERROR_LOCKOUT, ERROR_LOCKOUT_PERMANENT (demasiados intentos), user cancel, sensor unavailable.
+Rotación: WindowManager también informa display metrics; getDefaultDisplay() deprecado → Context.display o WindowMetricsCalculator.
 
 Cuándo usarlo:
-- Login rápido, confirmación de pago, acceso a datos sensibles.
-- Sustituir contraseña en cada apertura si hay biométrico enrolled.
-
-No usar solo biométrico sin fallback si el usuario no enrolló hardware.
+- Mantener pantalla encendida durante reproducción.
+- Modo inmersivo en juegos (InsetsController.hide(systemBars())).
+- Bubbles o overlays (raro; usar APIs oficiales de Bubbles si aplica).
 
 Ejemplo:
-val promptInfo = BiometricPrompt.PromptInfo.Builder()
-    .setTitle("Confirmar identidad")
-    .setSubtitle("Usa huella o rostro")
-    .setNegativeButtonText("Cancelar")
-    .build()
+// Mantener pantalla on en Activity
+window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
-val biometricPrompt = BiometricPrompt(
-    activity,
-    ContextCompat.getMainExecutor(activity),
-    object : BiometricPrompt.AuthenticationCallback() {
-        override fun onAuthenticationSucceeded(
-            result: BiometricPrompt.AuthenticationResult
-        ) { /* desbloquear */ }
-        override fun onAuthenticationError(code: Int, errString: CharSequence) {}
-    }
-)
-biometricPrompt.authenticate(promptInfo)
+// Edge-to-edge moderno
+WindowCompat.setDecorFitsSystemWindows(window, false)
+WindowInsetsControllerCompat(window, window.decorView).apply {
+    isAppearanceLightStatusBars = true
+}
 
 Consejo para entrevista:
-Menciona androidx.biometric, diferencia weak vs strong, CryptoObject + Keystore, y que el diálogo lo dibuja el sistema (no falsificar UI de huella). Nunca almacenes contraseñas; desbloquea claves o tokens cifrados.
+No te centres solo en “burbujas flotantes”. Habla de Window de Activity, edge-to-edge, InsetsController vs flags antiguos, y permiso overlay como excepción. Demuestra evolución hacia AndroidX Window library.

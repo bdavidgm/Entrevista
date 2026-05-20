@@ -1,47 +1,42 @@
 Concepto:
-Los callbacks del ciclo de vida de un Service son onCreate, onStartCommand (started), onBind (bound), onUnbind, onRebind, onDestroy; el orden depende de si es started, bound o ambos.
+Un Foreground Service (FGS) es un Service que muestra una notificación persistente mientras ejecuta trabajo perceptible para el usuario (música, navegación, llamada, sync visible), con prioridad alta y menos probabilidad de ser matado.
 
 Explicación detallada:
-Secuencia típica started:
-1) startService → onCreate (primera vez) → onStartCommand
-2) Más startService → solo onStartCommand (nuevo startId)
-3) stopSelf/stopService → onDestroy cuando no hay trabajo/startIds pendientes
+Desde Android 8 debe llamarse startForegroundService(); en pocos segundos startForeground(id, notification) o el sistema detiene la app (ANR/crash).
 
-Secuencia bound:
-1) bindService → onCreate → onBind → cliente conectado
-2) unbind → onUnbind → onDestroy (si no started)
+Android 10+: requiere permiso FOREGROUND_SERVICE. Android 14+: declarar foregroundServiceType en manifest (location, camera, mediaPlayback, dataSync, etc.) y permisos asociados según tipo.
 
-Started + bound: onDestroy cuando sin clients Y stopped.
+Notificación: canal obligatorio, ongoing, no dismissable hasta stopForeground.
 
-onStartCommand flags: START_FLAG_REDELIVERY, START_FLAG_RETRY si proceso matado.
-
-onBind retorna null en pure started service.
-
-onRebind tras onUnbind cuando ACTIVITY_BIND_AUTO_CREATE y cliente vuelve.
-
-No confundir con Activity lifecycle; Service puede vivir con app en background limitado.
+stopForeground(STOP_FOREGROUND_REMOVE) y stopSelf al terminar.
 
 Cuándo usarlo:
-- Depurar fugas (Service no destruido).
-- Entender cuándo liberar recursos (sensor, player) en onDestroy.
-- Entrevistas de ciclo de vida Android.
+- Reproducción audio/video en background.
+- Navegación turn-by-turn activa.
+- Fitness tracking con ubicación en uso.
+- Compartir pantalla o llamadas VoIP.
+
+No usar para: sync silencioso (WorkManager), analytics, prefetch — viola políticas y restricciones.
+
+Alternativa: WorkManager con setForeground() para trabajo largo que debe mostrar progreso ocasional.
 
 Ejemplo:
-class LogService : Service() {
-    override fun onCreate() {
-        super.onCreate()
-        // init recursos
-    }
+class PlaybackService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        // procesar intent; stopSelf(startId) al final
-        return START_NOT_STICKY
-    }
-    override fun onBind(intent: Intent?) = null
-    override fun onDestroy() {
-        // liberar recursos
-        super.onDestroy()
+        val notification = buildNotification()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            startForeground(NOTIF_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)
+        } else {
+            startForeground(NOTIF_ID, notification)
+        }
+        startPlayback()
+        return START_STICKY
     }
 }
 
+// Manifest
+// <service android:foregroundServiceType="mediaPlayback" ... />
+// <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"/>
+
 Consejo para entrevista:
-Recita callbacks en orden lógico para started y bound por separado. Menciona startId y stopSelf. Conecta con ForegroundService añadiendo startForeground tras onCreate/onStartCommand.
+Menciona notificación obligatoria, tipos Android 14, permisos FGS y que Play audita abuso. Contrasta con background service prohibido. Ejemplo concreto: mediaPlayback o location.

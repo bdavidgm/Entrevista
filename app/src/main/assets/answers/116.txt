@@ -1,54 +1,53 @@
 Concepto:
-Un memory leak (fuga de memoria) en Android ocurre cuando objetos que ya no deberían usarse siguen referenciados y no pueden ser recolectados por el GC, provocando crecimiento de memoria, lentitud y eventual OutOfMemoryError.
+El Principio de Responsabilidad Única (SRP, Single Responsibility Principle) establece que una clase o módulo debe tener una sola razón para cambiar: una responsabilidad cohesiva y bien delimitada.
 
 Explicación detallada:
-El garbage collector libera objetos sin referencias fuertes desde GC roots. Una fuga mantiene viva una cadena de referencias hacia Activity, Fragment, View o Context destruidos.
+Es la S de SOLID. Una razón para cambiar significa un único tipo de requisito de negocio o infraestructura que, si evoluciona, afecta solo a ese componente.
 
-Causas típicas en Android:
-- Listener o callback registrado en singleton o objeto de larga vida que captura Activity (this implícito en clase interna no estática).
-- Handler con mensajes pendientes que retienen Activity (usar Handler(Looper.getMainLooper()) y removeCallbacks en onDestroy, o WeakReference).
-- Coroutine o Job sin cancelar ligada al lifecycle (usar lifecycleScope, viewModelScope).
-- LiveData.observe sin LifecycleOwner o con referencia a View destruida.
-- Static fields que guardan Context (usar applicationContext solo si imprescindible, mejor no guardar Context).
-- Bitmap grande retenido tras rotación si no se libera.
-- Hilt/Dagger mal usado con scope incorrecto reteniendo UI.
+Anti-patrones en Android:
+- God Activity: red, persistencia, permisos, navegación y layouts en un solo archivo.
+- ViewModel que formatea strings para UI, accede a archivos, lanza intents y contiene lógica de dominio compleja.
+- Repository que además renderiza notificaciones y maneja analytics.
 
-Detección:
-- Android Studio Profiler (Memory): heap dump, ver instancias huérfanas de Activity.
-- LeakCanary en debug: notifica con cadena de referencias.
-- StrictMode y logs de GC en dispositivos de prueba.
+Diseño alineado con SRP:
+- UserRepository: abstrae origen de datos de usuario (API + cache local).
+- GetUserProfileUseCase: reglas de negocio para obtener perfil.
+- ProfileViewModel: estado y eventos de la pantalla de perfil.
+- UserDtoMapper: conversión DTO a entidad de dominio.
+- ProfileScreen (Composable): solo presentación y delegación de eventos.
 
-Prevención:
-- Observar con lifecycleScope y repeatOnLifecycle.
-- Usar viewModelScope para trabajo de pantalla.
-- Evitar pasar Activity a capas de datos; inyectar Application o interfaces.
-- Limpiar binding en onDestroyView en Fragments.
+Beneficios en equipos y entrevistas:
+- Tests unitarios pequeños y rápidos por clase.
+- Cambios en API no obligan a tocar Composables.
+- Modularización Gradle por capas (:domain, :data, :feature) refuerza SRP a escala de módulo.
+
+Pragmatismo: una data class con equals/hashCode no viola SRP; un UseCase puede orquestar dos repos si su responsabilidad es un caso de uso concreto (p. ej. sincronizar carrito).
 
 Cuándo usarlo:
-El concepto aplica siempre al diseñar listeners, async y DI. En entrevistas suelen pedir ejemplos concretos y cómo los evitarías.
+Como criterio de diseño continuo al dividir pantallas, paquetes y módulos. Especialmente en code reviews y refactors de código legacy.
 
 Ejemplo:
-// Mal: fuga
-class BadManager {
-    companion object {
-        var activityRef: Activity? = null
-    }
+class UserRepository @Inject constructor(
+    private val api: UserApi,
+    private val dao: UserDao
+) {
+    suspend fun getUser(id: String): User =
+        dao.getById(id) ?: api.fetchUser(id).also { dao.insert(it) }
 }
 
-// Mejor
-class GoodRepository @Inject constructor(
-    @ApplicationContext private val context: Context
-) { /* context de aplicación, no Activity */ }
+class GetUserUseCase @Inject constructor(
+    private val repository: UserRepository
+) {
+    suspend operator fun invoke(id: String): User = repository.getUser(id)
+}
 
-class MyActivity : AppCompatActivity() {
-  private val job = SupervisorJob()
-  private val scope = CoroutineScope(Dispatchers.Main + job)
-
-  override fun onDestroy() {
-    job.cancel()
-    super.onDestroy()
-  }
+@HiltViewModel
+class ProfileViewModel @Inject constructor(
+    private val getUser: GetUserUseCase
+) : ViewModel() {
+    private val _uiState = MutableStateFlow(ProfileUiState())
+    val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()
 }
 
 Consejo para entrevista:
-Cita Activity retenida por static/singleton/Handler y corrutinas sin cancelar. Menciona LeakCanary y lifecycle-aware components. Demuestra que entiendes la diferencia entre Context de Activity y Application.
+Explica con ejemplo concreto de capas Android, no solo teoría SOLID. La frase clave es una sola razón para cambiar, no una sola función por clase.

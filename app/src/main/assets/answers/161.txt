@@ -1,62 +1,54 @@
 Concepto:
-Las notificaciones en Android son mensajes del sistema mostrados fuera de la app (status bar, heads-up, wearables), creadas con NotificationCompat y mostradas mediante NotificationManager, obligatoriamente asignadas a un NotificationChannel en API 26+.
+Repository con caché combina una fuente remota y una local (memoria o BD) para exponer una única API de datos: sirve cache rápido offline y sincroniza con red cuando hay conectividad.
 
 Explicación detallada:
-Componentes:
-1) NotificationChannel (API 26+): categoría con importancia, sonido, vibración. El usuario puede silenciarla en ajustes.
-2) NotificationCompat.Builder: título, texto, icono pequeño, estilo, acciones.
-3) NotificationManager.notify(id, notification).
-4) PendingIntent en acciones y al tocar la notificación (abrir Activity).
+Flujo típico (single source of truth):
+- UI observa Flow desde Room.
+- Repository fetch remoto -> guarda en Room -> Room emite actualización.
+- Lectura inicial desde BD sin esperar red (stale-while-revalidate).
 
-Permisos:
-- POST_NOTIFICATIONS runtime en Android 13+ (API 33).
-- Foreground service types si la notificación acompaña FGS.
+Estrategias:
+- Cache-aside: lee cache; si miss o expirado, fetch red y actualiza cache.
+- Network-bound resource (patrón Google): emit Loading, lee BD, fetch, persiste, emite Success/Error.
+- TTL en memoria para datos poco críticos.
 
-Pasos:
-- Crear canal una vez (Application o primera vez).
-- Construir notificación con Builder.
-- Llamar notify con id único por tipo de notificación.
+Capas:
+interface UserRepository { fun observeUser(id: String): Flow<User> }
+class UserRepositoryImpl(api, dao, connectivity) : UserRepository
 
-Foreground:
-- startForeground(id, notification) para servicios en primer plano.
+Invalidación:
+- Pull-to-refresh fuerza sync.
+- WorkManager periódico.
+- Eventos push (FCM) invalidan keys.
 
-Buenas prácticas:
-- IDs estables por tipo; cancel(id) al resolver.
-- No spamear; respetar importancia.
-- Deep link en contentIntent.
+Consistencia:
+- onConflict REPLACE en Room.
+- Versionado de entidades.
+- Manejo offline: mostrar datos cacheados con banner "sin conexión".
 
 Cuándo usarlo:
-Mensajería, descargas, recordatorios, resultado de tareas en background con WorkManager (también puede mostrar notificación).
+Casi toda app con API REST y listas que deben funcionar offline o con mala red.
 
 Ejemplo:
-private fun createChannel(context: Context) {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        val channel = NotificationChannel(
-            CHANNEL_ID,
-            "Mensajes",
-            NotificationManager.IMPORTANCE_DEFAULT
-        )
-        val nm = context.getSystemService(NotificationManager::class.java)
-        nm.createNotificationChannel(channel)
+class ArticleRepository @Inject constructor(
+    private val api: ArticleApi,
+    private val dao: ArticleDao
+) {
+    fun observeArticles(): Flow<List<Article>> = dao.observeAll()
+
+    suspend fun refresh() {
+        val remote = api.getArticles()
+        dao.insertAll(remote.map { it.toEntity() })
     }
 }
 
-fun showMessageNotification(context: Context, title: String, body: String) {
-    createChannel(context)
-    val intent = Intent(context, MainActivity::class.java)
-    val pi = PendingIntent.getActivity(
-        context, 0, intent,
-        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-    )
-    val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-        .setSmallIcon(R.drawable.ic_notification)
-        .setContentTitle(title)
-        .setContentText(body)
-        .setContentIntent(pi)
-        .setAutoCancel(true)
-        .build()
-    NotificationManagerCompat.from(context).notify(NOTIF_ID, notification)
+// ViewModel
+init {
+    viewModelScope.launch {
+        launch { repository.observeArticles().collect { _state.value = it } }
+        launch { repository.refresh() }
+    }
 }
 
 Consejo para entrevista:
-Menciona canal obligatorio, permiso API 33 y PendingIntent FLAG_IMMUTABLE. Diferencia notify normal vs startForeground.
+Explica single source of truth (Room + Flow). Menciona NetworkBoundResource conceptualmente. Contrasta cache en memoria vs BD.

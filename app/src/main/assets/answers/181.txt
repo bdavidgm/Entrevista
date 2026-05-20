@@ -1,35 +1,36 @@
 Concepto:
-WindowManager es el servicio que gestiona ventanas en pantalla: layout params, rotación, flags de ventana (fullscreen, keep screen on) y, en APIs avanzadas, añadir vistas overlay tipo SYSTEM_ALERT (con permisos restrictivos).
+InputMethodManager (IMM) controla el teclado virtual (IME): mostrarlo, ocultarlo y consultar métodos de entrada disponibles, asociado al Context de una Activity con ventana enfocada.
 
 Explicación detallada:
-Cada Activity tiene una Window gestionada por WindowManager. Acceso típico:
-- activity.window o context.getSystemService(WindowManager::class.java)
-- window.attributes (LayoutParams): width, height, type, flags
-- window.setFlags(FLAG_FULLSCREEN, FLAG_FULLSCREEN) — muchas UIs usan WindowInsetsController ahora
-- window.addFlags(FLAG_KEEP_SCREEN_ON) para video o navegación
+El flujo de entrada de texto pasa por EditText/Compose TextField → InputConnection → IME del usuario (Gboard, SwiftKey). IMM métodos habituales:
+- showSoftInput(view, flags): muestra teclado para una View con foco.
+- hideSoftInputFromWindow(windowToken, flags): oculta usando token de la ventana.
+- toggleSoftInput(show, hideSoftInputOnly)
+- isActive(view): si hay IME activo para esa vista.
 
-LayoutParams.type define capa: TYPE_APPLICATION para contenido normal; TYPE_APPLICATION_OVERLAY (API 26+) para burbujas flotantes con SETTINGS canDrawOverlays.
+En Compose, el enfoque moderno es LocalSoftwareKeyboardController (show/hide) en lugar de IMM directo, pero internamente sigue el mismo stack.
 
-addView(view, params) añade vista al WM global (chat heads legacy); requiere permiso SYSTEM_ALERT_WINDOW, mal visto en Play Store salvo casos justificados.
+Flags: SHOW_IMPLICIT, HIDE_NOT_ALWAYS. Para ScrollView con campos, ajusta windowSoftInputMode en manifest (adjustResize, adjustPan) o WindowInsets en Compose (imePadding()).
 
-En Compose y Material3, preferir Modifier.systemBarsPadding(), enableEdgeToEdge(), WindowCompat.setDecorFitsSystemWindows(window, false) en lugar de manipular flags manualmente.
-
-Rotación: WindowManager también informa display metrics; getDefaultDisplay() deprecado → Context.display o WindowMetricsCalculator.
+Problemas comunes: llamar showSoftInput antes de que la View tenga foco (post { requestFocus(); show }); fugas si guardas Activity en listener; teclado que tapa botones (solución: insets, no hacks de margin fijos).
 
 Cuándo usarlo:
-- Mantener pantalla encendida durante reproducción.
-- Modo inmersivo en juegos (InsetsController.hide(systemBars())).
-- Bubbles o overlays (raro; usar APIs oficiales de Bubbles si aplica).
+- Botón “Buscar” que abre teclado explícitamente.
+- Cerrar teclado al enviar formulario o navegar.
+- Pantallas login con auto-focus en primer campo (con retraso post-layout).
 
 Ejemplo:
-// Mantener pantalla on en Activity
-window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+// Views tradicional
+val imm = getSystemService(InputMethodManager::class.java)
+editText.requestFocus()
+imm.showSoftInput(editText, InputMethodManager.SHOW_IMPLICIT)
 
-// Edge-to-edge moderno
-WindowCompat.setDecorFitsSystemWindows(window, false)
-WindowInsetsControllerCompat(window, window.decorView).apply {
-    isAppearanceLightStatusBars = true
-}
+// Ocultar
+imm.hideSoftInputFromWindow(editText.windowToken, 0)
+
+// Compose
+val keyboard = LocalSoftwareKeyboardController.current
+keyboard?.hide()
 
 Consejo para entrevista:
-No te centres solo en “burbujas flotantes”. Habla de Window de Activity, edge-to-edge, InsetsController vs flags antiguos, y permiso overlay como excepción. Demuestra evolución hacia AndroidX Window library.
+Prefiere WindowInsets/imePadding en Compose y windowSoftInputMode bien elegido. Si mencionas IMM, demuestra conocer windowToken y foco. Contrasta con enableEdgeToEdge y Behavior del IME en Material3.

@@ -1,35 +1,37 @@
 Concepto:
-Publicar en Google Play Store implica preparar un Android App Bundle firmado, crear la ficha en Play Console, cumplir políticas, pruebas internas/cerradas/abiertas y enviar a revisión de producción.
+Apollo Kotlin (antes Apollo Android) es un cliente GraphQL tipado que genera modelos y operaciones desde el schema, ejecutando queries/mutations/subscriptions sobre HTTP o WebSocket.
 
 Explicación detallada:
-Pasos principales:
+GraphQL: el cliente pide exactamente los campos necesarios en una sola petición; el servidor expone un schema con tipos y resolvers.
 
-1) Cuenta desarrollador Google Play (pago único).
+Apollo:
+- Define .graphql queries en proyecto
+- Gradle plugin genera clases Kotlin type-safe
+- ApolloClient con OkHttp, cache normalizado opcional
+- Coroutines: query.execute() o Flow para watch queries
+- Subscriptions para tiempo real (WebSocket)
 
-2) Preparar app: applicationId único, versionCode/versionName, iconos, feature graphic, screenshots, descripción, categoría, clasificación de contenido, política de privacidad (URL).
+Ventajas vs REST: menos over/under-fetching, evolución de API con deprecations en schema, una versión para móvil/web si comparten schema.
 
-3) Firma: keystore upload key; Play App Signing recomendado (Google guarda clave de firma). build.gradle signingConfigs release; no subir keystore a git.
-
-4) Build release: ./gradlew bundleRelease genera .aab; activar R8/ProGuard si aplica; subir mapping a Crashlytics.
-
-5) Play Console → Crear app → Producción o prueba interna → subir AAB → completar Store listing, Data safety form, permisos sensibles justificados, declaración de anuncios, acceso a cuenta de prueba si login.
-
-6) Pre-launch report y pruebas en dispositivos reales.
-
-7) Enviar a revisión; tiempos variables (horas a días).
-
-8) Tras publicación: staged rollout (1%-100%), monitorear vitals (ANR, crashes).
-
-Actualizaciones: incrementar versionCode, nuevo AAB, notas de versión.
+Desventajas: caching más complejo que REST; curva de schema; tooling de archivo único.
 
 Cuándo usarlo:
-- Lanzamiento comercial o closed beta con testers.
+- Backend GraphQL (Hasura, Apollo Server, DGS).
+- Pantallas que necesitan combinar muchos recursos sin N+1 REST calls.
 
 Ejemplo:
-# Terminal release build
-./gradlew clean bundleRelease
-# Artefacto: app/build/outputs/bundle/release/app-release.aab
-# Subir manualmente en Play Console o con Play Developer API / fastlane supply
+// GetUserQuery.graphql
+// query GetUser($id: ID!) { user(id: $id) { id name email } }
+
+val apollo = ApolloClient.Builder()
+    .serverUrl("https://api.example.com/graphql")
+    .build()
+
+suspend fun loadUser(id: String): GetUserQuery.Data? {
+    val response = apollo.query(GetUserQuery(id)).execute()
+    if (response.hasErrors()) throw ApolloException(response.errors)
+    return response.data
+}
 
 Consejo para entrevista:
-Menciona AAB no APK a producción, Play App Signing, tracks de testing, Data safety y versionCode obligatorio. Conoce diferencia internal testing vs production. Menciona fastlane como automatización opcional.
+Contrasta GraphQL vs REST (flexibilidad vs simplicidad caché HTTP). Menciona codegen, normalized cache y que no reemplaza Firestore. Si solo conoces Retrofit, admite Apollo cuando el backend es GraphQL-first.

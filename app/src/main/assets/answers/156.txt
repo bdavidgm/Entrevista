@@ -1,50 +1,40 @@
 Concepto:
-Un módulo en Android (Gradle module) es una unidad de compilación separada con su propio build.gradle.kts, código fuente y dependencias, que el proyecto ensambla en una librería (AAR) o aplicación (APK/AAB).
+El diseño adaptativo (tablet / large screen) adapta layout, navegación y densidad de contenido según el tamaño de pantalla, orientación y postura del dispositivo (teléfono, plegable, tablet, escritorio).
 
 Explicación detallada:
-Tipos comunes:
-- :app — application module, punto de entrada, applicationId.
-- Library modules (com.android.library): features, core, data — generan AAR consumidos por otros.
-- Dynamic feature modules (opcional): entrega bajo demanda.
+Android ofrece:
+- Qualifiers: sw600dp, w600dp, large, xlarge en res/layout-sw600dp.
+- WindowSizeClass (Material3): Compact, Medium, Expanded para width/height.
+- SlidingPaneLayout, Navigation Rail, dos paneles lista-detalle en tablets.
+- Compose: BoxWithConstraints, WindowInsets, Material3 AdaptiveNavigationSuite.
 
-settings.gradle.kts:
-include(":app", ":core:ui", ":feature:login")
+Patrones:
+- Lista + detalle simultáneos en tablet; solo uno en teléfono con back stack.
+- Grid de columnas variable (LazyVerticalGrid con min size).
+- Evitar solo escalar UI de teléfono; usar espacio horizontal (maestro-detalle).
 
-Dependencias entre módulos:
-implementation(project(":core:network"))
-- api vs implementation: api expone transitivamente al consumidor.
+Foldables:
+- Jetpack WindowManager para postures y separadores.
+- Continuidad al plegar/desplegar.
 
-Ventajas modularización:
-- Tiempos de compilación incrementales.
-- Límites de arquitectura (feature no depende de otra feature directamente).
-- Reutilización y equipos por módulo.
-- Test por módulo.
-
-Convenciones:
-- :core:model, :core:data, :feature:* 
-- Evitar dependencias circulares.
+Pruebas:
+- Emuladores de tablet y Desktop mode.
+- Layout validation en Android Studio.
 
 Cuándo usarlo:
-Proyectos medianos/grandes, multi-feature, compartir SDK interno. Apps triviales pueden ser monolito single-module.
+Apps de productividad, medios, e-commerce. Google Play prioriza apps optimizadas para tablets en categorías grandes.
 
 Ejemplo:
-// settings.gradle.kts
-include(":app")
-include(":core:domain")
-include(":core:data")
-include(":feature:profile")
-
-// app/build.gradle.kts
-dependencies {
-    implementation(project(":feature:profile"))
-    implementation(project(":core:data"))
+@Composable
+fun HomeAdaptive(windowSizeClass: WindowSizeClass) {
+    when (windowSizeClass.widthSizeClass) {
+        WindowWidthSizeClass.Compact -> SinglePaneNav()
+        WindowWidthSizeClass.Medium,
+        WindowWidthSizeClass.Expanded -> ListDetailPaneScaffold()
+    }
 }
 
-// feature/profile/build.gradle.kts
-plugins { alias(libs.plugins.android.library) }
-dependencies {
-    implementation(project(":core:domain"))
-}
+// XML alternativa: res/layout/activity_main.xml y res/layout-sw600dp/activity_main.xml
 
 Consejo para entrevista:
-Diferencia app vs library module. Menciona implementation vs api y compilación incremental. Relaciona con Clean Architecture por capas físicas.
+Menciona WindowSizeClass, list-detail y qualifiers sw600dp. Habla de Navigation Rail vs BottomBar. No confundas solo con orientación landscape.

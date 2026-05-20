@@ -1,21 +1,20 @@
 Concepto:
-El bootloader es el primer software que ejecuta el teléfono al encender; carga el kernel y arranca Android o recovery. Suele estar bloqueado por el fabricante.
+Fastboot es un protocolo y modo de arranque del bootloader que permite flashear particiones, desbloquear OEM y ejecutar comandos de bajo nivel cuando Android no está cargado.
 
 Explicación detallada:
-Bloqueado: solo arranques firmados (verified boot). Desbloquear (OEM unlock) permite flashear particiones custom, instalar recovery alternativo y rootear, pero suele borrar datos (factory reset warning) y anular garantía.
+Se accede con adb reboot bootloader o combinación de teclas (varía por marca). fastboot devices lista equipos. Comandos típicos: fastboot flash boot/recovery/system/vbmeta imagen.img, fastboot erase, fastboot oem unlock (según fabricante), fastboot reboot.
 
-Bootloader bloqueado + verificación activa impide ROMs no firmadas. Algunos fabricantes (Google Pixel, algunos Xiaomi con cuenta) facilitan unlock; otros lo restringen.
+A diferencia de ADB, no necesita sistema Android completo ni depuración USB en sentido de app debugging; necesita bootloader desbloqueado o comandos permitidos por el OEM.
 
-Implicaciones legales y de seguridad: dispositivo más vulnerable a malware con privilegios si se compromete el sistema. Empresas MDM pueden detectar bootloader desbloqueado.
-
-Para desarrolladores normales no hace falta desbloquear; para técnico que restaura software o instala ROM oficial vía fastboot a veces sí.
+Riesgos: flashear imagen incorrecta puede dejar el teléfono en bootloop (brick soft, a veces recuperable). Algunos fabricantes usan herramientas propietarias (Samsung Odin, MediaTek SP Flash, Qualcomm EDL) además o en lugar de fastboot estándar.
 
 Cuándo usarlo:
-Flasheo oficial, desarrollo de sistema, modding avanzado. No necesario para apps de Play Store estándar.
+Flasheo de ROM oficial, desbloqueo, reparación de particiones boot/recovery, desarrollo de kernels.
 
 Ejemplo:
-Ajustes > Opciones desarrollador > Desbloqueo OEM (si existe)
-fastboot oem unlock
+fastboot devices
+fastboot flash boot boot.img
+fastboot reboot
 
 Consejo para entrevista:
-Explica verified boot, wipe de datos al unlock y política de garantía.
+Contrasta con ADB: Fastboot = bootloader, particiones. Menciona riesgo de brick y herramientas OEM.

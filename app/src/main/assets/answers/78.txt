@@ -1,14 +1,14 @@
 Concepto:
-suspend es un modificador de Kotlin que marca una función que puede pausar y reanudar de forma segura dentro de una coroutine, sin bloquear el hilo subyacente. Solo puede llamarse desde otra función suspend o desde un coroutine builder como launch.
+Una coroutine es una unidad de trabajo ligera y suspendible que Kotlin ejecuta de forma cooperativa, permitiendo código asíncrono secuencial sin bloquear hilos. En Android sustituye callbacks anidados y simplifica operaciones de red y BD junto con ViewModelScope.
 
 Explicación detallada:
-El compilador transforma suspend en máquina de estados (continuations). Cuando la función espera IO, libera el hilo para otras coroutines. Retrofit con suspend fun, Room con suspend DAO, y delay() son ejemplos idiomáticos.
+Las coroutines se programan en dispatchers (Main, IO, Default). Una función suspend puede pausarse sin bloquear el hilo del sistema; al reanudarse continúa. Miles de coroutines pueden coexistir frente a pocos threads.
 
-Llamar suspend desde código no suspend requiere launch o runBlocking (tests). Encadenar varias suspend es código lineal legible frente a callbacks hell.
+CoroutineScope define ciclo de vida: viewModelScope, lifecycleScope, applicationScope. launch inicia trabajo fire-and-forget; async devuelve Deferred con resultado. Structured concurrency: los scopes padre cancelan hijos.
 
-suspendCancellableCoroutine convierte callbacks legacy a suspend. withTimeout y withContext son suspend estándar.
+Integración Android: Main dispatcher actualiza UI tras withContext(IO). Retrofit y Room exponen suspend. Flow para streams múltiples de valores.
 
-Cancellation: las suspend deben ser cooperativas; revisar isActive o usar funciones cancelables de kotlinx.coroutines.
+Errores: CoroutineExceptionHandler en scope raíz; try/catch en suspend. No uses GlobalScope en producción (sin lifecycle). runBlocking solo en tests o main bloqueado puntual.
 
 En el contexto de proyectos Android reales, combina esta idea con las guías oficiales de Android Developers y con métricas de calidad (crashes, ANR, Vitals) cuando aplique. En code review, pregunta siempre por ciclo de vida, testabilidad y si la solución escala cuando el equipo crece.
 
@@ -29,17 +29,14 @@ En proyectos reales, documenta decisiones en ADR breves o en README del módulo 
 Relaciona este concepto con los demás bloques del manifiesto Entrevista (arquitectura, corrutinas, seguridad, build) para demostrar visión de sistema completo, no conocimiento aislado de una API.
 
 Cuándo usarlo:
-APIs que esperan resultado único async. Para streams usar Flow, no suspend repetido en loop manual.
+Toda operación async en Kotlin moderno: red, BD, combinación de fuentes, debounce en ViewModel. Callback APIs legacy: suspendCoroutine o adaptadores.
 
 Ejemplo:
-interface ApiService {
-    @GET("users/{id}")
-    suspend fun getUser(@Path("id") id: Long): UserDto
-}
-
-suspend fun loadUser(id: Long): User = withContext(Dispatchers.IO) {
-    api.getUser(id).toDomain()
+viewModelScope.launch {
+    _uiState.update { it.copy(loading = true) }
+    val data = withContext(Dispatchers.IO) { repository.fetch() }
+    _uiState.update { it.copy(loading = false, items = data) }
 }
 
 Consejo para entrevista:
-Define suspend como pausable, no como async automático en otro hilo (el dispatcher decide). Pregunta: ¿puedo llamar suspend desde onClick directo? No, necesitas scope.launch.
+Explica suspend, scope y dispatchers. No digas que coroutine es un hilo. Seguimiento: diferencia thread vs coroutine — muchas coroutines, pocos threads.

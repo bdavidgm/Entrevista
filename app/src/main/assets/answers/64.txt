@@ -1,14 +1,16 @@
 Concepto:
-MVI (Model-View-Intent) es un patrón unidireccional donde la View envía Intents (acciones del usuario o del sistema), un componente reduce el estado anterior más la intent en un nuevo Model (estado inmutable único), y la View renderiza solo ese Model. Garantiza trazabilidad y reproducibilidad del estado de pantalla.
+Clean Architecture (Uncle Bob adaptada a Android) organiza el código en capas concéntricas: entidades y reglas de negocio en el centro, casos de uso (use cases), interfaces de repositorio, y capas externas de UI y frameworks. La regla de dependencia: las capas internas no conocen Android, Retrofit ni Room.
 
 Explicación detallada:
-A diferencia de MVVM con varios flujos sueltos, MVI centraliza todo en un State: data class ScreenState(val list, val error, val dialog). Cada cambio pasa por reduce(oldState, intent): ScreenState. Los efectos secundarios (red, navegación) se modelan como intents async o en capa intermedia (Actor, middleware).
+Capa de dominio (:domain): entidades puras Kotlin, interfaces Repository, use cases (GetUserUseCase) con una responsabilidad. Sin imports de android.*. Capa de datos (:data): implementaciones de repositorio, DTOs, Retrofit, Room, mappers. Capa de presentación (:app o :feature): ViewModel, Compose, Navigation.
 
-En Kotlin/Android suele implementarse con sealed class Intent, data class State, y ViewModel que expone StateFlow y función dispatch(Intent). Compose encaja bien: un solo collectAsState y when sobre state. Ventaja: debugging con logs de intents, time-travel en teoría, tests deterministas del reducer.
+Los use cases encapsulan una acción de negocio ("comprar", "validar cupón") y coordinan repositorios. El ViewModel orquesta use cases, no reglas de negocio complejas inline. Esto escala en equipos grandes y módulos múltiples.
 
-Desventajas: boilerplate para pantallas simples, riesgo de estados imposibles si el reducer no es exhaustivo, y eventos one-shot (toast) requieren patrón adicional (effect channel). Orbit MVI, MVIKotlin o implementación manual son opciones.
+Dependency Inversion: domain define UserRepository interface; data implementa UserRepositoryImpl. Hilt enlaza en módulos @Module @InstallIn. Beneficios: tests de dominio sin emulador, sustituir Firebase por backend propio cambiando :data.
 
-Comparación MVVM: MVVM permite múltiples LiveData; MVI fuerza un solo estado. MVI se parece a Redux; en entrevistas menciona predictibilidad y que es popular en equipos con flujos complejos (fintech, wizards).
+Costes: más boilerplate, curva de aprendizaje, riesgo de sobre-arquitectura en apps triviales. Para entrevista junior-mid, explica el principio aunque tu proyecto use MVVM simplificado con repository único.
+
+Modularización: feature modules dependen de :domain, no entre sí lateralmente sin interfaces. shared :core para utilidades.
 
 En el contexto de proyectos Android reales, combina esta idea con las guías oficiales de Android Developers y con métricas de calidad (crashes, ANR, Vitals) cuando aplique. En code review, pregunta siempre por ciclo de vida, testabilidad y si la solución escala cuando el equipo crece.
 
@@ -23,29 +25,22 @@ En proyectos reales, documenta decisiones en ADR breves o en README del módulo 
 Relaciona este concepto con los demás bloques del manifiesto Entrevista (arquitectura, corrutinas, seguridad, build) para demostrar visión de sistema completo, no conocimiento aislado de una API.
 
 Cuándo usarlo:
-Pantallas con muchos estados combinados (loading + error + partial data + modal), equipos que valoran auditoría de cambios, o cuando ya usan librería MVI. Para CRUD simple, MVVM basta.
+Apps con vida larga, varios desarrolladores, lógica de negocio rica o múltiples clients (móvil, wear). Para prototipos o apps muy pequeñas, MVVM con repository puede bastar; menciona pragmatismo.
 
 Ejemplo:
-sealed interface CartIntent {
-    data object Load : CartIntent
-    data class Remove(val id: String) : CartIntent
+// domain
+class GetProductsUseCase @Inject constructor(
+    private val repo: ProductRepository
+) {
+    suspend operator fun invoke(): Result<List<Product>> = repo.getProducts()
 }
 
-data class CartState(val items: List<Item> = emptyList(), val loading: Boolean = false)
-
-class CartViewModel : ViewModel() {
-    private val _state = MutableStateFlow(CartState())
-    val state = _state.asStateFlow()
-
-    fun dispatch(intent: CartIntent) = viewModelScope.launch {
-        _state.update { reduce(it, intent) }
-    }
-}
-
-private fun reduce(state: CartState, intent: CartIntent): CartState = when (intent) {
-    CartIntent.Load -> state.copy(loading = true)
-    is CartIntent.Remove -> state.copy(items = state.items.filter { it.id != intent.id })
+// presentation
+class CatalogViewModel @Inject constructor(
+    private val getProducts: GetProductsUseCase
+) : ViewModel() {
+    fun load() = viewModelScope.launch { getProducts() }
 }
 
 Consejo para entrevista:
-Explica ciclo Intent -> Reducer -> State -> View. Menciona eventos únicos como problema y solución (Channel/Effect). No digas que MVI reemplaza siempre a MVVM; es trade-off de complejidad.
+Dibuja círculos y flechas hacia dentro. Menciona Dependency Rule y use cases. Si preguntan "¿siempre Clean?": no, trade-off tamaño del equipo. Evita mezclar DTO de Retrofit en ViewModel.

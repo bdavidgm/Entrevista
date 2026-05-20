@@ -1,45 +1,34 @@
 Concepto:
-Kotlin es el lenguaje preferido para Android desde 2019: conciso, seguro ante nulls, interoperable con Java y con soporte de primera clase para corrutinas, DSLs y APIs modernas de Jetpack.
+Android Studio es el IDE oficial basado en IntelliJ IDEA, mantenido por Google, optimizado para desarrollo Android con SDK integrado, emulador, Layout Inspector, Profiler y soporte first-class de Kotlin y Jetpack Compose.
 
 Explicación detallada:
-Ventajas frente a Java en Android:
+Razones por las que es el estándar de la industria:
 
-1) Null safety: tipos String vs String? detectados en compilación; operadores ?., ?:, let reducen NPE en producción.
+1) Integración con el ecosistema Android: SDK Manager para plataformas y herramientas build; AVD Manager para emuladores con Google Play; Device Manager para dispositivos físicos; Logcat filtrado por app; APK Analyzer y App Bundle tools.
 
-2) Concisión: data class, sealed class, when exhaustivo, propiedades sin boilerplate getters/setters, default parameters, named arguments. Menos líneas = menos bugs y reviews más rápidos.
+2) Herramientas de UI: Layout Editor para XML (aunque Compose predomina), Compose Preview con @Preview multiparamétrico, Animation Preview, tema en tiempo real.
 
-3) Funciones de orden superior y lambdas: colecciones con map/filter, APIs reactivas legibles; SAM conversions donde Java exige interfaces.
+3) Build y dependencias: Gradle integrado, asistente de dependencias, variantes build (debug/release), product flavors visualizados, sincronización con version catalog (libs.versions.toml).
 
-4) Coroutines: async sin callback hell; integración con ViewModel scope, Room, Retrofit suspend, Flow. Java usa callbacks, RxJava o Executors más verbosos.
+4) Calidad y rendimiento: Android Profiler (CPU, memoria, energía, red); Lint con reglas Android; Baseline Profile generator; emulador con snapshots y sensores simulados.
 
-5) Extension functions: añadir utilidades a Context, View, String sin subclassing (usar con moderación).
+5) Productividad Kotlin: refactorings, nullability, coroutines debugger limitado, plantillas Activity/Compose, Navigation safe args plugin.
 
-6) Interoperabilidad: @JvmStatic, @JvmOverloads, @file:JvmName para llamar desde Java legacy; migración gradual módulo a módulo.
+6) Testing: ejecutar unit/instrumented tests, emulador headless en CI (aunque CI suele usar línea de comandos ./gradlew).
 
-7) Multiplataforma (KMP): lógica compartida con iOS en algunos equipos (no siempre en entrevista junior).
-
-8) Oficialidad: documentación, codelabs, Compose samples y AndroidX asumen Kotlin.
-
-Java sigue en código legacy y algunas APIs generadas; en entrevista se espera que escribas Kotlin nuevo.
+Alternativas (VS Code, Fleet) carecen de integración profunda con emulador, layout tools y asistentes oficiales. Para entrevistas, reconoce que el build es Gradle y puede automatizarse sin IDE, pero el desarrollo diario Android casi siempre es Android Studio.
 
 Cuándo usarlo:
-- Todo código nuevo en proyectos Android modernos.
-- Compose (APIs idiomáticas Kotlin).
-- Cuando migras módulos Java por riesgo/ROI.
+- Desarrollo Android nativo profesional.
+- Depuración visual, perfiles de rendimiento, diseño Compose/XML.
+- Publicación: Generate Signed Bundle, Play App Signing asistente.
 
 Ejemplo:
-// Java verboso vs Kotlin
-// Java: if (user != null) { String n = user.getName(); if (n != null) show(n); }
-// Kotlin:
-user?.name?.let { show(it) }
-
-data class User(val id: Long, val name: String)
-
-sealed interface UiState {
-    data object Loading : UiState
-    data class Success(val users: List<User>) : UiState
-    data class Error(val message: String) : UiState
-}
+// No hay “código” obligatorio; flujo típico en proyecto:
+// File → New → Activity → Empty Compose Activity
+// Build → Make Project (Ctrl+F9)
+// Run → app en emulador API 34
+// View → Tool Windows → App Inspection (DB, DataStore en versiones recientes)
 
 Consejo para entrevista:
-Da 3-4 puntos concretos (null safety, coroutines, data/sealed, oficial) con ejemplo breve. Menciona interop Java sin fanatismo. Evita decir “Java está muerto”; di “Kotlin es el default para desarrollo nuevo”.
+Menciona herramientas concretas que usas: Logcat, Profiler, Layout/Compose Preview, Device File Explorer, AGP Upgrade Assistant. Di que conoces Gradle por línea de comandos para CI. No critiques otros IDEs sin motivo; centra “oficial + integración + soporte Compose/Kotlin”.

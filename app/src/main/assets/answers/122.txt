@@ -1,43 +1,45 @@
 Concepto:
-Smart cast es la capacidad del compilador de Kotlin para tratar automáticamente una variable como un tipo más específico tras una comprobación is, null check o condición que garantiza el tipo en ese ámbito.
+Los operadores as (cast explícito inseguro) y as? (cast seguro nullable) convierten un valor a otro tipo en Kotlin; as? devuelve null si el cast no es posible en lugar de lanzar ClassCastException.
 
 Explicación detallada:
-Tras if (x is String) { ... }, dentro del bloque x se usa como String sin cast explícito.
+as:
+- Cast clásico: val s = obj as String
+- Si obj no es String en runtime, lanza ClassCastException.
+- Útil cuando estás seguro por lógica previa (p. ej. tras is en rama donde el compilador no hace smart cast por ser propiedad mutable).
 
-Condiciones para smart cast:
-- val o parámetro inmutable (no propiedad open con custom getter que pueda cambiar entre comprobación y uso).
-- Variable local no capturada por lambda que se ejecute async antes del uso.
-- when con is ramas exhaustivas en sealed class.
+as?:
+- Cast seguro: val s = obj as? String
+- Resultado String?; null si falla.
+- Encadena con Elvis: (obj as? String) ?: return
 
-Ejemplos comunes:
-- if (value != null) { value.length } // value smart cast a no-null
-- when (state) { is Loading -> showSpinner(); is Success -> show(state.data) }
+Relación con is:
+- Preferir is + smart cast cuando el compilador puede inferir el tipo en la misma rama.
+- as? en genéricos erasure: (list as? List<String>) no valida elementos en runtime por type erasure.
 
-Sin smart cast usas as o as?:
-- Propiedad de clase: if (item is Product) { item.name } puede fallar smart cast si item es var; solución: val local = item; if (local is Product) ...
+En Android:
+- findViewById antes de ViewBinding: view as TextView (legacy).
+- Intent extras: intent.getParcelableExtra("key", User::class.java) en API moderna evita casts manuales.
+- Fragments y tags: parentFragment as? DetailHost
 
-En Android con sealed class UiState:
-when (state) {
-    is UiState.Loading -> CircularProgressIndicator()
-    is UiState.Error -> Text(state.message)
-    is UiState.Success -> UserList(state.users)
-}
-
-Smart cast mejora legibilidad y seguridad frente a casts manuales propensos a ClassCastException.
+Evitar casts innecesarios con diseño: sealed class, when exhaustivo, interfaces en lugar de Any.
 
 Cuándo usarlo:
-Diseña APIs con sealed class, interfaces cerradas y tipos nullable explícitos para aprovechar el compilador. Evita almacenar tipos en Any si puedes modelar uniones con sealed.
+as? por defecto en código defensivo y capas que reciben Any o Serializable. as solo con garantía fuerte o tras comprobación is en la misma expresión.
 
 Ejemplo:
-sealed class Result<out T> {
-    data class Ok<T>(val value: T) : Result<T>()
-    data class Err(val message: String) : Result<Nothing>()
+fun handleClick(view: View) {
+    val button = view as? Button ?: return
+    button.isEnabled = false
 }
 
-fun <T> Result<T>.getOrNull(): T? = when (this) {
-    is Result.Ok -> value  // smart cast a Ok
-    is Result.Err -> null
+fun parseExtra(intent: Intent): User? {
+    return if (Build.VERSION.SDK_INT >= 33) {
+        intent.getParcelableExtra("user", User::class.java)
+    } else {
+        @Suppress("DEPRECATION")
+        intent.getParcelableExtra("user") as? User
+    }
 }
 
 Consejo para entrevista:
-Explica por qué a veces no hay smart cast (var, propiedad open, lambda). Muestra sealed class + when como patrón idiomático en ViewModels Android.
+Contrasta as vs as? vs is/smart cast. En Android menciona getParcelableExtra tipado y por qué el erasure limita casts de genéricos.

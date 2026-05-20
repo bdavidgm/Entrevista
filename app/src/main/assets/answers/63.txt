@@ -1,16 +1,16 @@
 Concepto:
-Clean Architecture (Uncle Bob adaptada a Android) organiza el código en capas concéntricas: entidades y reglas de negocio en el centro, casos de uso (use cases), interfaces de repositorio, y capas externas de UI y frameworks. La regla de dependencia: las capas internas no conocen Android, Retrofit ni Room.
+El patrón Repository es una capa de abstracción que unifica el acceso a datos desde una o varias fuentes (API, Room, DataStore, caché en memoria) y expone una API orientada al dominio o a la app. Oculta detalles de red y persistencia al ViewModel y facilita tests con implementaciones fake.
 
 Explicación detallada:
-Capa de dominio (:domain): entidades puras Kotlin, interfaces Repository, use cases (GetUserUseCase) con una responsabilidad. Sin imports de android.*. Capa de datos (:data): implementaciones de repositorio, DTOs, Retrofit, Room, mappers. Capa de presentación (:app o :feature): ViewModel, Compose, Navigation.
+El ViewModel no debe llamar a Retrofit ni DAO directamente: pide productRepository.getProducts() y el repository decide si leer de red, caché local o ambos (estrategia network-first, cache-first). Esto centraliza políticas de sincronización, reintentos y mapeo DTO -> entidad de dominio.
 
-Los use cases encapsulan una acción de negocio ("comprar", "validar cupón") y coordinan repositorios. El ViewModel orquesta use cases, no reglas de negocio complejas inline. Esto escala en equipos grandes y módulos múltiples.
+Un repository puede ser una interfaz ProductRepository con implementación DefaultProductRepository inyectada por Hilt. Internamente usa ProductApi, ProductDao y quizá DataStore para timestamps. Los errores se mapean a Result o excepciones de dominio legibles para la UI.
 
-Dependency Inversion: domain define UserRepository interface; data implementa UserRepositoryImpl. Hilt enlaza en módulos @Module @InstallIn. Beneficios: tests de dominio sin emulador, sustituir Firebase por backend propio cambiando :data.
+En Clean Architecture el repository pertenece a la capa de datos pero implementa interfaces definidas en dominio (Dependency Inversion). En MVVM pragmático a veces la interfaz vive en el mismo módulo data; en proyectos grandes, módulo :domain define contrato y :data implementa.
 
-Costes: más boilerplate, curva de aprendizaje, riesgo de sobre-arquitectura en apps triviales. Para entrevista junior-mid, explica el principio aunque tu proyecto use MVVM simplificado con repository único.
+Testing: FakeProductRepository en tests de ViewModel devuelve listas fijas sin Mockito de Retrofit. Tests de integración prueban la implementación real contra base en memoria.
 
-Modularización: feature modules dependen de :domain, no entre sí lateralmente sin interfaces. shared :core para utilidades.
+Cache: el repository puede mantener StateFlow compartido o invalidar tras escrituras. Paging 3 integra RemoteMediator que actúa como capa de sincronización entre red y Room dentro del ecosistema repository-like.
 
 En el contexto de proyectos Android reales, combina esta idea con las guías oficiales de Android Developers y con métricas de calidad (crashes, ANR, Vitals) cuando aplique. En code review, pregunta siempre por ciclo de vida, testabilidad y si la solución escala cuando el equipo crece.
 
@@ -25,22 +25,26 @@ En proyectos reales, documenta decisiones en ADR breves o en README del módulo 
 Relaciona este concepto con los demás bloques del manifiesto Entrevista (arquitectura, corrutinas, seguridad, build) para demostrar visión de sistema completo, no conocimiento aislado de una API.
 
 Cuándo usarlo:
-Apps con vida larga, varios desarrolladores, lógica de negocio rica o múltiples clients (móvil, wear). Para prototipos o apps muy pequeñas, MVVM con repository puede bastar; menciona pragmatismo.
+Siempre que haya más de una fuente de datos o posibilidad de cambiar implementación (mock en debug, API staging). Evita repository de un solo método que solo reenvía una llamada API sin valor; en ese caso evalúa si la capa aporta o es over-engineering.
 
 Ejemplo:
-// domain
-class GetProductsUseCase @Inject constructor(
-    private val repo: ProductRepository
-) {
-    suspend operator fun invoke(): Result<List<Product>> = repo.getProducts()
+interface ProductRepository {
+    suspend fun getProducts(): List<Product>
+    suspend fun refresh()
 }
 
-// presentation
-class CatalogViewModel @Inject constructor(
-    private val getProducts: GetProductsUseCase
-) : ViewModel() {
-    fun load() = viewModelScope.launch { getProducts() }
+class ProductRepositoryImpl @Inject constructor(
+    private val api: ProductApi,
+    private val dao: ProductDao
+) : ProductRepository {
+    override suspend fun getProducts(): List<Product> =
+        dao.getAll().ifEmpty { refresh(); dao.getAll() }
+
+    override suspend fun refresh() {
+        val remote = api.fetchAll()
+        dao.insertAll(remote.map { it.toEntity() })
+    }
 }
 
 Consejo para entrevista:
-Dibuja círculos y flechas hacia dentro. Menciona Dependency Rule y use cases. Si preguntan "¿siempre Clean?": no, trade-off tamaño del equipo. Evita mezclar DTO de Retrofit en ViewModel.
+Explica una fuente de verdad, estrategia de caché y test con fake. No confundas Repository con DAO: DAO es SQLite; Repository orquesta. Seguimiento: ¿Dónde va el mapper? En data layer o use case según Clean.

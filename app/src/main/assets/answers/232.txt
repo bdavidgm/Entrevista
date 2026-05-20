@@ -1,19 +1,22 @@
 Concepto:
-Android clasifica permisos en normal, peligroso (dangerous/runtime), firma (signature) y especial (special/appop). La protección depende del nivel de riesgo para privacidad e integridad.
+Un técnico Android en taller combina diagnóstico de hardware/software, restauración de firmware, gestión de cuenta (FRP), limpieza de almacenamiento y orientación al usuario.
 
 Explicación detallada:
-Normal (INTERNET, VIBRATE): concedidos en instalación sin diálogo. Dangerous (CAMERA, LOCATION, READ_CONTACTS): declarados en manifest y solicitados en runtime; el usuario puede denegar. Signature: solo apps firmadas con la misma clave que el sistema o el OEM. Special: permisos de alto impacto gestionados en Ajustes (WRITE_SETTINGS, MANAGE_EXTERNAL_STORAGE, SYSTEM_ALERT_WINDOW).
+Tareas habituales: comprobar puerto USB y modo (MTP, PTP, solo carga), activar depuración si es posible, extraer logs con adb bugreport, reinstalar ROM oficial, reset de fábrica, sustitución de batería/pantalla, test de sensores en menú secreto (*#*#4636#*#* en algunos), verificar IMEI y bandas.
 
-Desde Android 6 (API 23) los dangerous requieren requestPermissions o Activity Result API. Android 13+ granularidad: POST_NOTIFICATIONS, READ_MEDIA_* en lugar de READ_EXTERNAL_STORAGE único.
+FRP (Factory Reset Protection): tras reset, pide cuenta Google previa; no se “salta” legalmente sin credenciales del dueño; técnico debe explicar al cliente.
 
-Principio de mínimo privilegio: declarar solo lo necesario; usar maxSdkVersion para permisos legacy que ya no aplican. Revisar declaraciones fusionadas de librerías con merged manifest.
+Herramientas por fabricante: Odin (Samsung), Mi Flash (Xiaomi), MSM Download Tool (OnePlus/OPPO), SP Flash Tool (MediaTek), HiSuite/Honor, EDL cables en Qualcomm.
+
+Modo download/EDL: arranque de emergencia cuando no enciende Android; requiere autorización y firmware firmado. Distinto de fastboot visible.
+
+Ética: solo operar en dispositivos de propiedad demostrada; respetar privacidad de datos.
 
 Cuándo usarlo:
-Diseño de manifest, code review de privacidad, preparación para Play Console (Data safety).
+Centros de servicio, reparación de móviles, soporte IT corporativo con dispositivos Android.
 
 Ejemplo:
-AndroidManifest.xml uses-permission
-registerForActivityResult(RequestPermission())
+Diagnóstico: adb devices, cargador original, recovery wipe cache, flash ROM oficial del sitio del OEM
 
 Consejo para entrevista:
-Cuatro tipos + runtime desde API 23. Relaciona con pregunta de permisos peligrosos (id 103).
+Menciona FRP, Odin/Mi Flash, y límites legales/éticos.

@@ -1,16 +1,14 @@
 Concepto:
-Job representa un trabajo cancelable en el árbol de coroutines: controla el ciclo de vida, permite cancel() y join(), y forma la jerarquía padre-hijo de structured concurrency. Cancelar un Job padre cancela todos los hijos de forma cooperativa.
+withContext es una función suspend que cambia el CoroutineContext (típicamente el Dispatcher) para el bloque que ejecuta y restaura el contexto anterior al terminar. Permite escribir código secuencial que corre en IO o Main según la fase sin bloquear hilos.
 
 Explicación detallada:
-Cada coroutine tiene Job. viewModelScope contiene un Job que se cancela en onCleared(). job.cancel() solicita cancelación; el código suspend debe cooperar (isActive, yield, funciones de kotlinx cancelables).
+withContext(Dispatchers.IO) { heavyWork() } mueve la ejecución al pool IO y devuelve el resultado al caller. Tras el bloque, vuelves al dispatcher del scope padre (por ejemplo Main si launch fue en viewModelScope con Main implícito en actualización UI).
 
-CancellationException no siempre se loguea como error: es flujo normal. finally con NonCancellable para persistir estado crítico.
+Uso típico en ViewModel: launch en viewModelScope (Default o Main) -> withContext(IO) para red/BD -> actualizar StateFlow (thread-safe con update). No mezcles Dispatchers.IO en cada línea si un bloque entero es IO.
 
-SupervisorJob: un hijo fallido no cancela hermanos (útil en scope raíz de UI). Job() simple: fallo hijo cancela padre.
+withContext es preferible a launch anidado cuando necesitas el resultado de forma secuencial. Para paralelo usa async.
 
-job.join() suspende hasta completar. children y parent en depuración. attach a Handler si legacy.
-
-En UI: al salir de pantalla viewModelScope cancela peticiones obsoletas evitando actualizar UI destruida si el ViewModel se destruye (no en rotación si ViewModel persiste).
+NonCancellable: contexto especial para flush de datos tras cancelación del usuario. test: StandardTestDispatcher con runTest.
 
 En el contexto de proyectos Android reales, combina esta idea con las guías oficiales de Android Developers y con métricas de calidad (crashes, ANR, Vitals) cuando aplique. En code review, pregunta siempre por ciclo de vida, testabilidad y si la solución escala cuando el equipo crece.
 
@@ -25,23 +23,17 @@ Durante la entrevista, estructura la respuesta en definición, ejemplo concreto 
 Para profundizar tras la entrevista, revisa documentación oficial, codelabs y el código fuente de tu propio proyecto Entrevista aplicando el concepto en un flujo mínimo reproducible. La práctica deliberada con tests unitarios refuerza la confianza al explicar el tema en viva voz.
 
 Cuándo usarlo:
-Gestionar trabajo largo cancelable, tests que verifican cancelación, combinar jobs con + operator. Usuario pulsa "atrás" durante carga: cancelar scope o Job específico.
+Cambiar dispatcher para secciones concretas de trabajo suspend. Evita withContext(Main) innecesario si ya estás en Main y solo actualizas state.
 
 Ejemplo:
-val job = viewModelScope.launch {
-    try {
-        val data = repository.longPoll()
-        _state.value = data
-    } catch (e: CancellationException) {
-        throw e
-    } catch (e: Exception) {
-        _state.value = ErrorState(e)
-    }
+suspend fun fetchAndMap(): List<Item> = withContext(Dispatchers.IO) {
+    api.getItems().map { it.toDomain() }
 }
 
-fun onCancelClick() {
-    job.cancel()
+viewModelScope.launch {
+    val items = fetchAndMap()
+    _uiState.update { it.copy(items = items) }
 }
 
 Consejo para entrevista:
-Explica cooperativa vs forzada, SupervisorJob, y onCleared. Pregunta: ¿cancel detiene hilo? No, solo señala cooperación en coroutines.
+Contrasta withContext vs launch anidado. Menciona que es suspend y devuelve valor. No confundas con flowOn (para Flow).

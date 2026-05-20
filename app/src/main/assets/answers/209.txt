@@ -1,39 +1,38 @@
 Concepto:
-Firebase Crashlytics es un servicio de informes de fallos en tiempo casi real que agrupa crashes y ANRs por stack trace, versión, dispositivo y permite añadir logs/breadcrumbs custom para diagnosticar producción.
+Firebase Authentication provee login de usuarios con email/contraseña, teléfono, Google, Apple, anónimo y más, gestionando tokens y sesión integrada con otros productos Firebase.
 
 Explicación detallada:
-Integración Gradle: plugin com.google.firebase.crashlytics, google-services.json, dependencia firebase-crashlytics-ktx.
+FirebaseAuth es el SDK:
+- createUserWithEmailAndPassword / signInWithEmailAndPassword
+- signInWithCredential (GoogleSignIn, OAuth)
+- signInAnonymously para pruebas o guest checkout
+- currentUser, idToken (JWT para backend propio)
+- addAuthStateListener para UI reactiva al login/logout
 
-Automático: captura excepciones no controladas en main thread y nativas (con NDK config). Reportes tras reinicio de app (no siempre instantáneo en debug).
+Backend propio: envía ID token al servidor y verifica con Firebase Admin SDK.
 
-API útil:
-- Firebase.crashlytics.log("Paso antes del pago")
-- setCustomKey("cart_id", id)
-- setUserId(hashAnonymized) — cuidado GDPR
-- recordException(Throwable) para errores capturados no fatales
-- crashlytics.setCrashlyticsCollectionEnabled(BuildConfig.DEBUG.not())
+Integración UI: Google One Tap, Credential Manager; Phone Auth con verificación SMS.
 
-Dashboard: issues por frecuencia, regresiones en versiones nuevas, comparar builds.
-
-Complementos: Performance Monitoring, Analytics events para correlacionar.
+Seguridad: reglas en Firestore/Storage deben usar request.auth.uid; no confiar solo en cliente.
 
 Cuándo usarlo:
-- Toda app en producción necesita telemetría de crashes.
-- Priorizar fixes por impacto en usuarios.
+- MVPs y startups que quieren auth rápido sin servidor propio de identidad.
+- Apps que ya usan Firestore, Functions, FCM con mismo proyecto Firebase.
 
-Alternativas: Sentry, Bugsnag, Datadog RUM.
+Alternativas: Auth0, AWS Cognito, backend custom OAuth2/OIDC.
 
 Ejemplo:
-Firebase.crashlytics.apply {
-    setCustomKey("feature_flag_checkout_v2", true)
-    log("Checkout iniciado")
-}
-try {
-    processPayment()
-} catch (e: PaymentException) {
-    Firebase.crashlytics.recordException(e)
-    showErrorToUser()
-}
+val auth = Firebase.auth
+auth.signInWithEmailAndPassword(email, password)
+    .addOnCompleteListener { task ->
+        if (task.isSuccessful) {
+            val user = auth.currentUser
+        } else {
+            // task.exception
+        }
+    }
+// Coroutines KTX:
+// auth.signInWithEmailAndPassword(email, pass).await()
 
 Consejo para entrevista:
-Menciona custom keys/logs, no usar crash() en prod, deshabilitar collection en debug si quieres, y privacidad de userId. Conecta con CI mapping de ProGuard/R8 (upload mapping file) para stacks legibles.
+Menciona AuthStateListener, ID token para API propia, y reglas de seguridad en Firestore. Di que auth en cliente no basta; backend debe validar token. Conoce límites (proveedores, coste según escala).

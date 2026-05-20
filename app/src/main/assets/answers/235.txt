@@ -1,22 +1,20 @@
 Concepto:
-Cámara, micrófono y contactos son permisos dangerous de alto impacto en privacidad; requieren justificación clara y manejo de denegación.
+El acceso a archivos evolucionó de almacenamiento amplio (READ/WRITE_EXTERNAL_STORAGE) al modelo de sandbox y MediaStore con permisos granulares por tipo de medio.
 
 Explicación detallada:
-CAMERA / RECORD_AUDIO: solicitar just-in-time cuando el usuario pulsa grabar o escanear QR. Indicador verde/naranja en barra de estado (Android 12+) muestra uso activo. No grabar en background sin consentimiento explícito (ilegal en muchas regiones).
+Android 10+: scoped storage; apps acceden a su directorio y a URIs compartidos vía SAF (ACTION_OPEN_DOCUMENT, CREATE_DOCUMENT). Android 13+: READ_MEDIA_IMAGES/VIDEO/AUDIO sustituyen lectura amplia de imágenes.
 
-READ_CONTACTS / WRITE_CONTACTS: minimizar campos leídos; no subir libreta completa al servidor sin necesidad. GET_ACCOUNTS restringido.
+MANAGE_EXTERNAL_STORAGE (All files access): solo para gestores de archivos, backup, antivirus; revisión estricta en Play; pedir en Ajustes, no runtime clásico.
 
-READ_SMS / SEND_SMS / CALL_PHONE: muy sensibles; Play limita casos de uso (apps por defecto SMS/teléfono). Riesgo de fraude si se abusa.
+Seguridad: no exponer file:// en Intents (usar FileProvider); validar MIME y tamaño; escanear malware en servidor si suben archivos; no guardar PII en Downloads público.
 
-Buenas prácticas: rationale antes del segundo request, degradar funcionalidad si deniegan, enlace a Ajustes si denegación permanente. Revisar que librerías de terceros no declaren permisos extra.
-
-POST_NOTIFICATIONS (Android 13+): dangerous; pedir al activar notificaciones, no al instalar.
+WRITE_EXTERNAL_STORAGE deprecated en target altos. Para compartir entre apps: content:// con permisos temporales FLAG_GRANT_READ_URI_PERMISSION.
 
 Cuándo usarlo:
-Apps de mensajería, banca con KYC, escáneres, VoIP. Auditar manifest de SDKs de ads y analytics.
+Galería, editor, backup, exportar PDF. Usar SAF para archivos arbitrarios del usuario.
 
 Ejemplo:
-ActivityResultContracts.RequestMultiplePermissions() para CAMERA + RECORD_AUDIO
+val uri = contentResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
 
 Consejo para entrevista:
-Just-in-time, indicadores de privacidad OS, POST_NOTIFICATIONS separado.
+Scoped storage, SAF, READ_MEDIA_* y por qué MANAGE_EXTERNAL_STORAGE es excepcional.

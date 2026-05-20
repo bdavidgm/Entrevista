@@ -1,20 +1,16 @@
 Concepto:
-Scaffold es un Composable de Material Design que proporciona la estructura esqueleto de una pantalla: slots para topBar, bottomBar, floatingActionButton, drawer y el contenido principal con padding y snackbarHost integrado. Unifica el layout típico de app Android en un solo componente declarativo.
+rememberSaveable es un Composable que conserva estado a través de recomposiciones y también de cambios de configuración (rotación) y muerte de proceso, usando el mecanismo de Bundle de Android. Extiende remember con persistencia automática mediante Saver o tipos ya soportados.
 
 Explicación detallada:
-Antes de Compose, CoordinatorLayout más AppBarLayout más FAB más BottomNavigation requerían XML anidado y comportamiento manual de insets del sistema. Scaffold de Material3 encapsula las convenciones: el contenido recibe PaddingValues de innerPadding para respetar barras y notch; snackbarHost gestiona la cola de Snackbar con coroutineScope.
+remember solo sobrevive mientras el Composable permanece en el árbol de composición; si la Activity se recrea por rotación, el estado en remember se pierde a menos que lo restaures manualmente. rememberSaveable delega en rememberSaveableStateSaver y en SavedStateRegistry: serializa el valor en un Bundle asociado al mismo mecanismo que onSaveInstanceState.
 
-Cada slot es opcional y es una lambda Composable: topBar con TopAppBar, bottomBar con NavigationBar, floatingActionButton con ExtendedFloatingActionButton. Los parámetros containerColor y contentColor alinean con el tema. Para navigation drawer, el slot drawerContent envuelve ModalNavigationDrawer o usa Scaffold junto con drawer state externo.
+Los tipos soportados por defecto incluyen primitivos, String, Parcelable, Serializable (con matices), y listas o mapas de tipos compatibles. Para tipos personalizados defines un Saver con save y restore, o usas mapSaver y listSaver. Es el equivalente Compose de guardar estado de UI en el Bundle sin escribir código boilerplate en la Activity.
 
-Scaffold no sustituye la lógica de navegación ni el ViewModel; solo organiza UI. Debes aplicar el padding al contenido hijo con Modifier.padding(innerPadding) o muchos diseños quedarán debajo de la status bar incorrectamente. Con edge-to-edge en versiones recientes, combina Scaffold con WindowInsets y consumeInsets en hijos si necesitas control fino.
+Diferencia con ViewModel: rememberSaveable es para estado de UI efímero de pantalla (texto de búsqueda, scroll, expansión de acordeón); ViewModel es para estado de negocio que debe sobrevivir rotación con semántica más rica y tests. Pueden coexistir: el ViewModel expone datos de dominio y rememberSaveable guarda posición de lista o pestaña seleccionada.
 
-En entrevistas comparan Scaffold con Column más TopAppBar manual: Scaffold aplica semantics, consistencia Material y reduce boilerplate. Variantes relacionadas incluyen BottomSheetScaffold y patrones de drawer permanente en tablets.
+Con process death (el sistema mata la app en segundo plano), rememberSaveable puede restaurar si el usuario vuelve por recents; no sustituye persistencia en disco (Room, DataStore). Para listas grandes no serialices todo en Bundle: guarda solo IDs o índices, porque el Bundle tiene límites de tamaño y rendimiento.
 
-Material2 usaba Scaffold de androidx.compose.material; en Material3 muchos equipos migran a androidx.compose.material3.Scaffold con API ligeramente distinta (TopAppBar renombrado, colores del tema). En entrevista menciona la versión que conoces y que consultarías la documentación de migración M2 a M3.
-
-El slot content recibe innerPadding pero también puedes usar Scaffold junto con ModalBottomSheetLayout o NavigationSuiteScaffold en tablets (navigation rail). Para pantallas con collapsing toolbar, NestedScrollConnection y LargeTopAppBar se combinan con Scaffold en patrones documentados.
-
-Accesibilidad: las barras deben exponer títulos y navigationIcon con contentDescription. El FAB debe tener descripción clara si solo muestra icono. Snackbar debe anunciar mensajes a TalkBack cuando aparece.
+En formularios multi-paso, combinar rememberSaveable con navegación evita perder borradores en rotación sin inflar el ViewModel con datos que no son lógica de negocio.
 
 Preguntas de seguimiento frecuentes en entrevistas para este tema incluyen comparación con alternativas del ecosistema, implicaciones en testing y en el ciclo de vida de Android, y cómo lo aplicarías en una app modular con varios flavors. Si el entrevistador pide profundidad, menciona herramientas de diagnóstico (Profiler, Lint, StrictMode, Layout Inspector) y cómo validarías en CI que no hay regresiones.
 
@@ -23,27 +19,27 @@ En proyectos reales, documenta decisiones en ADR breves o en README del módulo 
 Relaciona este concepto con los demás bloques del manifiesto Entrevista (arquitectura, corrutinas, seguridad, build) para demostrar visión de sistema completo, no conocimiento aislado de una API.
 
 Cuándo usarlo:
-En casi toda pantalla principal Material3 con barra superior, navegación inferior o FAB. Evita forzar Scaffold en diálogos simples o pantallas fullscreen inmersivas (video, cámara) donde el esqueleto sobra.
+Úsalo para estado de UI local que debe sobrevivir rotación: texto de TextField, índice de pager, filtros temporales. No lo uses para datos sensibles, listas enormes ni como fuente única de verdad de negocio (ViewModel más repositorio).
 
 Ejemplo:
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(onNavigate: (String) -> Unit) {
-    val snackbarHostState = remember { SnackbarHostState() }
-    Scaffold(
-        topBar = { TopAppBar(title = { Text("Inicio") }) },
-        floatingActionButton = {
-            FloatingActionButton(onClick = { onNavigate("create") }) {
-                Icon(Icons.Default.Add, contentDescription = "Crear")
-            }
-        },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { innerPadding ->
-        LazyColumn(Modifier.padding(innerPadding)) {
-            items(20) { Text("Item $it", Modifier.padding(16.dp)) }
-        }
-    }
+fun SearchBar() {
+    var query by rememberSaveable { mutableStateOf("") }
+    TextField(
+        value = query,
+        onValueChange = { query = it },
+        label = { Text("Buscar") }
+    )
+}
+
+@Parcelize
+data class Filter(val category: String) : Parcelable
+
+@Composable
+fun FilterSection() {
+    var filter by rememberSaveable { mutableStateOf(Filter("all")) }
+    // UI que modifica filter
 }
 
 Consejo para entrevista:
-Menciona innerPadding obligatorio, slots composables y snackbarHost. Si preguntan edge-to-edge: WindowInsets más Scaffold. No confundas Scaffold con el host de navegación: NavHost va dentro del contenido.
+Compara con remember y ViewModel; menciona Saver para tipos custom y límite de tamaño del Bundle. Pregunta trampa: ¿Guarda en disco? No, solo Bundle y estado restaurable; persistencia real es DataStore o Room.

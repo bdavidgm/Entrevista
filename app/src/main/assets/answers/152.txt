@@ -1,42 +1,39 @@
 Concepto:
-El patrón Factory proporciona una interfaz para crear objetos sin especificar la clase concreta, centralizando la lógica de construcción y permitiendo variar el tipo creado según parámetros o configuración.
+El patrón Singleton garantiza que una clase tenga una única instancia global en el proceso y proporciona un punto de acceso centralizado a ella.
 
 Explicación detallada:
-Variantes:
-- Simple factory method: fun create(type: Type): Product
-- Abstract Factory: familias de objetos relacionados.
-- Factory registrada en DI: @Provides fun provideParser(format: Format): Parser
+En Kotlin:
+object NetworkClient { ... } // singleton declarativo del lenguaje, thread-safe en carga de clase.
 
-En Android:
-- ViewModelFactory (antes manual; Hilt lo genera).
-- FragmentFactory para inyección en fragments.
-- Room: @Database abstract class proporciona DAOs (factory interna generada).
+En Java/Android clásico:
+- private constructor + getInstance() sincronizado o holder idiom.
+- Riesgo en tests: estado global compartido entre tests.
 
-Ventajas:
-- Oculta detalles de construcción (dependencias, API keys).
-- Facilita tests sustituyendo factory por fake.
-- Cumple Open/Closed: nuevos tipos sin cambiar clientes si extiendes factory.
+En Android moderno con Hilt:
+- @Singleton @Provides fun provideClient(): OkHttpClient — una instancia por componente Application de Hilt, preferible a object manual.
+- Evita object singletons que ocultan dependencias y dificultan tests.
 
-Kotlin:
-- Funciones de extensión o top-level como factories ligeras.
-- sealed class + when para tipos cerrados.
+Problemas en Android:
+- Retener Context de Activity en singleton -> memory leak.
+- Estado mutable global -> condiciones de carrera.
+- Acoplamiento alto.
 
 Cuándo usarlo:
-Cuando la creación requiere lógica (permisos, config, múltiples impl) o no quieres que el cliente conozca implementaciones concretas.
+Clientes de red, BD, configuración costosa de crear una vez por proceso. Preferir DI scoped @Singleton sobre object suelto.
 
 Ejemplo:
-interface PaymentProcessor
-class StripeProcessor : PaymentProcessor
-class PayPalProcessor : PaymentProcessor
-
-object PaymentProcessorFactory {
-    fun create(provider: Provider): PaymentProcessor = when (provider) {
-        Provider.STRIPE -> StripeProcessor()
-        Provider.PAYPAL -> PayPalProcessor()
-    }
+// Kotlin object (simple)
+object DateFormatter {
+    fun format(epoch: Long): String = ...
 }
 
-// Con Hilt @Binds múltiples @IntoMap o qualifiers es el enfoque escalable
+// Hilt (recomendado en apps grandes)
+@Module
+@InstallIn(SingletonComponent::class)
+object NetworkModule {
+    @Provides @Singleton
+    fun provideOkHttp(): OkHttpClient = OkHttpClient.Builder().build()
+}
 
 Consejo para entrevista:
-Relaciona con Hilt @Provides/@Binds como factory centralizada. Contrasta con new directo en Activity. Menciona ViewModelFactory histórico.
+Menciona object en Kotlin vs @Singleton en Hilt. Habla de testabilidad y no guardar Activity en singleton. No defiendas singleton para todo.

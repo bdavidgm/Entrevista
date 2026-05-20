@@ -1,12 +1,12 @@
 Concepto:
-Los datos sensibles (tokens, contraseñas, claves API, PII) no deben almacenarse en texto plano en SharedPreferences sin cifrar, archivos externos legibles, logs ni código fuente. Se usan Android Keystore, EncryptedSharedPreferences/DataStore, servidor remoto y principio de mínimo privilegio.
+La recomposición excesiva en Compose ocurre cuando demasiados Composables se invalidan y vuelven a ejecutar sin necesidad, desperdiciando CPU en el hilo principal y causando jank. Suele deberse a estado mal ubicado, inestabilidad de parámetros o lecturas amplias de State.
 
 Explicación detallada:
-Keystore genera claves hardware-backed difíciles de extraer en dispositivos compatibles. EncryptedSharedPreferences (Security crypto) cifra valores. Para tokens OAuth: almacenar refresh token cifrado; access token corta vida en memoria si posible.
+Compose recompone scopes afectados por State leído durante composición. Si el State está alto en el árbol, un cambio pequeño (contador) recomponer pantalla entera. Soluciones: state hoisting granular, remember, derivedStateOf para derivar sin propagar lecturas innecesarias, estabilidad de tipos (@Stable, inmutables).
 
-Nunca hardcodear API secrets en APK (reverse engineering con apktool). Usa backend proxy o Play App Signing + remote config con rotación. certificate pinning para MITM.
+Parámetros inestables: crear lambda nueva cada vez sin remember -> hijos skippables no saltan recomposición. Usa key en LazyColumn para items. Evita leer state.global en raíz si solo afecta hijo.
 
-Logs: desactivar body en OkHttp producción. excludeFromBackup en manifest para backups cloud. BiometricPrompt antes de mostrar datos ultra sensibles.
+Herramientas: Layout Inspector recomposition counts, Compose compiler reports (strong skipping mode en versiones recientes).
 
 En el contexto de proyectos Android reales, combina esta idea con las guías oficiales de Android Developers y con métricas de calidad (crashes, ANR, Vitals) cuando aplique. En code review, pregunta siempre por ciclo de vida, testabilidad y si la solución escala cuando el equipo crece.
 
@@ -27,18 +27,25 @@ En proyectos reales, documenta decisiones en ADR breves o en README del módulo 
 Relaciona este concepto con los demás bloques del manifiesto Entrevista (arquitectura, corrutinas, seguridad, build) para demostrar visión de sistema completo, no conocimiento aislado de una API.
 
 Cuándo usarlo:
-Cualquier credencial, salud, financiero. DataStore normal para tema oscuro; Keystore para secrets.
+Cuando Profiler o Layout Inspector muestran recomposiciones excesivas o frames por encima de 16 ms. No optimizar prematuramente sin medición previa.
 
 Ejemplo:
-val masterKey = MasterKey.Builder(context)
-    .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-    .build()
+// Mal: todo el árbol lee counter
+@Composable
+fun Screen() {
+    var counter by remember { mutableIntStateOf(0) }
+    ExpensiveList() // recomponer siempre
+    Text("$counter")
+}
 
-val securePrefs = EncryptedSharedPreferences.create(
-    context, "secure_prefs", masterKey,
-    EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-    EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-)
+// Mejor: aislar estado
+@Composable
+fun Screen() {
+    Column {
+        ExpensiveList()
+        CounterChip() // solo este subárbol
+    }
+}
 
 Consejo para entrevista:
-Keystore + encrypted prefs + no logs + no hardcode. OWASP Mobile mención breve. Root bypass: defensa en profundidad, no absoluta.
+Menciona estabilidad, derivedStateOf, keys, y medir antes. No digas "Compose es lento"; di "mal usado".

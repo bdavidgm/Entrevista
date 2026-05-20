@@ -1,42 +1,44 @@
 Concepto:
-Channel es una primitiva de comunicación hot entre corrutinas: transmite elementos de forma similar a una cola bloqueante, con capacidad configurable y soporte para múltiples productores y consumidores.
+SupervisorJob es un Job que no cancela a sus hijos cuando uno de ellos falla con excepción; solo el hijo fallido se cancela, permitiendo que hermanos sigan ejecutándose.
 
 Explicación detallada:
-Tipos de capacidad:
-- Channel.RENDEZVOUS: sin buffer, emisor espera receptor.
-- BUFFERED, CONFLATED (solo último valor), UNLIMITED.
+Job normal (estructura de corrutinas):
+- Si un hijo falla sin manejar la excepción, el padre cancela a todos los hijos (structured concurrency).
 
-Operaciones:
-- send(element) / receive()
-- trySend, close, cancel.
+SupervisorJob:
+- Fallo aislado: útil cuando tareas paralelas son independientes (varias peticiones de red, workers).
 
-Channel vs Flow:
-- Channel: hot, típicamente 1:1 o N:M con API imperativa; puede perder backpressure si mal usado.
-- Flow: cold por defecto, declarativo, operadores (map, filter), mejor para streams de UI y datos.
+Uso:
+val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+scope.launch { taskA() }
+scope.launch { taskB() } // si A falla, B continúa
 
-En arquitectura moderna Android se prefiere SharedFlow/StateFlow para eventos y estado; Channel para pipelines internos o integración con APIs callback.
+viewModelScope internamente puede combinar elementos; para patrones custom en ViewModel a veces se usa supervisorScope { } de la librería.
 
-Patrón actor: una corrutina consume channel y serializa mutaciones de estado.
-
-Cuándo usarlo:
-Comunicación puntual entre corrutinas, colas de trabajo internas, puente desde callback a corrutinas (channel.trySend). Para UI state expuesto, StateFlow suele ser más idiomático.
-
-Ejemplo:
-val channel = Channel<Command>(Channel.BUFFERED)
-
-// Productor
-scope.launch {
-    channel.send(Command.Refresh)
+supervisorScope builder:
+supervisorScope {
+    launch { fetchUsers() }
+    launch { fetchSettings() }
 }
 
-// Consumidor
-scope.launch {
-    for (cmd in channel) {
-        when (cmd) {
-            Command.Refresh -> loadData()
+Cuándo usarlo:
+Múltiples flujos independientes en una pantalla; logging/analytics paralelos; evitar que un error secundario tumbe la carga principal si está bien manejado.
+
+Precaución: no es excusa para ignorar errores; captura excepciones en cada hijo si la UI debe reaccionar.
+
+Ejemplo:
+viewModelScope.launch {
+    supervisorScope {
+        launch {
+            runCatching { repo.syncCatalog() }
+                .onFailure { _events.emit(UiEvent.CatalogError) }
+        }
+        launch {
+            runCatching { repo.syncCart() }
+                .onFailure { _events.emit(UiEvent.CartError) }
         }
     }
 }
 
 Consejo para entrevista:
-Contrasta Channel (hot, cola) vs Flow (cold, reactivo). Menciona que SharedFlow reemplaza muchos usos de Channel en MVVM. Habla de cerrar channel y cancelación.
+Contrasta Job vs SupervisorJob. Relaciona con structured concurrency y por qué no usar GlobalScope. Menciona supervisorScope.

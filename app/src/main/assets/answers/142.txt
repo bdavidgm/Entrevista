@@ -1,44 +1,44 @@
 Concepto:
-SupervisorJob es un Job que no cancela a sus hijos cuando uno de ellos falla con excepción; solo el hijo fallido se cancela, permitiendo que hermanos sigan ejecutándose.
+runBlocking es una función de corrutinas que bloquea el hilo actual hasta que el bloque suspendido termine, creando un event loop temporal para ejecutar corrutinas en ese hilo.
 
 Explicación detallada:
-Job normal (estructura de corrutinas):
-- Si un hijo falla sin manejar la excepción, el padre cancela a todos los hijos (structured concurrency).
+Firma conceptual:
+fun <T> runBlocking(context, block): T
 
-SupervisorJob:
-- Fallo aislado: útil cuando tareas paralelas son independientes (varias peticiones de red, workers).
+Bloquea el caller — en Main thread causa ANR si el bloque tarda.
 
-Uso:
-val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
-scope.launch { taskA() }
-scope.launch { taskB() } // si A falla, B continúa
+Usos legítimos:
+- Tests unitarios JVM: runBlocking { repository.load() }
+- main() en herramientas CLI Kotlin.
+- Puente temporal desde código Java callback-based (evitar en producción UI).
 
-viewModelScope internamente puede combinar elementos; para patrones custom en ViewModel a veces se usa supervisorScope { } de la librería.
+NO usar en:
+- Activity, Fragment, Composable, onCreate, onClick — usa lifecycleScope o viewModelScope.
 
-supervisorScope builder:
-supervisorScope {
-    launch { fetchUsers() }
-    launch { fetchSettings() }
-}
+Alternativas en Android:
+- viewModelScope.launch { }
+- withContext en suspend function desde repo.
+
+runBlocking vs runBlocking<Unit>:
+- Puede especificar dispatcher; por defecto usa el del hilo bloqueado con event loop.
 
 Cuándo usarlo:
-Múltiples flujos independientes en una pantalla; logging/analytics paralelos; evitar que un error secundario tumbe la carga principal si está bien manejado.
-
-Precaución: no es excusa para ignorar errores; captura excepciones en cada hijo si la UI debe reaccionar.
+Tests, scripts, integración en código no-Android. En producción Android UI casi nunca.
 
 Ejemplo:
-viewModelScope.launch {
-    supervisorScope {
-        launch {
-            runCatching { repo.syncCatalog() }
-                .onFailure { _events.emit(UiEvent.CatalogError) }
-        }
-        launch {
-            runCatching { repo.syncCart() }
-                .onFailure { _events.emit(UiEvent.CartError) }
-        }
-    }
+// Test
+@Test
+fun `loads users`() = runBlocking {
+    val repo = FakeUserRepository()
+    val users = repo.getUsers()
+    assertEquals(2, users.size)
+}
+
+// Mal en Activity
+override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
+    // NO: runBlocking { api.fetch() }
 }
 
 Consejo para entrevista:
-Contrasta Job vs SupervisorJob. Relaciona con structured concurrency y por qué no usar GlobalScope. Menciona supervisorScope.
+Enfatiza ANR en Main y que en tests está bien. Contrasta con suspend y launch. Si preguntan tests, menciona runTest de kotlinx-coroutines-test como alternativa moderna.

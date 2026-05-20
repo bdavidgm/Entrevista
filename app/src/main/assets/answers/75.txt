@@ -1,14 +1,14 @@
 Concepto:
-Paging 3 es la librería de Jetpack para cargar y mostrar grandes conjuntos de datos por páginas de forma eficiente, con placeholders, estados de carga/error y integración con RecyclerView, Compose LazyColumn y fuentes Room o red.
+Navigation Component es la librería de Jetpack para gestionar navegación entre destinos (pantallas) con un grafo declarado, back stack consistente, argumentos, deep links y animaciones. Unifica Fragments (XML) y Compose (Navigation Compose) bajo el mismo NavController.
 
 Explicación detallada:
-PagingSource load(params) devuelve LoadResult.Page con datos y keys para siguiente/anterior. Pager construye Flow<PagingData<T>>. En UI, collect con collectLatest y LazyPagingItems en Compose o submitData en Adapter.
+El grafo navigation.xml o Kotlin DSL define destinos y acciones. NavController.navigate(R.id.action) o navigate("route"). Safe Args genera clases tipadas para argumentos en Fragments. Deep links y nested graphs organizan flujos (onboarding, main).
 
-RemoteMediator sincroniza red + Room: REFRESH carga API y guarda en BD; Paging lee solo de Room. Separación clara offline-first.
+Con Fragments: NavHostFragment en layout; cada destino es fragment. Con Compose: NavHost composable. El back stack lo gestiona el componente; popBackStack vuelve atrás. Para bottom nav, evita crear back stack paralelos incorrectos usando múltiples graphs o saveState.
 
-LoadState: Loading, Error, NotLoading para footer y retry. prefetchDistance y pageSize tunan rendimiento. header/footer con LoadStateAdapter.
+Integración ViewModel: ViewModel scoped al NavBackStackEntry sobrevive navegación dentro del mismo destino pero no necesariamente al pop. navGraphViewModels comparte entre destinos del mismo graph.
 
-Evita listas gigantes en memoria: solo páginas visibles más prefetch. Invalida PagingSource tras filtros cambiando Pager o invalidate().
+Testing Navigation con TestNavHostController. Migración gradual: un NavHost con mix de fragment y composable destinations en versiones recientes.
 
 En el contexto de proyectos Android reales, combina esta idea con las guías oficiales de Android Developers y con métricas de calidad (crashes, ANR, Vitals) cuando aplique. En code review, pregunta siempre por ciclo de vida, testabilidad y si la solución escala cuando el equipo crece.
 
@@ -23,22 +23,17 @@ Durante la entrevista, estructura la respuesta en definición, ejemplo concreto 
 Para profundizar tras la entrevista, revisa documentación oficial, codelabs y el código fuente de tu propio proyecto Entrevista aplicando el concepto en un flujo mínimo reproducible. La práctica deliberada con tests unitarios refuerza la confianza al explicar el tema en viva voz.
 
 Cuándo usarlo:
-Feeds infinitos, catálogos, historial de mensajes. No para listas de 10 elementos fijos en memoria.
+Apps multi-pantalla con navegación compleja, deep links, o single-Activity. Evita Transaction manual fragmentManager si el grafo encaja.
 
 Ejemplo:
-@Composable
-fun ProductList(pager: Flow<PagingData<Product>>) {
-    val items = pager.collectAsLazyPagingItems()
-    LazyColumn {
-        items(items.itemCount) { index ->
-            items[index]?.let { ProductRow(it) }
-        }
-        when (items.loadState.append) {
-            is LoadState.Loading -> item { CircularProgressIndicator() }
-            else -> Unit
-        }
-    }
+// navigation.xml simplificado + MainActivity
+val navController = findNavController(R.id.nav_host)
+navController.navigate(R.id.action_home_to_detail, bundleOf("id" to 42))
+
+// Compose
+navController.navigate("detail/42") {
+    launchSingleTop = true
 }
 
 Consejo para entrevista:
-Explica PagingSource, RemoteMediator, PagingData. Contrasta con cargar todo en RecyclerView. Seguimiento: ¿Cómo refrescar? invalidate() o nueva Pager.
+Menciona grafo, back stack, Safe Args, deep links. Pregunta bottom navigation: un NavController o varios con restoreState. No confundas con Intent entre apps.

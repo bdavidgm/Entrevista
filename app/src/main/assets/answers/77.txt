@@ -1,14 +1,12 @@
 Concepto:
-Una coroutine es una unidad de trabajo ligera y suspendible que Kotlin ejecuta de forma cooperativa, permitiendo código asíncrono secuencial sin bloquear hilos. En Android sustituye callbacks anidados y simplifica operaciones de red y BD junto con ViewModelScope.
+App Startup es una librería de Jetpack que permite inicializar componentes al arranque de la aplicación de forma declarativa y ordenada, sin sobrecargar Application.onCreate con código secuencial pesado. Usa ContentProvider bajo el capó de forma optimizada.
 
 Explicación detallada:
-Las coroutines se programan en dispatchers (Main, IO, Default). Una función suspend puede pausarse sin bloquear el hilo del sistema; al reanudarse continúa. Miles de coroutines pueden coexistir frente a pocos threads.
+Implementas Initializer<T> con create(context) y dependencies() que declara otros Initializers que deben ejecutarse antes. En manifest o androidx.startup configuras qué inicializadores corren. Startup ejecuta el grafo de dependencias en orden topológico y puede hacer trabajo en background según configuración.
 
-CoroutineScope define ciclo de vida: viewModelScope, lifecycleScope, applicationScope. launch inicia trabajo fire-and-forget; async devuelve Deferred con resultado. Structured concurrency: los scopes padre cancelan hijos.
+Casos: Timber, Firebase opcional, configuración de Coil, migración ligera. Evita trabajo pesado de red en Initializer; retrasa arranque y StrictMode puede alertar. Prefer WorkManager para sync pesado.
 
-Integración Android: Main dispatcher actualiza UI tras withContext(IO). Retrofit y Room exponen suspend. Flow para streams múltiples de valores.
-
-Errores: CoroutineExceptionHandler en scope raíz; try/catch en suspend. No uses GlobalScope en producción (sin lifecycle). runBlocking solo en tests o main bloqueado puntual.
+Comparación con Application.onCreate: más modular y testeable por inicializador; varios módulos de librería pueden registrar su Initializer sin tocar Application del host.
 
 En el contexto de proyectos Android reales, combina esta idea con las guías oficiales de Android Developers y con métricas de calidad (crashes, ANR, Vitals) cuando aplique. En code review, pregunta siempre por ciclo de vida, testabilidad y si la solución escala cuando el equipo crece.
 
@@ -21,22 +19,20 @@ En el contexto de proyectos Android reales, combina esta idea con las guías ofi
 Durante la entrevista, estructura la respuesta en definición, ejemplo concreto de tu experiencia o proyecto demo, y trade-offs frente a alternativas. Mencionar versiones recientes de API o biblioteca (Material3, Paging 3, Hilt 2.x) demuestra que sigues el ecosistema, sin necesidad de memorizar números de versión exactos.
 
 Para profundizar tras la entrevista, revisa documentación oficial, codelabs y el código fuente de tu propio proyecto Entrevista aplicando el concepto en un flujo mínimo reproducible. La práctica deliberada con tests unitarios refuerza la confianza al explicar el tema en viva voz.
-
-Preguntas de seguimiento frecuentes en entrevistas para este tema incluyen comparación con alternativas del ecosistema, implicaciones en testing y en el ciclo de vida de Android, y cómo lo aplicarías en una app modular con varios flavors. Si el entrevistador pide profundidad, menciona herramientas de diagnóstico (Profiler, Lint, StrictMode, Layout Inspector) y cómo validarías en CI que no hay regresiones.
-
-En proyectos reales, documenta decisiones en ADR breves o en README del módulo para que el equipo no revierta el patrón por desconocimiento. La mejor respuesta de entrevista combina definición precisa, ejemplo Kotlin o Compose concreto y honestidad sobre límites: ninguna solución es gratis en complejidad o tamaño de APK.
-
-Relaciona este concepto con los demás bloques del manifiesto Entrevista (arquitectura, corrutinas, seguridad, build) para demostrar visión de sistema completo, no conocimiento aislado de una API.
 
 Cuándo usarlo:
-Toda operación async en Kotlin moderno: red, BD, combinación de fuentes, debounce en ViewModel. Callback APIs legacy: suspendCoroutine o adaptadores.
+SDKs que requieren init temprano, varios módulos con setup. Si solo tienes 2 líneas en Application, puede ser overkill.
 
 Ejemplo:
-viewModelScope.launch {
-    _uiState.update { it.copy(loading = true) }
-    val data = withContext(Dispatchers.IO) { repository.fetch() }
-    _uiState.update { it.copy(loading = false, items = data) }
+class TimberInitializer : Initializer<Unit> {
+    override fun create(context: Context) {
+        if (BuildConfig.DEBUG) Timber.plant(Timber.DebugTree())
+    }
+    override fun dependencies(): List<Class<out Initializer<*>>> = emptyList()
 }
 
+// AndroidManifest.xml dentro de <provider> androidx.startup
+// tools:node="merge" y meta-data para deshabilitar auto-init si hace falta
+
 Consejo para entrevista:
-Explica suspend, scope y dispatchers. No digas que coroutine es un hilo. Seguimiento: diferencia thread vs coroutine — muchas coroutines, pocos threads.
+Menciona orden de dependencias y no bloquear main thread. Contrasta con lazy init en primer uso. Pregunta: ¿Reemplaza Application? No del todo, pero reduce su tamaño.

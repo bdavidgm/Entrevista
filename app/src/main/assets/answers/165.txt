@@ -1,48 +1,56 @@
 Concepto:
-FusedLocationProviderClient es la API de Google Play Services Location que fusiona señales de GPS, red y sensores para ofrecer la mejor ubicación disponible con menor consumo de batería que usar LocationManager por separado.
+Obtener la ubicación del usuario en Android requiere permisos de ubicación en runtime, elegir el proveedor adecuado (Fused Location Provider recomendado), respetar límites de background y consumo de batería.
 
 Explicación detallada:
-Obtención:
-LocationServices.getFusedLocationProviderClient(context)
+Permisos:
+- ACCESS_COARSE_LOCATION / ACCESS_FINE_LOCATION (runtime desde API 23).
+- ACCESS_BACKGROUND_LOCATION aparte en API 29+ si necesitas ubicación con app en background (revisión estricta en Play).
 
-Métodos principales:
-- getLastLocation(): última conocida, puede ser null o antigua.
-- getCurrentLocation(priority, cancellationToken): lectura actualizada bajo demanda (API moderna preferida).
-- requestLocationUpdates(LocationRequest, callback, looper): stream de actualizaciones.
-- removeLocationUpdates(callback)
+Google Play Services Location:
+- FusedLocationProviderClient combina GPS, Wi-Fi, sensores.
+- getCurrentLocation(priority, cancellationToken) para lectura puntual.
+- requestLocationUpdates para seguimiento continuo (Foreground Service + tipo location en API 29+ si en background).
 
-LocationRequest (LocationRequest.Builder):
-- setIntervalMillis, setMinUpdateIntervalMillis
-- setPriority(PRIORITY_HIGH_ACCURACY, BALANCED, LOW_POWER, PASSIVE)
+Prioridades:
+- PRIORITY_HIGH_ACCURACY vs BALANCED_POWER_ACCURACY.
 
-Requisitos:
-- Google Play Services en el dispositivo (la mayoría con GMS).
-- Permisos ACCESS_FINE_LOCATION o COARSE según precisión.
-- Dependency play-services-location.
+Sin Google Play:
+- LocationManager legacy (menos recomendado).
 
-Integración con corrutinas:
-- await() de kotlinx-coroutines-play-services en getCurrentLocation suspend.
+Buenas prácticas:
+- Pedir permiso en contexto (just-in-time) con rationale.
+- Dejar de recibir updates en onPause/onStop si no es app de navegación.
+- Comprobar isLocationEnabled y Settings para activar GPS.
+- Minimizar frecuencia y usar lastLocation cuando baste precisión.
 
 Cuándo usarlo:
-Cualquier app con GMS que necesite ubicación; es el estándar recomendado por Google frente a LocationManager directo.
+Mapas, check-in, entregas, features contextuales. Evitar tracking continuo sin necesidad clara.
 
 Ejemplo:
-class LocationRepository @Inject constructor(
-    @ApplicationContext private val context: Context
-) {
-    private val client = LocationServices.getFusedLocationProviderClient(context)
+@AndroidEntryPoint
+class MapActivity : AppCompatActivity() {
+    @Inject lateinit var fusedClient: FusedLocationProviderClient
 
-    suspend fun currentLocation(): Location? {
-        if (!hasFineLocation(context)) return null
-        return client.getCurrentLocation(
-            Priority.PRIORITY_BALANCED_POWER_ACCURACY,
-            CancellationTokenSource().token
-        ).await()
+    private val requestPermission = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { grants ->
+        if (grants[Manifest.permission.ACCESS_FINE_LOCATION] == true) {
+            fetchLocation()
+        }
+    }
+
+    private fun fetchLocation() {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+            != PackageManager.PERMISSION_GRANTED) {
+            requestPermission.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION))
+            return
+        }
+        fusedClient.getCurrentLocation(Priority.PRIORITY_BALANCED_POWER_ACCURACY, null)
+            .addOnSuccessListener { location ->
+                location?.let { updateMap(it.latitude, it.longitude) }
+            }
     }
 }
 
-// build.gradle
-// implementation("com.google.android.gms:play-services-location:21.3.0")
-
 Consejo para entrevista:
-Explica fusión de proveedores y prioridades de batería. Contrasta con LocationManager. Menciona getCurrentLocation vs lastLocation obsoleto para UX.
+Menciona permisos fine/coarse, background aparte, FusedLocationProviderClient y ahorro de batería. Foreground service para tracking continuo.

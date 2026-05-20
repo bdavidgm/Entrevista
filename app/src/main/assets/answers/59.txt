@@ -1,22 +1,20 @@
 Concepto:
-Navigation Compose es la integración del Navigation Component con Jetpack Compose: define un grafo de rutas como destinos Composable con NavHost, NavController y argumentos tipados, gestionando back stack y deep links de forma declarativa sin Fragments.
+Scaffold es un Composable de Material Design que proporciona la estructura esqueleto de una pantalla: slots para topBar, bottomBar, floatingActionButton, drawer y el contenido principal con padding y snackbarHost integrado. Unifica el layout típico de app Android en un solo componente declarativo.
 
 Explicación detallada:
-NavController en Compose se obtiene con rememberNavController() y se asocia al NavHost con startDestination y el grafo de rutas. Cada destino es composable("ruta") { backStackEntry -> ... }. Los argumentos se declaran en la ruta, por ejemplo "detail/{id}", y se leen con backStackEntry.arguments o navArgument más NavType.
+Antes de Compose, CoordinatorLayout más AppBarLayout más FAB más BottomNavigation requerían XML anidado y comportamiento manual de insets del sistema. Scaffold de Material3 encapsula las convenciones: el contenido recibe PaddingValues de innerPadding para respetar barras y notch; snackbarHost gestiona la cola de Snackbar con coroutineScope.
 
-Ventajas frente a navigation XML: rutas en Kotlin, argumentos con tipo seguro, animaciones de transición con enterTransition y exitTransition, y navegación anidada (graphs para flujos login frente a main). Integración con ViewModel: hiltViewModel() con scope al NavBackStackEntry permite ViewModels por destino.
+Cada slot es opcional y es una lambda Composable: topBar con TopAppBar, bottomBar con NavigationBar, floatingActionButton con ExtendedFloatingActionButton. Los parámetros containerColor y contentColor alinean con el tema. Para navigation drawer, el slot drawerContent envuelve ModalNavigationDrawer o usa Scaffold junto con drawer state externo.
 
-Deep links se configuran con navDeepLink y uriPattern. Para bottom navigation con varias pestañas, el patrón recomendado usa restoreState y saveState en navigate() para no perder estado al cambiar de tab, junto con launchSingleTop cuando corresponda.
+Scaffold no sustituye la lógica de navegación ni el ViewModel; solo organiza UI. Debes aplicar el padding al contenido hijo con Modifier.padding(innerPadding) o muchos diseños quedarán debajo de la status bar incorrectamente. Con edge-to-edge en versiones recientes, combina Scaffold con WindowInsets y consumeInsets en hijos si necesitas control fino.
 
-Arquitectura single-Activity encaja naturalmente: una Activity con setContent { AppNav() }. Para resultados entre pantallas, Navigation reciente ofrece rutas type-safe con Kotlin Serialization o callbacks con popBackStack y SavedStateHandle.
+En entrevistas comparan Scaffold con Column más TopAppBar manual: Scaffold aplica semantics, consistencia Material y reduce boilerplate. Variantes relacionadas incluyen BottomSheetScaffold y patrones de drawer permanente en tablets.
 
-Errores comunes: varios NavController sin coordinación, olvidar popUpTo al completar login, y navegar desde LaunchedEffect sin respetar el lifecycle. En tests se puede usar createComposeRule con NavHostController de prueba.
+Material2 usaba Scaffold de androidx.compose.material; en Material3 muchos equipos migran a androidx.compose.material3.Scaffold con API ligeramente distinta (TopAppBar renombrado, colores del tema). En entrevista menciona la versión que conoces y que consultarías la documentación de migración M2 a M3.
 
-Type-safe navigation con Kotlin Serialization define @Serializable object Home y data class Detail(val id: Int), generando rutas sin strings mágicos. Reduce errores en refactor y es pregunta frecuente en entrevistas senior.
+El slot content recibe innerPadding pero también puedes usar Scaffold junto con ModalBottomSheetLayout o NavigationSuiteScaffold en tablets (navigation rail). Para pantallas con collapsing toolbar, NestedScrollConnection y LargeTopAppBar se combinan con Scaffold en patrones documentados.
 
-Animaciones personalizadas entre destinos mejoran percepción de calidad pero no abuses en listas profundas por coste. popUpTo con inclusive true limpia el back stack tras login exitoso para que el usuario no vuelva a la pantalla de credenciales con botón atrás.
-
-Integración con Hilt: cada composable destination puede recibir hiltViewModel() con scope al NavBackStackEntry; al navegar a otro destino, el ViewModel del anterior se limpia según el grafo. Para ViewModel compartido entre pantallas del mismo flujo (wizard), usa navigation graph anidado y navGraphViewModels.
+Accesibilidad: las barras deben exponer títulos y navigationIcon con contentDescription. El FAB debe tener descripción clara si solo muestra icono. Snackbar debe anunciar mensajes a TalkBack cuando aparece.
 
 Preguntas de seguimiento frecuentes en entrevistas para este tema incluyen comparación con alternativas del ecosistema, implicaciones en testing y en el ciclo de vida de Android, y cómo lo aplicarías en una app modular con varios flavors. Si el entrevistador pide profundidad, menciona herramientas de diagnóstico (Profiler, Lint, StrictMode, Layout Inspector) y cómo validarías en CI que no hay regresiones.
 
@@ -25,25 +23,27 @@ En proyectos reales, documenta decisiones en ADR breves o en README del módulo 
 Relaciona este concepto con los demás bloques del manifiesto Entrevista (arquitectura, corrutinas, seguridad, build) para demostrar visión de sistema completo, no conocimiento aislado de una API.
 
 Cuándo usarlo:
-Apps Compose-first con una Activity, flujos multi-pantalla, deep links y argumentos. Si la app sigue 100% en Fragments legacy sin migrar, el Navigation Component XML puede mantenerse hasta migrar pantallas al NavHost Compose.
+En casi toda pantalla principal Material3 con barra superior, navegación inferior o FAB. Evita forzar Scaffold en diálogos simples o pantallas fullscreen inmersivas (video, cámara) donde el esqueleto sobra.
 
 Ejemplo:
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AppNav() {
-    val navController = rememberNavController()
-    NavHost(navController, startDestination = "home") {
-        composable("home") {
-            HomeScreen(onOpen = { id -> navController.navigate("detail/$id") })
-        }
-        composable(
-            route = "detail/{itemId}",
-            arguments = listOf(navArgument("itemId") { type = NavType.IntType })
-        ) { entry ->
-            val id = entry.arguments?.getInt("itemId") ?: return@composable
-            DetailScreen(itemId = id, onBack = { navController.popBackStack() })
+fun HomeScreen(onNavigate: (String) -> Unit) {
+    val snackbarHostState = remember { SnackbarHostState() }
+    Scaffold(
+        topBar = { TopAppBar(title = { Text("Inicio") }) },
+        floatingActionButton = {
+            FloatingActionButton(onClick = { onNavigate("create") }) {
+                Icon(Icons.Default.Add, contentDescription = "Crear")
+            }
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { innerPadding ->
+        LazyColumn(Modifier.padding(innerPadding)) {
+            items(20) { Text("Item $it", Modifier.padding(16.dp)) }
         }
     }
 }
 
 Consejo para entrevista:
-Domina NavHost, rutas con argumentos, popUpTo inclusive para auth, y ViewModel scoped al back stack entry. Pregunta típica de bottom nav: launchSingleTop, restoreState y saveState.
+Menciona innerPadding obligatorio, slots composables y snackbarHost. Si preguntan edge-to-edge: WindowInsets más Scaffold. No confundas Scaffold con el host de navegación: NavHost va dentro del contenido.

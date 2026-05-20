@@ -1,43 +1,43 @@
 Concepto:
-Application es la clase que representa el proceso Android de tu app antes de que exista cualquier Activity; se instancia una vez al arrancar el proceso y vive hasta que el sistema mata el proceso.
+Context en Android es el handle que proporciona acceso a recursos, sistema de archivos, servicios, temas y componentes de la plataforma; representa información sobre el entorno de ejecución de la app.
 
 Explicación detallada:
-Declaración en AndroidManifest:
-<application android:name=".MyApplication" ... />
+Jerarquía:
+- Context abstracto: operaciones base (getString, getResources, startActivity, getSystemService, openFileOutput).
+- ContextWrapper: delega en base (Activity, Service, Application son wrappers).
+- Application: contexto global de la app, vive todo el proceso.
+- Activity: contexto con tema de Activity, lanzamiento de intents desde UI, permisos ligados a ventana.
 
-Callbacks:
-- onCreate(): inicialización global (timber, strict mode en debug, App Startup, migraciones ligeras). Debe ser rápido; trabajo pesado en background.
-- onTerminate(): no fiable en dispositivos reales; no depender para persistencia.
-- onLowMemory(), onTrimMemory(): liberar caches no críticos.
+Regla crítica: no retener referencia a Activity Context en objetos de larga vida (singleton, ViewModel no debe guardar Activity). Usar applicationContext para cosas que vivan más que la Activity (singleton de DB a veces, pero preferir inyección con @ApplicationContext).
 
-Obtener instancia:
-- context.applicationContext as MyApplication (evitar cast en producción sin comprobar).
-- En Hilt: @HiltAndroidApp en Application activa generación de componente raíz.
+Usos comunes:
+- Inflar layouts: LayoutInflater.from(context)
+- Acceder a strings y dimensiones: context.getString(R.string.app_name)
+- startActivity, registerReceiver (con cuidado en versiones nuevas)
+- getSystemService(Context.CONNECTIVITY_SERVICE) etc.
 
-Singleton de proceso:
-- Variables estáticas en Application sobreviven rotaciones de Activity pero no garantizan persistencia si el proceso muere.
-- Preferir DI con @Singleton scoped al componente Application de Hilt.
+En Compose: LocalContext.current como CompositionLocal.
 
-No usar Application para:
-- Estado de UI de una pantalla (usar ViewModel).
-- Lógica que debería estar en UseCase o Repository.
+Hilt inyecta @ApplicationContext Context para capas que necesitan contexto sin acoplar a Activity.
 
 Cuándo usarlo:
-Inicialización global: logging, analytics, configuración de imagen (Coil/Glide), WorkManager custom configuration, registro de ActivityLifecycleCallbacks para analytics.
+Siempre que interactúes con recursos Android, servicios del sistema o arranques de componentes. Elige el Context de menor alcance necesario (Activity para diálogos con tema de Activity, Application para caches de app).
 
 Ejemplo:
-@HiltAndroidApp
-class MyApplication : Application() {
-    override fun onCreate() {
-        super.onCreate()
-        if (BuildConfig.DEBUG) {
-            Timber.plant(Timber.DebugTree())
-        }
-    }
+class TokenStorage @Inject constructor(
+    @ApplicationContext private val context: Context
+) {
+    private val prefs = context.getSharedPreferences("auth", Context.MODE_PRIVATE)
+    fun saveToken(token: String) = prefs.edit().putString("token", token).apply()
 }
 
-// AndroidManifest.xml
-<application android:name=".MyApplication" ... />
+@Composable
+fun MyScreen() {
+    val context = LocalContext.current
+    Button(onClick = {
+        context.startActivity(Intent(context, SettingsActivity::class.java))
+    }) { Text("Ajustes") }
+}
 
 Consejo para entrevista:
-Diferencia Application (proceso) vs Activity (pantalla). Menciona @HiltAndroidApp y que onCreate debe ser ligero. Evita anti-patrón de guardar todo en Application.
+Explica jerarquía y fugas por retener Activity. Menciona applicationContext vs Activity context y @ApplicationContext en Hilt.

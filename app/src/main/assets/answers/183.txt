@@ -1,44 +1,50 @@
 Concepto:
-App Shortcuts son accesos directos en el icono de la app (long-press en launcher) que lanzan intents concretos: estáticos (manifest), dinámicos (ShortcutManager) o pinned (usuario añade a home).
+BiometricPrompt es la API unificada de AndroidX Biometric para autenticación biométrica (huella, rostro, iris) o credencial del dispositivo, con UI del sistema y callbacks de éxito/error.
 
 Explicación detallada:
-Tipos:
-1) Static shortcuts: definidos en res/xml/shortcuts.xml referenciados en activity con meta-data android.app.shortcuts. Máximo ~5 visibles según launcher.
-2) Dynamic shortcuts: ShortcutManager.addDynamicShortcuts() en runtime según contexto (ej. “Último pedido”, contacto reciente). Límite total combinado (cuota, típicamente 5 activos destacados).
-3) Pinned shortcuts: requestPinShortcut() si el launcher soporta PIN_SHORTCUT_SUPPORTED; usuario confirma icono en escritorio.
+Sustituye FingerprintManager antiguo. Componentes:
+- BiometricManager: canAuthenticate(authenticators) → BIOMETRIC_SUCCESS, ERROR_NONE_ENROLLED, ERROR_NO_HARDWARE, etc.
+- BiometricPrompt: muestra diálogo con título, subtítulo, negative button (cancelar; no uses “Usar contraseña” como negative si rediriges a PIN — usa CryptoObject o flujo propio).
 
-Cada shortcut tiene id, shortLabel, longLabel, icon, intents (o activity target). Para deep link interno, usa Intent con action VIEW y NavDeepLink o rutas explícitas.
+Authenticators (flags combinables):
+- BIOMETRIC_STRONG / BIOMETRIC_WEAK
+- DEVICE_CREDENTIAL (PIN/patrón) con setAllowedAuthenticators
+- Clase 3 (strong) exigida para pagos según guía
 
-Android 7.1+ (API 25). Actualiza dynamic shortcuts cuando cambian datos; removeDynamicShortcuts si ya no aplican.
+BiometricPrompt.CryptoObject vincula cifrado (Cipher) a la autenticación para que la clave en Android Keystore solo se desbloquee tras biométrico válido.
 
-Integración con notifications: Bubble shortcuts y conversaciones usan Person y categorías relacionadas.
+Flujo típico app bancaria/login:
+1) Comprobar canAuthenticate
+2) Opcional: generar clave en Keystore con setUserAuthenticationRequired
+3) Mostrar BiometricPrompt en main thread
+4) onAuthenticationSucceeded → desbloquear token o navegar
+
+Errores: ERROR_LOCKOUT, ERROR_LOCKOUT_PERMANENT (demasiados intentos), user cancel, sensor unavailable.
 
 Cuándo usarlo:
-- Acciones frecuentes: “Nueva nota”, “Buscar”, “Escanear QR”.
-- Deep links a sección sin pasar por home.
-- Re-engagement: shortcuts dinámicos a contenido reciente.
+- Login rápido, confirmación de pago, acceso a datos sensibles.
+- Sustituir contraseña en cada apertura si hay biométrico enrolled.
+
+No usar solo biométrico sin fallback si el usuario no enrolló hardware.
 
 Ejemplo:
-// shortcuts.xml
-<shortcuts>
-  <shortcut android:shortcutId="compose"
-      android:shortcutShortLabel="@string/compose"
-      android:icon="@drawable/ic_compose"
-      android:targetPackage="com.example"
-      android:targetClass="com.example.MainActivity">
-    <intent android:action="android.intent.action.VIEW"
-        android:data="myapp://compose" />
-  </shortcut>
-</shortcuts>
-
-// Dinámico
-val shortcut = ShortcutInfo.Builder(context, "order_42")
-    .setShortLabel("Pedido #42")
-    .setIntent(Intent(Intent.ACTION_VIEW, Uri.parse("myapp://order/42")))
-    .setIcon(Icon.createWithResource(context, R.drawable.ic_order))
+val promptInfo = BiometricPrompt.PromptInfo.Builder()
+    .setTitle("Confirmar identidad")
+    .setSubtitle("Usa huella o rostro")
+    .setNegativeButtonText("Cancelar")
     .build()
-context.getSystemService(ShortcutManager::class.java)
-    .addDynamicShortcuts(listOf(shortcut))
+
+val biometricPrompt = BiometricPrompt(
+    activity,
+    ContextCompat.getMainExecutor(activity),
+    object : BiometricPrompt.AuthenticationCallback() {
+        override fun onAuthenticationSucceeded(
+            result: BiometricPrompt.AuthenticationResult
+        ) { /* desbloquear */ }
+        override fun onAuthenticationError(code: Int, errString: CharSequence) {}
+    }
+)
+biometricPrompt.authenticate(promptInfo)
 
 Consejo para entrevista:
-Diferencia static vs dynamic vs pinned, menciona límite de shortcuts y que deben reflejar acciones reales (Play policy). Conecta con deep links y Nav Component para manejar el intent en cold start.
+Menciona androidx.biometric, diferencia weak vs strong, CryptoObject + Keystore, y que el diálogo lo dibuja el sistema (no falsificar UI de huella). Nunca almacenes contraseñas; desbloquea claves o tokens cifrados.

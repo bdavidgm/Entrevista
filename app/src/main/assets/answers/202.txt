@@ -1,41 +1,39 @@
 Concepto:
-MVP (Model-View-Presenter) separa la UI pasiva (View) de la lógica de presentación (Presenter) que orquesta el Model; el Presenter no conoce detalles de Android framework salvo contrato con View.
+DiffUtil calcula la diferencia mínima entre dos listas y emite actualizaciones granulares (insert/remove/move/change) para RecyclerView, evitando notifyDataSetChanged() y animaciones incorrectas.
 
 Explicación detallada:
-Roles:
-- Model: datos y reglas de negocio (repositorio, API, Room).
-- View: Activity/Fragment que implementa interfaz IView (showLoading, showError, renderList); solo UI y delega eventos.
-- Presenter: recibe eventos (onLoginClicked), llama Model, actualiza View en hilo principal; en tests se mockea View y Model.
+Algoritmo de Eugene Myers: encuentra el patch más pequeño entre lista antigua y nueva. Requiere implementar:
+- areItemsTheSame(old, new): identidad estable (id).
+- areContentsTheSame(old, new): igualdad de contenido visible.
+- Opcional getChangePayload: actualización parcial en bind.
 
-Flujo login: View.notify click → Presenter.login(user, pass) → Model.authenticate → callback → Presenter.view.hideLoading(); view.navigateHome() o view.showError().
+Uso manual:
+val diff = DiffUtil.calculateDiff(object : DiffUtil.Callback() {
+    override fun getOldListSize() = old.size
+    override fun getNewListSize() = new.size
+    override fun areItemsTheSame(o, n) = old[o].id == new[n].id
+    override fun areContentsTheSame(o, n) = old[o] == new[n]
+})
+diff.dispatchUpdatesTo(adapter)
 
-Ventajas: testabilidad del Presenter sin instrumentación; separación clara en proyectos pre-Architecture Components.
+ListAdapter (RecyclerView) ejecuta DiffUtil en background thread automáticamente al llamar submitList(newList).
 
-Desventajas: mucho boilerplate (interfaces View/Presenter); Presenter debe desacoplarse del ciclo de vida (memory leaks si View retiene Activity); duplicación con configuración changes si no usas ViewModel.
-
-Hoy MVVM + ViewModel + StateFlow reemplaza MVP en la mayoría de apps nuevas; MVP sigue en entrevistas y código legacy.
+Beneficios: mejor rendimiento en listas grandes, animaciones por item, preservación de scroll si aplica, menos parpadeo.
 
 Cuándo usarlo:
-- Mantenimiento de apps antiguas con MVP.
-- Entender evolución hacia MVVM/MVI.
-- Equipos que testean lógica de UI sin Robolectric pesado (Presenter unit tests).
+- Siempre que la lista cambie por datos de red o base de datos.
+- Chat, feeds, catálogos con actualizaciones parciales.
+
+Evitar: comparaciones costosas en areContentsTheSame (usar campos relevantes).
 
 Ejemplo:
-interface LoginView {
-    fun showError(msg: String)
-    fun openHome()
+val callback = object : DiffUtil.ItemCallback<Message>() {
+    override fun areItemsTheSame(a: Message, b: Message) = a.id == b.id
+    override fun areContentsTheSame(a: Message, b: Message) =
+        a.text == b.text && a.timestamp == b.timestamp
 }
-class LoginPresenter(
-    private val view: LoginView,
-    private val repo: AuthRepository
-) {
-    fun onLogin(email: String, pass: String) {
-        repo.login(email, pass) { result ->
-            if (result.isSuccess) view.openHome()
-            else view.showError("Credenciales inválidas")
-        }
-    }
-}
+val adapter = object : ListAdapter<Message, MsgVH>(callback) { ... }
+adapter.submitList(newMessages)
 
 Consejo para entrevista:
-Contrasta MVP con MVVM: Presenter vs ViewModel, View activa vs pasiva, supervivencia a rotación (ViewModel + SavedState). Di que conoces MVP pero implementarías MVVM con UDF en proyectos nuevos.
+Explica los dos métodos areItems/areContents y por qué notifyDataSetChanged es mala idea (pierde animación, rebind total). Menciona ListAdapter y AsyncListDiffer. En Compose, animaciones con LazyColumn key + AnimatedContent es el paralelo conceptual.

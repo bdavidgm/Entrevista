@@ -1,42 +1,47 @@
 Concepto:
-Storage Access Framework (SAF) es el mecanismo mediante el cual el usuario elige archivos o carpetas mediante intents (ACTION_OPEN_DOCUMENT, CREATE_DOCUMENT, OPEN_DOCUMENT_TREE) y la app obtiene URIs persistentes con permisos, sin permisos de almacenamiento amplio.
+MediaStore es el ContentProvider del sistema que indexa archivos multimedia (imágenes, vídeo, audio) y metadatos en almacenamiento compartido, ofreciendo URIs y columnas estándar para consultar y crear contenido con scoped storage.
 
 Explicación detallada:
-SAF separa “dueño del archivo” (provider de documentos: Downloads, Drive, archivos locales) de “consumidor” (tu app). Tras el picker, recibes content:// Uri con flags persistibles (FLAG_GRANT_READ_URI_PERMISSION, takePersistableUriPermission).
+Desde Android 10 (scoped storage), las apps no deberían usar rutas absolutas en tarjeta SD para media compartido. MediaStore expone colecciones:
+- Images.Media, Video.Media, Audio.Media
+- Downloads (Android 10+)
+- MediaStore.Files para archivos genéricos en volúmenes
 
-Ventajas:
-- Privacidad: acceso solo a lo elegido.
-- Compatible con scoped storage y políticas de Play Store.
-- Soporta nubes y proveedores terceros que implementen DocumentsProvider.
+Columnas útiles: _ID, DISPLAY_NAME, MIME_TYPE, DATE_ADDED, RELATIVE_PATH, IS_PENDING (subidas en progreso), OWNER_PACKAGE_NAME (Android 11+ para saber quién creó el archivo).
 
-APIs clave:
-- ActivityResultContracts.OpenDocument() / CreateDocument() / OpenDocumentTree()
-- contentResolver.openInputStream(uri), openFileDescriptor
-- DocumentFile.fromTreeUri para navegar carpetas autorizadas
-- Persistencia: contentResolver.takePersistableUriPermission(uri, flags)
+Flujo de escritura moderno:
+1) ContentValues con DISPLAY_NAME, MIME_TYPE, RELATIVE_PATH (Pictures/MyApp).
+2) contentResolver.insert(collection, values) → Uri
+3) openOutputStream(uri) y escribir bytes
+4) values.clear(); put(IS_PENDING, 0); update(uri) para publicar
 
-Limitaciones: no es un sistema de archivos POSIX completo; operaciones dependen del provider; rendimiento variable en URIs remotos.
+Lectura: query con ContentResolver; mostrar con Coil/Glide usando Uri; permisos READ_MEDIA_* o READ_EXTERNAL_STORAGE según API.
 
-Contraste: MediaStore para media conocido que tu app añade a colecciones estándar; SAF para “abrir PDF cualquiera” o exportar CSV a ubicación elegida por el usuario.
+Volume: MediaStore.VOLUME_EXTERNAL_PRIMARY vs getContentUri(volumeName) en Android 10+.
 
 Cuándo usarlo:
-- Importar/exportar documentos (JSON, ZIP, PDF).
-- Elegir carpeta de sincronización (document tree).
-- Evitar MANAGE_EXTERNAL_STORAGE salvo casos excepcionales justificados.
+- Galerías, editores de foto, apps que guardan capturas en álbum del usuario.
+- Listar música o podcasts en almacenamiento compartido.
+- Sustituir File(Environment.DIRECTORY_PICTURES) directo en APIs modernas.
 
 Ejemplo:
-val openDoc = registerForActivityResult(
-    ActivityResultContracts.OpenDocument()
-) { uri: Uri? ->
-    uri ?: return@registerForActivityResult
-    contentResolver.takePersistableUriPermission(
-        uri, Intent.FLAG_GRANT_READ_URI_PERMISSION
-    )
-    contentResolver.openInputStream(uri)?.use { stream ->
-        val text = stream.bufferedReader().readText()
+fun saveImage(context: Context, displayName: String, bytes: ByteArray): Uri? {
+    val values = ContentValues().apply {
+        put(MediaStore.Images.Media.DISPLAY_NAME, displayName)
+        put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+        put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/Entrevista")
+        put(MediaStore.Images.Media.IS_PENDING, 1)
     }
+    val resolver = context.contentResolver
+    val uri = resolver.insert(
+        MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values
+    ) ?: return null
+    resolver.openOutputStream(uri)?.use { it.write(bytes) }
+    values.clear()
+    values.put(MediaStore.Images.Media.IS_PENDING, 0)
+    resolver.update(uri, values, null, null)
+    return uri
 }
-// Lanzar: openDoc.launch(arrayOf("application/pdf", "text/*"))
 
 Consejo para entrevista:
-“El usuario es el dueño del archivo.” Menciona persistable URI, contraste con READ_EXTERNAL_STORAGE masivo, y que WRITE_EXTERNAL_STORAGE ya no es el patrón en apps target 33+. Ejemplo de OpenDocument vs MediaStore.insert.
+Domina scoped storage, IS_PENDING, RELATIVE_PATH y permisos granulares Android 13. Di que MediaStore es la forma correcta de media compartido; SAF para documentos arbitrarios que el usuario elige.

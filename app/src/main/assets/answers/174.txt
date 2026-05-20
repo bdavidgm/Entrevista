@@ -1,40 +1,44 @@
 Concepto:
-SharedPreferences es un almacenamiento clave-valor ligero y privado por app para preferencias pequeñas (booleanos, strings, enteros) persistidos en XML en el almacenamiento interno.
+AlarmManager programa disparos en tiempo (a menudo exactos) mediante PendingIntent; WorkManager ejecuta trabajo en background garantizado, diferible y con restricciones (red, batería, almacenamiento), respetando Doze y políticas modernas.
 
 Explicación detallada:
-API clásica: getSharedPreferences(name, MODE_PRIVATE) devuelve SharedPreferences; edición con edit { putX; apply() o commit() }. apply() es asíncrono; commit() bloquea y devuelve boolean (tests o necesidad síncrona).
+AlarmManager pertenece al modelo antiguo de “despertar la app a una hora”. No ejecuta tu lógica directamente: envía un Intent. No ofrece reintentos automáticos, encadenamiento ni observabilidad unificada. Las alarmas exactas consumen batería y están restringidas (permisos, límites en repeticiones).
 
-Limitaciones conocidas:
-- No es seguro para datos sensibles (tokens, contraseñas): archivo XML sin cifrado fuerte; usa EncryptedSharedPreferences o DataStore con cifrado.
-- No tipado; errores de clave silenciosos.
-- Operaciones no atómicas entre claves sin sincronización.
-- Puede causar ANR si abusas de commit() en main thread con archivos grandes.
-- No hay Flow reactivo nativo (registerOnSharedPreferenceChangeListener es callback antiguo).
+WorkManager (Jetpack) es la capa recomendada para tareas que deben completarse aunque la app cierre: subir logs, sincronizar catálogo, prefetch. Internamente puede usar JobScheduler (API 23+), AlarmManager o Firebase JobDispatcher según versión. Expone Constraints, backoff exponencial, UniqueWork, observación con WorkInfo y corrutinas/Flow.
 
-Reemplazo recomendado: Preferences DataStore (Jetpack), API asíncrona con coroutines/Flow, migración desde SharedPreferences, mejor manejo de concurrencia.
+Comparación práctica:
+| Aspecto | AlarmManager | WorkManager |
+| Hora exacta usuario | Sí (setAlarmClock) | No prioritario |
+| Sync periódico en Doze | Mal adaptado | Sí |
+| Reintentos | Manual | Automático |
+| Restricción Wi‑Fi | Manual | Constraints |
+| Persistencia tras reboot | Reprogramar tú | Sí (con constraints) |
+| Foreground inmediato | No | Worker con ForegroundInfo |
 
-Sigue apareciendo en entrevistas y código legacy. Migración típica: wrapper que lee DataStore en ViewModel y expone StateFlow.
+AlarmManager sigue válido para despertador real o recordatorio visible en esa hora. WorkManager para casi todo trabajo de red o disco en background.
 
 Cuándo usarlo:
-- Flags simples: onboarding visto, tema, última pestaña.
-- Prototipos y apps muy pequeñas.
-- Mantenimiento de código existente hasta migrar a DataStore.
-
-Evitar: listas grandes, JSON enormes, PII, configuración multiusuario compleja (usa Room).
+- AlarmManager: alarma de usuario, calendario con hora fija, casos que deben sonar incluso en Doze (setAlarmClock).
+- WorkManager: sync, analytics batch, limpieza de caché, descargas no urgentes, migraciones.
 
 Ejemplo:
-// SharedPreferences clásico
-val prefs = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
-prefs.edit {
-    putString("token", null) // no guardar tokens así
-    putBoolean("dark_mode", true)
-}
+// WorkManager: sync cada 6h con red
+val request = PeriodicWorkRequestBuilder<SyncWorker>(6, TimeUnit.HOURS)
+    .setConstraints(
+        Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .build()
+    )
+    .build()
+WorkManager.getInstance(context).enqueueUniquePeriodicWork(
+    "sync", ExistingPeriodicWorkPolicy.KEEP, request
+)
 
-// DataStore (preferido hoy)
-val Context.dataStore by preferencesDataStore("settings")
-suspend fun saveDarkMode(enabled: Boolean) {
-    context.dataStore.edit { it[booleanPreferencesKey("dark_mode")] = enabled }
-}
+// AlarmManager: recordatorio exacto
+alarmManager.setAlarmClock(
+    AlarmManager.AlarmClockInfo(triggerTime, showIntent),
+    operationPendingIntent
+)
 
 Consejo para entrevista:
-Di que lo conoces por legacy pero recomiendas DataStore; menciona apply vs commit, MODE_PRIVATE obsoleto (solo private), y nunca tokens en claro. Ofrece EncryptedSharedPreferences si insisten en “preferencias seguras”.
+Respuesta ideal en una frase: “AlarmManager para tiempo wall-clock crítico para el usuario; WorkManager para trabajo deferible y fiable en background.” Menciona Doze, SCHEDULE_EXACT_ALARM y que WorkManager puede usar AlarmManager internamente sin que tú lo gestiones.

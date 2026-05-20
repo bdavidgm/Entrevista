@@ -1,56 +1,49 @@
 Concepto:
-Un evento de UI one-shot es una acción que debe consumirse una sola vez por el observador (navegar, mostrar Snackbar, Toast), a diferencia del estado persistente que la UI puede re-renderizar tras rotación sin repetir el efecto.
+Un fake en testing es una implementación ligera y funcional de una dependencia (interfaz o clase) con comportamiento simplificado pero real, a diferencia del mock que verifica interacciones y del stub que devuelve valores fijos.
 
 Explicación detallada:
-Problema:
-- Si expones navegación como parte de UiState data class y la pantalla rota, al recomponer o re-observar se dispara otra vez NavigateToLogin.
-- LiveData con Event wrapper o Channel/SharedFlow para eventos.
+Tipos en la pirámide de dobles:
+- Mock (MockK/Mockito): expectativa de llamadas, verify { repo.load() }.
+- Stub: devuelve datos precargados sin lógica.
+- Fake: lógica mínima real — FakeUserRepository con mapa en memoria, FakeAuthService con tokens válidos falsos.
 
-Patrones:
-1) Channel + receiveAsFlow (consumo único):
-private val _events = Channel<UiEvent>(Channel.BUFFERED)
-val events = _events.receiveAsFlow()
+Ventajas del fake:
+- Tests más legibles y estables.
+- Varias capas pueden usar el mismo fake (integración ligera).
+- Menos acoplamiento a detalles de implementación que verify.
 
-2) SharedFlow con replay=0 y extraBufferCapacity.
+Desventajas:
+- Hay que mantener el fake al evolucionar la interfaz.
+- No sustituye test de contrato con implementación real si hay riesgo alto.
 
-3) Wrapper Event<T> con getContentIfNotHandled() (patrón legacy LiveData).
-
-4) Snackbar en Compose con LaunchedEffect(eventId) y incrementar id por evento.
-
-Estado vs evento:
-- State: lista de items, loading — siempre reflejado en UI.
-- Event: Navigate, ShowError — fire once.
+En Android:
+- FakeRepository para ViewModel tests.
+- Room in-memory como fake de persistencia (técnicamente doble de integración).
 
 Cuándo usarlo:
-Navegación, diálogos, mensajes tras acción exitosa, permisos denegados. No mezclar en el mismo StateFlow sin diseño.
+ViewModel y UseCase tests con flujos CRUD, auth, carrito. Combinar fake de datos con MockK solo para dependencias externas puntuales.
 
 Ejemplo:
-sealed interface UiEvent {
-    data class ShowMessage(val text: String) : UiEvent
-    data object NavigateBack : UiEvent
-}
+class FakeUserRepository : UserRepository {
+    private val users = mutableMapOf<String, User>()
 
-@HiltViewModel
-class CheckoutViewModel @Inject constructor(...) : ViewModel() {
-    private val _events = Channel<UiEvent>(Channel.BUFFERED)
-    val events = _events.receiveAsFlow()
+    override suspend fun getUser(id: String): User =
+        users[id] ?: throw NotFoundException(id)
 
-    fun onPaymentSuccess() {
-        viewModelScope.launch { _events.send(UiEvent.NavigateBack) }
+    override suspend fun save(user: User) {
+        users[user.id] = user
     }
 }
 
-@Composable
-fun CheckoutScreen(vm: CheckoutViewModel = hiltViewModel()) {
-    LaunchedEffect(Unit) {
-        vm.events.collect { event ->
-            when (event) {
-                UiEvent.NavigateBack -> navController.popBackStack()
-                is UiEvent.ShowMessage -> snackbarHost.showSnackbar(event.text)
-            }
-        }
+@Test
+fun `shows user`() = runTest {
+    val fake = FakeUserRepository().apply {
+        save(User("1", "Ana"))
     }
+    val vm = ProfileViewModel(GetUserUseCase(fake))
+    advanceUntilIdle()
+    assertEquals("Ana", vm.uiState.value.name)
 }
 
 Consejo para entrevista:
-Explica rotación y repetición. Contrasta StateFlow para estado vs Channel/SharedFlow para eventos. Menciona anti-patrón de poner navigate en UiState sin consumo.
+Contrasta mock vs fake vs stub con ejemplo. En Android prioriza fakes para repos y mocks para analytics/clock si hace falta verify.

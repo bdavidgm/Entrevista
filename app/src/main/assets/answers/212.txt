@@ -1,37 +1,45 @@
 Concepto:
-Apollo Kotlin (antes Apollo Android) es un cliente GraphQL tipado que genera modelos y operaciones desde el schema, ejecutando queries/mutations/subscriptions sobre HTTP o WebSocket.
+Koin es un framework de inyección de dependencias para Kotlin ligero, basado en DSL y funciones, sin procesamiento de anotaciones en compile-time; Hilt usa Dagger con codegen y es el estándar recomendado por Google para Android.
 
 Explicación detallada:
-GraphQL: el cliente pide exactamente los campos necesarios en una sola petición; el servidor expone un schema con tipos y resolvers.
+Koin:
+- module { single { Repo(get()) }; viewModel { HomeViewModel(get()) } }
+- startKoin { androidContext(app); modules(appModule) }
+- Inyección: by inject(), getViewModel() o koinViewModel() en Compose
+- Ventajas: curva baja, puro Kotlin, rápido en prototipos.
+- Desventajas: errores en runtime si falta binding; menos validación en compilación; escala grande puede perder garantías de grafo.
 
-Apollo:
-- Define .graphql queries en proyecto
-- Gradle plugin genera clases Kotlin type-safe
-- ApolloClient con OkHttp, cache normalizado opcional
-- Coroutines: query.execute() o Flow para watch queries
-- Subscriptions para tiempo real (WebSocket)
+Hilt:
+- Anotaciones @HiltAndroidApp, @AndroidEntryPoint, @Inject, @Module @InstallIn
+- Codegen Dagger: dependencias verificadas en compile time
+- Integración ViewModel (@HiltViewModel), WorkManager, Navigation, testing con @TestInstallIn
+- Estándar documentación Android oficial
 
-Ventajas vs REST: menos over/under-fetching, evolución de API con deprecations en schema, una versión para móvil/web si comparten schema.
-
-Desventajas: caching más complejo que REST; curva de schema; tooling de archivo único.
+Comparación entrevista:
+| | Koin | Hilt |
+| Compile-time safety | Débil | Fuerte |
+| Boilerplate | Bajo | Medio |
+| Curva | Baja | Media-alta |
+| Google endorsement | No oficial | Sí |
 
 Cuándo usarlo:
-- Backend GraphQL (Hasura, Apollo Server, DGS).
-- Pantallas que necesitan combinar muchos recursos sin N+1 REST calls.
+- Koin: KMP compartido, prototipos, equipos pequeños que rechazan Dagger.
+- Hilt: apps Android profesionales nuevas, equipos que quieren errores en build.
 
-Ejemplo:
-// GetUserQuery.graphql
-// query GetUser($id: ID!) { user(id: $id) { id name email } }
+Ejemplo Koin:
+val appModule = module {
+    single<ApiService> { retrofit.create(ApiService::class.java) }
+    single { UserRepository(get()) }
+    viewModel { UserViewModel(get()) }
+}
 
-val apollo = ApolloClient.Builder()
-    .serverUrl("https://api.example.com/graphql")
-    .build()
-
-suspend fun loadUser(id: String): GetUserQuery.Data? {
-    val response = apollo.query(GetUserQuery(id)).execute()
-    if (response.hasErrors()) throw ApolloException(response.errors)
-    return response.data
+Ejemplo Hilt:
+@Module @InstallIn(SingletonComponent::class)
+object NetworkModule {
+    @Provides @Singleton
+    fun provideApi(retrofit: Retrofit): ApiService =
+        retrofit.create(ApiService::class.java)
 }
 
 Consejo para entrevista:
-Contrasta GraphQL vs REST (flexibilidad vs simplicidad caché HTTP). Menciona codegen, normalized cache y que no reemplaza Firestore. Si solo conoces Retrofit, admite Apollo cuando el backend es GraphQL-first.
+No fanatismo: explica trade-off compile-time vs DSL. Di que usarías Hilt en proyecto Android serio salvo requisito Koin/KMP. Menciona que ambos evitan new() en Activities.

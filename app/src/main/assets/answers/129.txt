@@ -1,38 +1,49 @@
 Concepto:
-lifecycleScope es una CoroutineScope vinculada al Lifecycle de un LifecycleOwner (Activity, Fragment) que cancela automáticamente las corrutinas cuando el Lifecycle se destruye (DESTROYED).
+Parcelable es la interfaz de Android para serializar objetos en un Parcel de forma eficiente y pasarlos entre componentes (Intent extras, Bundle, IPC, SavedState) con menor overhead que Serializable de Java.
 
 Explicación detallada:
-Proporcionado por androidx.lifecycle:lifecycle-runtime-ktx.
-- Extensión val LifecycleOwner.lifecycleScope
-- Dispatcher por defecto Main.immediate para trabajo de UI tras suspend.
-- Cancelación en onDestroy del owner.
+Parcelable escribe campos en orden con Parcel.write* y los lee en el mismo orden en el constructor o factory CREATOR.
 
-Patrones recomendados:
-- lifecycleScope.launch { } para fire-and-forget ligado a pantalla.
-- repeatOnLifecycle(Lifecycle.State.STARTED) { flow.collect { } } para coleccionar Flow solo cuando la UI es visible, evitando trabajo en background y fugas.
+Ventajas vs Serializable:
+- Más rápido y menos allocations (importante en intents y transacciones frecuentes).
+- Serializable usa reflexión y genera más basura.
 
-Comparación con viewModelScope:
-- lifecycleScope: cancela al destruir Activity/Fragment; ideal para efectos de UI puros (animaciones, collectors de UI).
-- viewModelScope: sobrevive rotación; cancela al limpiar ViewModel (CLEAR del store).
+En Kotlin moderno:
+- @Parcelize en data class (plugin kotlin-parcelize): el compilador genera el boilerplate.
+- Requiere plugins { id("kotlin-parcelize") } y @Parcelize annotation.
 
-No uses GlobalScope en producción: no respeta lifecycle.
+API 33+ (Tiramisu):
+- intent.getParcelableExtra("key", MyClass::class.java) tipado.
+- Bundle.getParcelableArrayList con Class parameter.
+
+Limitaciones:
+- Solo para datos simples y estables; no persistencia a largo plazo ni red.
+- Cambiar estructura del Parcelable rompe compatibilidad si no versionas.
+- Objetos grandes en Intent pueden causar TransactionTooLargeException (límite ~1MB binder).
+
+Alternativas:
+- Navigation Safe Args para argumentos tipados entre destinos.
+- JSON en SavedStateHandle para objetos complejos (con cuidado de tamaño).
+- Room/BD para datos grandes.
 
 Cuándo usarlo:
-Lanzar corrutinas desde Activity/Fragment que deben morir con la pantalla. Combinar con repeatOnLifecycle para Flows en lugar de collect directo en onCreate sin lifecycle.
+Argumentos entre Activities/Fragments, estado en Bundle, AIDL. Para red usa DTO JSON; para disco usa Room.
 
 Ejemplo:
-class ListActivity : AppCompatActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.items.collect { items ->
-                    adapter.submitList(items)
-                }
-            }
-        }
-    }
+@Parcelize
+data class User(
+    val id: String,
+    val name: String
+) : Parcelable
+
+// Enviar
+val intent = Intent(this, DetailActivity::class.java).apply {
+    putExtra("user", User("1", "Ana"))
 }
+startActivity(intent)
+
+// Recibir API 33+
+val user = intent.getParcelableExtra("user", User::class.java)
 
 Consejo para entrevista:
-Explica cancelación automática y repeatOnLifecycle vs collect en onCreate. Contrasta con viewModelScope para rotación.
+Contrasta Parcelable vs Serializable (rendimiento). Menciona @Parcelize y TransactionTooLargeException. Safe Args como alternativa moderna con Navigation.

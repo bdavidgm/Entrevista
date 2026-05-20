@@ -1,20 +1,21 @@
 Concepto:
-Rootear consiste en obtener acceso de superusuario (uid 0) en Android, tradicionalmente con su o Magisk, permitiendo modificar /system o interceptar el arranque con módulos.
+El bootloader es el primer software que ejecuta el teléfono al encender; carga el kernel y arranca Android o recovery. Suele estar bloqueado por el fabricante.
 
 Explicación detallada:
-Magisk (actual estándar) parchea la imagen boot e instala un manager que concede root por app. Permite módulos sin tocar system (systemless), ocultar root de algunas apps (Zygisk, denylist) aunque bancos y juegos con Play Integrity pueden detectarlo.
+Bloqueado: solo arranques firmados (verified boot). Desbloquear (OEM unlock) permite flashear particiones custom, instalar recovery alternativo y rootear, pero suele borrar datos (factory reset warning) y anular garantía.
 
-Ventajas: backups completos, bloqueadores sistema, automatización avanzada, temas profundos. Riesgos: malware con root, brick si se borran particiones críticas, violación de políticas bancarias/empresa, actualizaciones OTA fallidas.
+Bootloader bloqueado + verificación activa impide ROMs no firmadas. Algunos fabricantes (Google Pixel, algunos Xiaomi con cuenta) facilitan unlock; otros lo restringen.
 
-Root no es lo mismo que bootloader unlock: normalmente se requiere unlock primero. No confundir con jailbreak de iOS.
+Implicaciones legales y de seguridad: dispositivo más vulnerable a malware con privilegios si se compromete el sistema. Empresas MDM pueden detectar bootloader desbloqueado.
 
-Desarrollador de apps: debe asumir que en dispositivos rooteados las protecciones locales fallan; usar servidor para datos críticos y Play Integrity donde aplique.
+Para desarrolladores normales no hace falta desbloquear; para técnico que restaura software o instala ROM oficial vía fastboot a veces sí.
 
 Cuándo usarlo:
-Modding personal, investigación, herramientas de backup (Titanium-style). Evitar en dispositivos de trabajo con datos sensibles.
+Flasheo oficial, desarrollo de sistema, modding avanzado. No necesario para apps de Play Store estándar.
 
 Ejemplo:
-Magisk Manager > Instalar > Parchear boot.img > Flashear vía fastboot
+Ajustes > Opciones desarrollador > Desbloqueo OEM (si existe)
+fastboot oem unlock
 
 Consejo para entrevista:
-Menciona Magisk vs su antiguo, Play Integrity, y riesgos de seguridad.
+Explica verified boot, wipe de datos al unlock y política de garantía.

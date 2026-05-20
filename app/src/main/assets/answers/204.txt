@@ -1,44 +1,39 @@
 Concepto:
-Retrofit es una biblioteca de Square que genera implementaciones de interfaces HTTP a partir de anotaciones (@GET, @POST, @Path, @Query, @Body), integrándose con convertidores (Moshi/Gson) y OkHttp.
+MVC en Android clásico asigna Model (datos), View (layouts/widgets) y Controller (Activity/Fragment) que recibe eventos, actualiza Model y refresca View; en la práctica Activity suele acumular demasiada lógica (“fat Activity”).
 
 Explicación detallada:
-Defines ApiService como interfaz Kotlin/Java. Retrofit.Builder configura baseUrl, call adapters (CoroutineCallAdapter, RxJava), converter factories.
+Variante Android informal:
+- Model: POJOs, SQLite, API clients, repositorios.
+- View: XML layouts + widgets; a veces se considera que Activity es parte de la View.
+- Controller: Activity/Fragment maneja onClick, AsyncTask/coroutines, navegación, permisos.
 
-Ventajas: código declarativo, tipado, fácil mockear en tests, interceptors OkHttp para auth/logging, soporte suspend para coroutines sin Callback.
+Problema: sin disciplina, el Controller crece con cientos de líneas mezclando UI, red y estado. Testing difícil sin extraer capas.
 
-Componentes típicos:
-- Retrofit.create(ApiService::class.java)
-- OkHttpClient con timeouts, certificate pinning, logging HttpLoggingInterceptor (solo debug)
-- MoshiConverterFactory para JSON Kotlin-friendly
+Evolución en Google samples: MVP luego MVVM con ViewModel que sobrevive rotación y expone UI state observable.
 
-Manejo errores: HttpException en códigos 4xx/5xx; IOException red; envolver en Result o sealed class en repositorio.
+MVC puro (como en web server-side) no mapea 1:1 porque Activity es controlador Y punto de entrada del sistema.
 
 Cuándo usarlo:
-- Casi todo cliente REST en Android profesional.
-- Alternativas: Ktor client (Kotlin puro), Apollo para GraphQL.
+- Entender críticas históricas al “todo en Activity”.
+- Comparar en entrevistas con MVVM/MVI/Clean.
+- Refactorizar fat Activity hacia capas.
 
 Ejemplo:
-interface ApiService {
-    @GET("users/{id}")
-    suspend fun getUser(@Path("id") id: Long): UserDto
-
-    @POST("users")
-    suspend fun createUser(@Body body: CreateUserRequest): UserDto
+// Anti-patrón MVC acoplado
+class UserActivity : AppCompatActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        binding.btnLoad.setOnClickListener {
+            lifecycleScope.launch {
+                binding.progress.visible()
+                val users = api.getUsers() // Model+red en Activity
+                binding.list.adapter = Adapter(users) // View update
+                binding.progress.gone()
+            }
+        }
+    }
 }
-
-val okHttp = OkHttpClient.Builder()
-    .addInterceptor(HttpLoggingInterceptor().apply {
-        level = HttpLoggingInterceptor.Level.BODY
-    })
-    .build()
-
-val retrofit = Retrofit.Builder()
-    .baseUrl("https://api.example.com/")
-    .client(okHttp)
-    .addConverterFactory(MoshiConverterFactory.create())
-    .build()
-
-val api = retrofit.create(ApiService::class.java)
+// Mejor: ViewModel como presentación, Activity solo observa state
 
 Consejo para entrevista:
-Menciona OkHttp debajo, suspend, interceptors para token refresh, y capa Repository que no expone Retrofit a UI. Habla de manejo de errores y timeouts. Si preguntan GraphQL, cita Apollo.
+Admite que Android MVC es ambiguo y suele degenerar en fat Activity. Explica cómo migrarías a MVVM (ViewModel, Repository, unidirectional data). No defiendas MVC para apps nuevas.

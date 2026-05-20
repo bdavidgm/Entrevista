@@ -1,43 +1,42 @@
 Concepto:
-collectAsState es el puente entre Flow frío de Kotlin y el estado observable de Compose: suscribe el Flow en el composable y expone su último valor como State<T> que dispara recomposición.
+rememberUpdatedState envuelve un valor en un State que siempre refleja la última versión pasada al composable, útil cuando una lambda o efecto capturó un valor antiguo en un closure de larga duración.
 
 Explicación detallada:
-Variantes:
-- collectAsState(): requiere Context o scope de composición; usa remember y produce State.
-- collectAsStateWithLifecycle(): respeta STARTED/STOPPED del LifecycleOwner; recomendado en pantallas Android para no coleccionar en background.
+Problema:
+- LaunchedEffect(Unit) { while(true) { onEvent(currentCount) } } captura onEvent y currentCount del primer composition.
+- Si el padre pasa nueva lambda o count, el efecto no se reinicia pero debería ver el valor actualizado.
 
-Internamente:
-- Inicia colección en coroutine ligada al lifecycle del composable o del owner.
-- Cada emisión actualiza State.value -> recomposición.
-
-Origen típico:
-- ViewModel expone StateFlow; UI: val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-
-Diferencia con observeAsState (LiveData):
-- LiveData es lifecycle-aware nativo; Flow es más flexible (operadores, cold/hot).
-
-Consideraciones:
-- Flow frío: cada collector puede re-ejecutar upstream; en UI suele exponerse StateFlow compartido desde ViewModel.
-- initial: parámetro para valor antes de primera emisión.
-- No uses collect {} manual en Composable sin rememberCoroutineScope y DisposableEffect salvo casos avanzados.
-
-Cuándo usarlo:
-Toda pantalla Compose que observe ViewModel StateFlow/SharedFlow o repository Flow expuesto a UI.
-
-Ejemplo:
-@HiltViewModel
-class HomeViewModel @Inject constructor(repo: Repo) : ViewModel() {
-    val items = repo.itemsFlow()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+Solución:
+val updatedOnEvent by rememberUpdatedState(newValue = onEvent)
+LaunchedEffect(Unit) {
+    while (true) {
+        updatedOnEvent()
+    }
 }
 
+rememberUpdatedState vs remember:
+- remember guarda estado entre recomposiciones del mismo composable.
+- rememberUpdatedState no reinicia efectos; solo actualiza la referencia leída dentro del efecto.
+
+Casos típicos:
+- Callbacks en LaunchedEffect, DisposableEffect, animaciones largas.
+- Polling o listeners donde reiniciar el efecto sería costoso.
+- Snackbar o navegación one-shot desde efecto con callback del padre.
+
+Cuándo usarlo:
+Cuando un efecto con clave fija o larga duración debe leer valores o callbacks actualizados sin relanzar el efecto completo.
+
+Ejemplo:
 @Composable
-fun HomeScreen(vm: HomeViewModel = hiltViewModel()) {
-    val items by vm.items.collectAsStateWithLifecycle()
-    LazyColumn {
-        items(items, key = { it.id }) { ItemRow(it) }
+fun TimerTick(onTick: () -> Unit) {
+    val currentOnTick by rememberUpdatedState(onTick)
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(1_000)
+            currentOnTick()
+        }
     }
 }
 
 Consejo para entrevista:
-Prefiere collectAsStateWithLifecycle sobre collectAsState en Android. Menciona stateIn en ViewModel para Flow frío y WhileSubscribed.
+Contrasta con incluir la dependencia en LaunchedEffect(key) que reinicia el efecto. Usa rememberUpdatedState cuando reiniciar es incorrecto o caro.

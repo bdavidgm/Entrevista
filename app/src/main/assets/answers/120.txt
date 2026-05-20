@@ -1,43 +1,47 @@
 Concepto:
-minSdk (API mínima) define la versión Android más antigua en la que la app puede instalarse; targetSdk (API objetivo) indica para qué versión del sistema optimizaste y aceptas comportamientos de compatibilidad y políticas nuevas.
+Android App Bundle (AAB) es el formato de publicación en Google Play: un paquete que Play Store usa para generar APKs optimizados por dispositivo (ABI, densidad, idioma), en lugar de subir un APK monolítico.
 
 Explicación detallada:
-minSdk:
-- Dispositivos por debajo no ven la app en Play Store (o no instalan el APK).
-- Permite usar APIs sin comprobaciones solo si compileSdk y minSdk lo permiten; para APIs superiores a minSdk usas Build.VERSION.SDK_INT o androidx checks.
-- Subir minSdk reduce fragmentación pero excluye usuarios en versiones viejas.
+Al subir un .aab, Google Play aplica Dynamic Delivery:
+- Split APKs por arquitectura (arm64-v8a, armeabi-v7a, x86_64): el usuario descarga solo su ABI.
+- Configuration APKs por densidad de pantalla e idioma: reduce tamaño vs APK universal con todos los recursos.
+- Asset packs y feature modules para entrega bajo demanda (Play Feature Delivery).
 
-targetSdk:
-- Señal a Google Play y al sistema de que probaste contra esa versión.
-- Google exige targetSdk reciente para publicar (políticas anuales).
-- Activan cambios de comportamiento (scoped storage, permisos en runtime, restricciones de background, notificaciones con canal obligatorio desde API 26, etc.) aunque el dispositivo tenga Android más nuevo.
+El desarrollador compila con:
+./gradlew bundleRelease
+El artefacto está en app/build/outputs/bundle/release/
 
-compileSdk:
-- Versión del SDK con la que compilas; debe ser >= targetSdk. No afecta qué dispositivos instalan, solo qué APIs ves en compilación.
+Play App Signing: Google puede firmar el APK final; subes el AAB firmado con upload key. Los usuarios instalan APKs firmados por la clave de distribución de Play.
 
-Ejemplo numérico: minSdk 26 (Android 8), targetSdk 35 (Android 15), compileSdk 35.
+AAB no se instala directamente en dispositivos de desarrollo habitualmente; para pruebas locales usas bundletool build-apks o instala vía Play Internal Testing.
 
-defaultConfig en Gradle:
-minSdk = 26
-targetSdk = 35
+Ventajas:
+- Menor tamaño de descarga e instalación.
+- Requisito para publicaciones nuevas en Play Console.
+- Soporte de módulos dinámicos.
+
+Limitaciones:
+- Solo distribución vía Google Play (otras tiendas pueden requerir APK).
+- Builds de debug siguen siendo APK para rapidez en IDE.
 
 Cuándo usarlo:
-Definir minSdk según analytics de usuarios y APIs necesarias (Biometric, WorkManager moderno). Actualizar targetSdk cada año antes de deadlines de Play. Probar en emuladores de targetSdk tras cada bump.
+Siempre para producción en Play Store desde 2021 (nuevas apps deben usar AAB). Para sideload o CI interno puedes generar APK desde bundle.
 
 Ejemplo:
+// build.gradle.kts
 android {
-    compileSdk = 35
-    defaultConfig {
-        minSdk = 26
-        targetSdk = 35
-        applicationId = "com.example.app"
+    defaultConfig { ... }
+    buildTypes {
+        release {
+            isMinifyEnabled = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+        }
     }
 }
-
-// Uso condicional de API
-if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-    requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), REQ_CODE)
-}
+// Terminal: ./gradlew :app:bundleRelease
 
 Consejo para entrevista:
-Diferencia las tres: compile (build), min (instalación), target (comportamiento/políticas). Menciona que subir targetSdk puede romper tests si no adaptas permisos y background limits.
+Explica que AAB no es el APK que instala el usuario; Play lo divide. Menciona tamaño, Play Signing y diferencia con APK universal. No confundas con Android Instant (deprecated) salvo que pregunten histórico.

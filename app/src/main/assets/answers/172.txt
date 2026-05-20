@@ -1,41 +1,41 @@
 Concepto:
-AlarmManager es un servicio del sistema que dispara intents (broadcasts o activities) en un momento futuro o de forma periódica, incluso si la app está en segundo plano, sujeto a restricciones de ahorro de batería desde Android 6+.
+PackageManager es la API del sistema que permite consultar información sobre paquetes instalados (apps), componentes (activities, services), permisos, features del dispositivo y resolver intents.
 
 Explicación detallada:
-Permite programar alarmas con:
-- setExact / setExactAndAllowWhileIdle: hora precisa (despertar dispositivo); requiere permisos SCHEDULE_EXACT_ALARM (API 31+) o USE_EXACT_ALARM para casos elegibles (reloj, alarma).
-- setWindow / setAndAllowWhileIdle: ventana flexible; mejor para batería.
-- setRepeating: deprecado en favor de ventanas; Doze puede agrupar ejecuciones.
-- setAlarmClock: muestra icono de alarma en status bar; el usuario entiende que es crítico.
+Cada app Android es un package (applicationId). PackageManager ofrece métodos para:
+- getPackageInfo(packageName, flags): versión, firmas, permisos declarados, etc. (cuidado con flags deprecados; en API 33+ usar PackageManager.PackageInfoFlags).
+- queryIntentActivities / resolveActivity: comprobar si hay app que maneje un intent (evitar ActivityNotFoundException).
+- getApplicationInfo / getApplicationLabel: metadatos y nombre visible.
+- hasSystemFeature(FEATURE_CAMERA, FEATURE_NFC): capacidades hardware/software.
+- checkPermission / checkSelfPermission: permisos concedidos (junto con ContextCompat).
+- getInstalledPackages / getInstalledApplications: listar apps (restringido en versiones recientes por privacidad).
+- setComponentEnabledSetting: habilitar/deshabilitar componentes dinámicamente (poco común).
 
-El disparador suele ser PendingIntent hacia BroadcastReceiver o Service. En Android 8+ muchos broadcasts implícitos están limitados; patrón común: AlarmManager → BroadcastReceiver → startForegroundService o encolar WorkManager.
+Se obtiene con context.packageManager o getSystemService(PackageManager::class.java) según API.
 
-Restricciones modernas:
-- Doze y App Standby retrasan alarmas inexactas.
-- Límites a alarmas exactas repetitivas (API 23+): usar una alarma y reprogramar en el receiver.
-- Android 12+: permiso SCHEDULE_EXACT_ALARM; el usuario puede revocarlo en ajustes.
-- Para trabajo diferible y con restricciones de red/carga, Google recomienda WorkManager en lugar de AlarmManager salvo alarmas de usuario visibles (despertador, calendario).
+Cambios de privacidad: Android 11+ limita visibilidad de paquetes; debes declarar <queries> en el manifest para intents específicos que consultes. Sin ello queryIntentActivities puede devolver lista vacía aunque exista la app.
+
+Usos en entrevista: feature detection antes de usar cámara, Bluetooth, leanback; verificar actualización propia comparando versionCode; deep links; launchers alternativos; plugins que enumeran apps instaladas (ahora regulado).
 
 Cuándo usarlo:
-- Alarmas de reloj/despertador, recordatorios de calendario con hora exacta.
-- Notificación a una hora concreta acordada con el usuario.
-- Casos legacy donde WorkManager no encaja (muy pocos hoy).
-
-Evitar: sincronización periódica de datos, uploads en background, polling de red (usar WorkManager + NetworkCallback).
+- Antes de startActivity con intent implícito (¿hay navegador?).
+- Comprobar si el dispositivo soporta una feature antes de mostrar funcionalidad.
+- Obtener versión de tu app o de un SDK integrado (package name conocido).
+- Leer meta-data de otro componente (raro en apps consumer).
 
 Ejemplo:
-val alarmManager = context.getSystemService(AlarmManager::class.java)
-val pending = PendingIntent.getBroadcast(
-    context, 0,
-    Intent(context, AlarmReceiver::class.java),
-    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-)
-val triggerAt = System.currentTimeMillis() + 60_000
-if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-    alarmManager.setExactAndAllowWhileIdle(
-        AlarmManager.RTC_WAKEUP, triggerAt, pending
-    )
+fun canOpenMaps(pm: PackageManager): Boolean {
+    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=Madrid"))
+    return intent.resolveActivity(pm) != null
+}
+
+fun supportsNfc(pm: PackageManager): Boolean =
+    pm.hasSystemFeature(PackageManager.FEATURE_NFC)
+
+fun appVersionName(context: Context): String {
+    val info = context.packageManager.getPackageInfo(context.packageName, 0)
+    return info.versionName ?: ""
 }
 
 Consejo para entrevista:
-Contrasta siempre con WorkManager. Di “exact alarm” vs “inexact”, Doze, y permisos API 31+. Buena respuesta: AlarmManager para UX de alarma real; WorkManager para sync en background.
+Menciona <queries> en Android 11+, no abuses de getInstalledPackages, y diferencia PackageManager de ActivityManager (tareas recientes). Ejemplo clásico: resolveActivity antes de abrir URL.

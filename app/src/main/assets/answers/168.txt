@@ -1,59 +1,58 @@
 Concepto:
-Acceder a la cámara en Android implica solicitar el permiso CAMERA (en tiempo de ejecución desde API 23), elegir una API (CameraX recomendada, Camera2 de bajo nivel o intents del sistema) y gestionar el ciclo de vida, orientación y almacenamiento del resultado.
+ConnectivityManager.NetworkCallback es una interfaz de callback que el sistema invoca cuando cambia el estado de una red registrada: disponible, perdida o con capacidades modificadas (Wi‑Fi, celular, VPN, metered, validación de Internet).
 
 Explicación detallada:
-Hay tres enfoques habituales:
+A partir de Android 7 (API 24), la forma recomendada de observar conectividad no es consultar getActiveNetworkInfo() (obsoleto), sino registrar un NetworkCallback sobre ConnectivityManager. Defines qué redes te interesan con NetworkRequest (transporte, capacidades como NET_CAPABILITY_INTERNET o NET_CAPABILITY_VALIDATED) y el sistema te notifica de forma eficiente sin polling.
 
-1) Intent implícito (ACTION_IMAGE_CAPTURE o ACTION_VIDEO_CAPTURE): delegas la captura en la app de cámara del sistema. Recibes un thumbnail en extras o debes proveer un Uri destino vía EXTRA_OUTPUT y FileProvider. Ventaja: poco código y sin permiso CAMERA si solo usas el intent (según documentación y versión). Desventaja: poca personalización de UI y preview.
+Los métodos principales son:
+- onAvailable(Network): la red cumple el request; puedes obtener NetworkCapabilities y LinkProperties.
+- onLost(Network): la red dejó de estar disponible para tu request.
+- onCapabilitiesChanged(Network, NetworkCapabilities): cambió algo relevante (p. ej. pasó de celular a Wi‑Fi, o la red ganó validación DNS).
+- onLinkPropertiesChanged: cambios en rutas, DNS, etc.
+- onBlockedStatusChanged (API 29+): la app puede estar bloqueada en esa red por políticas del usuario o del sistema.
 
-2) CameraX (biblioteca Jetpack): abstrae Camera2, maneja compatibilidad entre fabricantes, lifecycle binding y casos de uso (Preview, ImageCapture, ImageAnalysis). Es el estándar actual para apps que muestran preview en pantalla.
+Puedes registrar con registerNetworkCallback(request, callback) para redes que coincidan con el filtro, o registerDefaultNetworkCallback(callback) para seguir la red por defecto del dispositivo. Desde Android 10 conviene usar ConnectivityManager.NetworkCallback con Context.registerComponentCallbacks o lifecycle-aware: en onStart registra y en onStop unregisterNetworkCallback para evitar fugas y consumo en segundo plano.
 
-3) Camera2 API: control fino (manual focus, RAW, múltiples streams) pero mucha complejidad y diferencias entre dispositivos.
-
-Flujo típico con preview propio:
-- Declarar uses-permission android.permission.CAMERA y feature opcional.
-- Comprobar PackageManager.FEATURE_CAMERA_ANY.
-- Pedir permiso con ActivityResultContracts.RequestPermission.
-- Inicializar ProcessCameraProvider en un Executor.
-- Vincular use cases al LifecycleOwner con bindToLifecycle.
-- Para guardar fotos: ImageCapture con MediaStore o FileProvider; en Android 10+ usar scoped storage.
-
-Consideraciones: rotación (Display rotation vs sensor orientation), flash, enfoque táctil, liberar la cámara en onStop, no bloquear el hilo principal, y políticas de privacidad (indicador de cámara en barra de estado en versiones recientes).
+NetworkCapabilities permite saber si hay Internet real (VALIDATED), si la red es de pago (NOT_METERED / METERED), ancho de banda estimado, etc. Esto es clave para pausar sincronización pesada en datos móviles o reanudar cuando vuelve Wi‑Fi.
 
 Cuándo usarlo:
-- Apps de escaneo, redes sociales, KYC, código QR, realidad aumentada ligera.
-- Cuando necesitas preview en tu UI: CameraX.
-- Captura puntual sin UI propia: intent del sistema + FileProvider.
-- Control profesional de exposición/RAW: Camera2 directo.
+- Mostrar banner “sin conexión” o estado offline en tiempo real.
+- Pausar/reanudar descargas, colas de subida o reintentos de API.
+- Decidir si usar calidad de imagen alta solo en Wi‑Fi.
+- Sincronización diferida cuando onCapabilitiesChanged indica red validada.
+- Evitar WorkManager o AlarmManager para “escuchar red”; NetworkCallback es el mecanismo correcto en primer plano o con restricciones claras en background.
 
 Ejemplo:
-// Permiso + CameraX Preview + ImageCapture (esquema)
-val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
-cameraProviderFuture.addListener({
-    val provider = cameraProviderFuture.get()
-    val preview = Preview.Builder().build().also {
-        it.surfaceProvider = previewView.surfaceProvider
-    }
-    val capture = ImageCapture.Builder().build()
-    provider.unbindAll()
-    provider.bindToLifecycle(
-        lifecycleOwner,
-        CameraSelector.DEFAULT_BACK_CAMERA,
-        preview,
-        capture
-    )
-}, ContextCompat.getMainExecutor(context))
+class NetworkMonitor(
+    context: Context,
+    private val connectivity: ConnectivityManager =
+        context.getSystemService(ConnectivityManager::class.java)
+) {
+    private val request = NetworkRequest.Builder()
+        .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+        .addCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+        .build()
 
-// Captura
-val output = ImageCapture.OutputFileOptions.Builder(photoFile).build()
-imageCapture.takePicture(
-    output,
-    executor,
-    object : ImageCapture.OnImageSavedCallback {
-        override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) { }
-        override fun onError(exception: ImageCaptureException) { }
+    private val callback = object : ConnectivityManager.NetworkCallback() {
+        override fun onAvailable(network: Network) {
+            // Red usable: reanudar cola
+        }
+        override fun onLost(network: Network) {
+            // Pausar operaciones de red
+        }
+        override fun onCapabilitiesChanged(
+            network: Network,
+            caps: NetworkCapabilities
+        ) {
+            val unmetered = caps.hasCapability(
+                NetworkCapabilities.NET_CAPABILITY_NOT_METERED
+            )
+        }
     }
-)
+
+    fun start() = connectivity.registerNetworkCallback(request, callback)
+    fun stop() = connectivity.unregisterNetworkCallback(callback)
+}
 
 Consejo para entrevista:
-Di que CameraX es la recomendación oficial, explica FileProvider y scoped storage, y que el permiso CAMERA es peligroso y debe justificarse en Play Console. Si preguntan por Camera2, reconoce complejidad pero menciona que CameraX lo usa por debajo.
+Menciona deprecación de APIs antiguas, diferencia entre “tener interfaz de red” y NET_CAPABILITY_VALIDATED (captive portal), siempre desregistrar el callback, y combinar con WorkManager Constraints.NETWORK_CONNECTED para trabajo en background. Demuestra que entiendes Android moderno (NetworkRequest + NetworkCapabilities), no solo “¿hay Wi‑Fi?”.

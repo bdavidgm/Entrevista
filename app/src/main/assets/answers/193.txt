@@ -1,43 +1,45 @@
 Concepto:
-Estructuras de datos y algoritmos (EDA) son la base para escribir código eficiente, elegir colecciones adecuadas, diseñar pantallas escalables y resolver problemas de entrevista técnica sin cuellos de botella en dispositivos móviles.
+Kotlin es el lenguaje preferido para Android desde 2019: conciso, seguro ante nulls, interoperable con Java y con soporte de primera clase para corrutinas, DSLs y APIs modernas de Jetpack.
 
 Explicación detallada:
-En Android no implementas quicksort diariamente, pero sí aplicas complejidad y estructuras constantemente:
+Ventajas frente a Java en Android:
 
-1) Colecciones Kotlin/Java: List vs Set vs Map; HashMap O(1) para búsqueda por id frente a List O(n); LinkedHashMap para orden de inserción; ArrayDeque para colas. En RecyclerView/DiffUtil, mapas por id aceleran diff.
+1) Null safety: tipos String vs String? detectados en compilación; operadores ?., ?:, let reducen NPE en producción.
 
-2) Listas grandes: paginación (Paging 3) en lugar de cargar 10k items en memoria; LazyColumn solo compone visibles pero tu ViewModel no debe retener listas enormes sin necesidad.
+2) Concisión: data class, sealed class, when exhaustivo, propiedades sin boilerplate getters/setters, default parameters, named arguments. Menos líneas = menos bugs y reviews más rápidos.
 
-3) Algoritmos de UI: DiffUtil (Myers) para actualizaciones mínimas; orden estable; comparadores eficientes en areItemsTheSame/areContentsTheSame.
+3) Funciones de orden superior y lambdas: colecciones con map/filter, APIs reactivas legibles; SAM conversions donde Java exige interfaces.
 
-4) Concurrencia: entender race conditions, inmutabilidad, estructuras thread-safe; por qué no mutar lista compartida desde múltiples corrutinas sin sincronización.
+4) Coroutines: async sin callback hell; integración con ViewModel scope, Room, Retrofit suspend, Flow. Java usa callbacks, RxJava o Executors más verbosos.
 
-5) Grafos y árboles: navegación (back stack), deep links, jerarquías de composición; árbol de dependencias Gradle.
+5) Extension functions: añadir utilidades a Context, View, String sin subclassing (usar con moderación).
 
-6) Entrevistas coding: two pointers, sliding window, BFS/DFS en grids (apps mapas, juegos), heap para “top K”. Complejidad temporal y espacial — en móvil importa memoria (OOM en bitmaps).
+6) Interoperabilidad: @JvmStatic, @JvmOverloads, @file:JvmName para llamar desde Java legacy; migración gradual módulo a módulo.
 
-7) Caché: LRU (LruCache, Coil disk cache), políticas de eviction; trade-off memoria vs red.
+7) Multiplataforma (KMP): lógica compartida con iOS en algunos equipos (no siempre en entrevista junior).
 
-8) Procesamiento en background: dividir trabajo O(n) pesado con coroutines y chunks para no bloquear UI.
+8) Oficialidad: documentación, codelabs, Compose samples y AndroidX asumen Kotlin.
+
+Java sigue en código legacy y algunas APIs generadas; en entrevista se espera que escribas Kotlin nuevo.
 
 Cuándo usarlo:
-- Optimizar listas con miles de elementos.
-- Diseñar capa de datos (índices Room, claves primarias).
-- Pasar entrevistas técnicas (LeetCode medio).
-- Depurar ANR por trabajo O(n²) en main thread.
+- Todo código nuevo en proyectos Android modernos.
+- Compose (APIs idiomáticas Kotlin).
+- Cuando migras módulos Java por riesgo/ROI.
 
 Ejemplo:
-// Buscar duplicados O(n) con Set vs O(n²) nested loops
-fun hasDuplicate(ids: List<String>): Boolean {
-    val seen = HashSet<String>(ids.size)
-    for (id in ids) {
-        if (!seen.add(id)) return true
-    }
-    return false
+// Java verboso vs Kotlin
+// Java: if (user != null) { String n = user.getName(); if (n != null) show(n); }
+// Kotlin:
+user?.name?.let { show(it) }
+
+data class User(val id: Long, val name: String)
+
+sealed interface UiState {
+    data object Loading : UiState
+    data class Success(val users: List<User>) : UiState
+    data class Error(val message: String) : UiState
 }
 
-// Mapa para lookup en adapter
-val productsById = products.associateBy { it.id }
-
 Consejo para entrevista:
-Relaciona EDA con Android real: DiffUtil, Paging, LruCache de bitmaps, no bloquear Main. Si piden complejidad, explica Big-O del enfoque elegido. Muestra que practicas problemas pero entiendes impacto en batería y memoria móvil.
+Da 3-4 puntos concretos (null safety, coroutines, data/sealed, oficial) con ejemplo breve. Menciona interop Java sin fanatismo. Evita decir “Java está muerto”; di “Kotlin es el default para desarrollo nuevo”.

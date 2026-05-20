@@ -1,40 +1,35 @@
 Concepto:
-PowerManager controla energía del dispositivo (modo Doze, idle, interactivo); WakeLock mantiene CPU o pantalla activa evitando sleep, y debe usarse con extrema cautela por impacto en batería.
+AccountManager es el framework de cuentas de Android que centraliza identidades (Google, corporativas, custom) con almacenamiento de credenciales, sincronización y autenticación entre apps del mismo account type.
 
 Explicación detallada:
-PowerManager ofrece:
-- isInteractive / isDeviceIdleMode / isPowerSaveMode: consultar estado.
-- wakeLock = powerManager.newWakeLock(PARTIAL_WAKE_LOCK, "tag")
-  acquire(timeout) / release() — PARTIAL mantiene CPU; SCREEN_BRIGHT/DIM obsoletos para mantener pantalla (usa FLAG_KEEP_SCREEN_ON en Window).
+Una “cuenta” tiene type (String único del proveedor), name (usuario) y userData. AuthenticatorService (AbstractAccountAuthenticator) define flujos addAccount, getAuthToken, confirmCredentials. SyncAdapter puede asociarse para sincronizar contactos o calendario periódicamente.
 
-Doze (Android 6+): agrupa red y jobs; App Standby limita apps poco usadas. No “despertar” con WakeLock para sync rutinario; usa WorkManager.
+Apps llaman AccountManager.getAccountsByType, addAccountExplicitly (privilegiado), getAuthToken(account, authTokenType, ...) recibiendo Bundle con KEY_AUTHTOKEN o intent de login.
 
-WakeLock legítimo: reproductor de música con foreground service, navegación turn-by-turn, descarga crítica con notificación visible. Siempre timeout en acquire(long) y release en finally.
+Casos históricos: contactos Exchange, Twitter legacy, cuentas Google integradas. Hoy muchas apps usan OAuth en navegador/Custom Tabs + tokens en EncryptedDataStore en lugar de crear AccountAuthenticator propio.
 
-Desde Android 12, restricciones adicionales a wake locks parciales en background.
-
-Alternativas: Foreground Service con tipo adecuado (location, mediaPlayback), AlarmManager.setAlarmClock solo para alarmas usuario.
+Complejidad: permisos GET_ACCOUNTS restringidos, UX del sistema de ajustes de cuentas, mantenimiento de SyncAdapter.
 
 Cuándo usarlo:
-- Casi nunca en apps de negocio estándar.
-- Media, VOIP, fitness tracking en background con FGS y tipo declarado.
-- Debugging temporal (nunca en producción sin justificación).
+- Integración profunda con sync de contactos/calendario del sistema.
+- Suite enterprise que requiere cuenta visible en Ajustes → Cuentas.
+- Mantenimiento de apps legacy que ya usan AccountManager.
+
+Para login típico Firebase/OAuth: no necesitas AccountManager.
 
 Ejemplo:
-val pm = context.getSystemService(PowerManager::class.java)
-val wl = pm.newWakeLock(
-    PowerManager.PARTIAL_WAKE_LOCK,
-    "Entrevista:Upload"
-)
-try {
-    wl.acquire(10 * 60_000L /* 10 min max */)
-    upload()
-} finally {
-    if (wl.isHeld) wl.release()
+// Obtener token (simplificado; flujo real es async con Callback)
+val am = AccountManager.get(context)
+val accounts = am.getAccountsByType("com.example.account")
+if (accounts.isNotEmpty()) {
+    am.getAuthToken(
+        accounts[0], "api_access", null, activity,
+        { future ->
+            val bundle = future.result
+            val token = bundle.getString(AccountManager.KEY_AUTHTOKEN)
+        }, null
+    )
 }
 
-// Mejor para video:
-window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-
 Consejo para entrevista:
-“WakeLock es último recurso.” Explica Doze, App Standby, y que Play penaliza mal uso de background. Menciona PARTIAL vs pantalla con FLAG_KEEP_SCREEN_ON. Conecta con restricciones Android 8+ en background services.
+Demuestra que conoces el concepto pero que en apps modernas OAuth + almacenamiento cifrado es el patrón habitual. Menciona Authenticator, SyncAdapter y que Google Sign-In ya no implica que debas registrar AccountAuthenticator para apps simples.

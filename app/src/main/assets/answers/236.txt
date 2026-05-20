@@ -1,20 +1,22 @@
 Concepto:
-Además de los dangerous clásicos existen permisos especiales que se conceden desde Ajustes del sistema o mediante AppOps, por su alto poder sobre el dispositivo.
+Cámara, micrófono y contactos son permisos dangerous de alto impacto en privacidad; requieren justificación clara y manejo de denegación.
 
 Explicación detallada:
-SYSTEM_ALERT_WINDOW (dibujar sobre otras apps): overlays; riesgo de phishing; solicitar con Settings.canDrawOverlays y ACTION_MANAGE_OVERLAY_PERMISSION. PACKAGE_USAGE_STATS: estadísticas de uso. REQUEST_IGNORE_BATTERY_OPTIMIZATIONS: exención Doze (justificar en Play). SCHEDULE_EXACT_ALARM (Android 12+): alarmas exactas. NEARBY_WIFI_DEVICES (Android 13+): sin ubicación para WiFi scan en algunos casos.
+CAMERA / RECORD_AUDIO: solicitar just-in-time cuando el usuario pulsa grabar o escanear QR. Indicador verde/naranja en barra de estado (Android 12+) muestra uso activo. No grabar en background sin consentimiento explícito (ilegal en muchas regiones).
 
-WRITE_SETTINGS: modificar ajustes globales. MANAGE_EXTERNAL_STORAGE: todos los archivos. BIND_ACCESSIBILITY_SERVICE: automatización potente, vector de malware si el usuario activa servicios maliciosos.
+READ_CONTACTS / WRITE_CONTACTS: minimizar campos leídos; no subir libreta completa al servidor sin necesidad. GET_ACCOUNTS restringido.
 
-Seguridad: explicar al usuario por qué abre Ajustes; nunca engañar para obtener permisos; auditar que solo servicios de accesibilidad necesarios estén en el manifest. Play Console declara usos sensibles.
+READ_SMS / SEND_SMS / CALL_PHONE: muy sensibles; Play limita casos de uso (apps por defecto SMS/teléfono). Riesgo de fraude si se abusa.
 
-AppOps puede revocar permisos en runtime aunque el usuario aceptó antes (modo “permitir solo esta vez”).
+Buenas prácticas: rationale antes del segundo request, degradar funcionalidad si deniegan, enlace a Ajustes si denegación permanente. Revisar que librerías de terceros no declaren permisos extra.
+
+POST_NOTIFICATIONS (Android 13+): dangerous; pedir al activar notificaciones, no al instalar.
 
 Cuándo usarlo:
-Funciones avanzadas (burbujas, VPN propia, automatización). Evitar pedir overlay si no es esencial.
+Apps de mensajería, banca con KYC, escáneres, VoIP. Auditar manifest de SDKs de ads y analytics.
 
 Ejemplo:
-if (!Settings.canDrawOverlays(ctx)) startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, uri))
+ActivityResultContracts.RequestMultiplePermissions() para CAMERA + RECORD_AUDIO
 
 Consejo para entrevista:
-Lista 3-4 especiales con riesgo (overlay, accessibility, all files). Mencionar AppOps.
+Just-in-time, indicadores de privacidad OS, POST_NOTIFICATIONS separado.

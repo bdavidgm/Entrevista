@@ -1,41 +1,46 @@
 Concepto:
-La ruta de aprendizaje Android (p. ej. roadmap.sh/android) organiza competencias en fases progresivas: fundamentos del lenguaje y plataforma, UI, arquitectura, datos, async, calidad y publicación hasta nivel senior.
+ProGuard y R8 son herramientas de ofuscación, reducción y optimización de bytecode en builds release; R8 es el default del Android Gradle Plugin y combina shrinking, obfuscation y optimización.
 
 Explicación detallada:
-Fases típicas de un roadmap moderno:
+R8 en release (minifyEnabled true):
+- Shrinking (tree shaking): elimina clases/métodos no usados según análisis de entrada.
+- Obfuscation: renombra clases/métodos a a, b, c dificultando ingeniería inversa.
+- Optimización: inline, elimina código muerto.
 
-1) Prerrequisitos: Git, Kotlin básico (null safety, colecciones, OOP), Gradle intro, estructuras de datos.
+Reglas proguard-rules.pro:
+-keep para clases reflejadas (Retrofit interfaces, Room entities, Parcelable, Gson/Moshi models si reflexión).
+-keepattributes Signature, InnerClasses para stack traces.
+-dontwarn para dependencias opcionales.
 
-2) Fundamentos Android: Activity, Fragment, ciclo de vida, Intent, permisos, Context, manifest, layouts XML o introducción Compose.
+Mapping file: mapping.txt asocia nombres ofuscados con originales; subir a Play Console y Crashlytics para crashes legibles.
 
-3) UI: Views (RecyclerView, ConstraintLayout) o Jetpack Compose (estado, recomposición, navegación); Material Design; adaptabilidad tablet.
+Riesgos: reflexión sin reglas rompe runtime; Serializable/Parcelable mal configurados; demasiados -keep anulan beneficio.
 
-4) Arquitectura: MVVM, capa Repository, inyección (Hilt), principios SOLID, Clean Architecture ligera, UDF/MVI opcional.
-
-5) Datos: Room, DataStore, Retrofit/OkHttp, caching, offline-first, Paging 3.
-
-6) Concurrencia: coroutines, Flow, StateFlow, dispatchers, testing con Turbine.
-
-7) Calidad: JUnit, MockK, Espresso, CI, Lint, Profiler, Crashlytics.
-
-8) Sistema y APIs: notificaciones, WorkManager, background limits, seguridad (Keystore, permisos).
-
-9) Publicación: AAB, Play Console, firma, R8, vitals.
-
-10) Senior: modularización, performance (Baseline Profiles), KMP opcional, liderazgo técnico.
-
-El roadmap no es checklist lineal: se iteran temas con proyectos (app notas, clima, ecommerce mini).
+ProGuard manual ya no es flujo típico; AGP invoca R8.
 
 Cuándo usarlo:
-- Planificar estudios 6-12 meses para junior→mid.
-- Entrevistas: demostrar conocimiento del ecosistema completo, no solo tutorial aislado.
+- Siempre release en producción (tamaño APK/AAB y seguridad básica).
+- Desactivar solo temporalmente para depurar crash ofuscación.
 
 Ejemplo:
-// Proyecto por fase (portfolio)
-// Fase UI: app lista tareas Compose + Room
-// Fase red: mismo + Retrofit + Repository + Hilt
-// Fase calidad: tests ViewModel + Espresso login
-// Fase release: AAB en Play internal track
+android {
+    buildTypes {
+        release {
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+        }
+    }
+}
+
+# proguard-rules.pro
+-keep class com.example.data.api.** { *; }
+-keepclassmembers class * {
+    @com.squareup.moshi.Json <fields>;
+}
 
 Consejo para entrevista:
-Menciona roadmap.sh como guía, no como biblia. Relaciona tu experiencia con fases concretas (“domino MVVM y coroutines, profundizando en modularización”). Muestra proyecto end-to-end en portfolio.
+Di R8 reemplaza ProGuard, explica shrinking vs obfuscation, mapping file y reglas -keep para Retrofit/Room/Moshi. Menciona isShrinkResources y probar release build en QA.

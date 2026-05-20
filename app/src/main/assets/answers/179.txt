@@ -1,37 +1,44 @@
 Concepto:
-ClipboardManager gestiona el portapapeles del sistema: copiar y leer texto (y en APIs recientes, tipos enriquecidos) entre apps, obtenido con getSystemService(CLIPBOARD_SERVICE).
+getSystemService es el método de Context que devuelve gestores del sistema (ConnectivityManager, AlarmManager, SensorManager, etc.) registrados en el ServiceManager de Android, tipados con extensiones Kotlin o casting.
 
 Explicación detallada:
-ClipData encapsula uno o más items (texto plano, URI, intent). Métodos:
-- setPrimaryClip(clip): reemplaza contenido (desde Android 10 el acceso en background está restringido).
-- getPrimaryClip() / getPrimaryClipDescription(): leer si tu app está en foreground o cumples restricciones.
-- addPrimaryClipChangedListener: notificación cuando cambia (uso limitado en background).
+Android centraliza servicios del SO en procesos del sistema. La app no instancia estos objetos; los solicita al Context con una clave String (legacy) o Class (API 23+):
 
-Privacidad Android 10+: las apps no pueden leer el portapapeles en segundo plano; solo cuando es foreground o hay foco. Android 13+ muestra toast al usuario cuando otra app pega contenido sensible si hay políticas del OEM.
+val cm = context.getSystemService(ConnectivityManager::class.java)
 
-Buenas prácticas:
-- Copiar solo lo necesario (código de verificación, enlace); no contraseñas sin aviso.
-- Para pegar, ofrece botón explícito en lugar de leer clipboard al abrir (mejor UX y privacidad).
-- Usa ClipData.newPlainText(label, text) con label descriptivo para accesibilidad.
+Equivalente antiguo: getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager.
+
+Servicios frecuentes en entrevistas:
+- CONNECTIVITY_SERVICE → ConnectivityManager
+- ALARM_SERVICE → AlarmManager
+- NOTIFICATION_SERVICE → NotificationManager
+- ACTIVITY_SERVICE → ActivityManager
+- SENSOR_SERVICE → SensorManager
+- LOCATION_SERVICE → LocationManager (preferir FusedLocationProviderClient)
+- CLIPBOARD_SERVICE → ClipboardManager
+- INPUT_METHOD_SERVICE → InputMethodManager
+- WINDOW_SERVICE → WindowManager
+- POWER_SERVICE → PowerManager
+- DOWNLOAD_SERVICE → DownloadManager
+- AUDIO_SERVICE → AudioManager
+- VIBRATOR_SERVICE → Vibrator / VibratorManager (API 31+)
+- BIOMETRIC_SERVICE → BiometricManager
+
+El Context debe ser válido: Application context para servicios sin UI; Activity context para WindowManager o InputMethodManager ligados a ventana. Usar applicationContext donde no necesites tema o display de Activity evita fugas.
 
 Cuándo usarlo:
-- Copiar enlace, número de pedido, código promocional.
-- Editores que soporten pegar desde portapapeles con acción del usuario.
-- Evitar monitoreo continuo del clipboard (anti-patrón y bloqueado).
+- Siempre que integres una API de plataforma documentada como “system service”.
+- En helpers DI puedes envolver getSystemService en providers Hilt (@ApplicationContext).
 
 Ejemplo:
-fun copyToClipboard(context: Context, label: String, text: String) {
-    val clipboard = context.getSystemService(ClipboardManager::class.java)
-    val clip = ClipData.newPlainText(label, text)
-    clipboard.setPrimaryClip(clip)
-}
-
-fun readClipboardText(context: Context): String? {
-    val clipboard = context.getSystemService(ClipboardManager::class.java)
-    val clip = clipboard.primaryClip ?: return null
-    if (clip.itemCount == 0) return null
-    return clip.getItemAt(0).coerceToText(context)?.toString()
+class SystemServices @Inject constructor(
+    @ApplicationContext private val context: Context
+) {
+    val connectivity: ConnectivityManager
+        get() = context.getSystemService(ConnectivityManager::class.java)
+    val notifications: NotificationManager
+        get() = context.getSystemService(NotificationManager::class.java)
 }
 
 Consejo para entrevista:
-Menciona restricciones de background desde Android 10 y enfoque “user-initiated paste”. No digas que leerás el clipboard al iniciar la app para “detectar enlaces” sin consentimiento.
+Lista tres servicios que hayas usado con nombres correctos. Aclara Context de Application vs Activity. Menciona que en tests se mockea Context o se usa Robolectric para getSystemService.

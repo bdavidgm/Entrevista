@@ -1,43 +1,62 @@
 Concepto:
-NotificationChannel es la categoría de notificaciones (Android 8+, API 26) que agrupa comportamiento de sonido, vibración, importancia y visibilidad en pantalla de bloqueo; el usuario controla cada canal en ajustes del sistema.
+Las notificaciones en Android son mensajes del sistema mostrados fuera de la app (status bar, heads-up, wearables), creadas con NotificationCompat y mostradas mediante NotificationManager, obligatoriamente asignadas a un NotificationChannel en API 26+.
 
 Explicación detallada:
-Antes de Oreo, el comportamiento se configuraba solo en la notificación. Ahora debes crear el canal antes de notificar.
+Componentes:
+1) NotificationChannel (API 26+): categoría con importancia, sonido, vibración. El usuario puede silenciarla en ajustes.
+2) NotificationCompat.Builder: título, texto, icono pequeño, estilo, acciones.
+3) NotificationManager.notify(id, notification).
+4) PendingIntent en acciones y al tocar la notificación (abrir Activity).
 
-Atributos clave:
-- channelId: String único estable.
-- name y description: visibles al usuario en ajustes.
-- importance: IMPORTANCE_MIN, LOW, DEFAULT, HIGH, MAX — afecta heads-up, sonido, interrupción.
-- enableVibration, setSound, enableLights.
-- lockscreenVisibility.
+Permisos:
+- POST_NOTIFICATIONS runtime en Android 13+ (API 33).
+- Foreground service types si la notificación acompaña FGS.
 
-Una app puede tener varios canales: "mensajes", "promociones", "descargas". Así el usuario silencia marketing sin perder alertas críticas.
+Pasos:
+- Crear canal una vez (Application o primera vez).
+- Construir notificación con Builder.
+- Llamar notify con id único por tipo de notificación.
 
-Creación:
-- Una vez por instalación; createNotificationChannel es idempotente.
-- No se puede bajar importancia programáticamente tras creación (usuario manda); puedes abrir ACTION_CHANNEL_NOTIFICATION_SETTINGS.
+Foreground:
+- startForeground(id, notification) para servicios en primer plano.
+
+Buenas prácticas:
+- IDs estables por tipo; cancel(id) al resolver.
+- No spamear; respetar importancia.
+- Deep link en contentIntent.
 
 Cuándo usarlo:
-Siempre al usar NotificationCompat en API 26+. Planifica canales en diseño de producto, no un solo canal genérico.
+Mensajería, descargas, recordatorios, resultado de tareas en background con WorkManager (también puede mostrar notificación).
 
 Ejemplo:
-companion object {
-    const val CHANNEL_ALERTS = "alerts"
+private fun createChannel(context: Context) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        val channel = NotificationChannel(
+            CHANNEL_ID,
+            "Mensajes",
+            NotificationManager.IMPORTANCE_DEFAULT
+        )
+        val nm = context.getSystemService(NotificationManager::class.java)
+        nm.createNotificationChannel(channel)
+    }
 }
 
-fun ensureAlertChannel(context: Context) {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
-    val channel = NotificationChannel(
-        CHANNEL_ALERTS,
-        context.getString(R.string.channel_alerts_name),
-        NotificationManager.IMPORTANCE_HIGH
-    ).apply {
-        description = context.getString(R.string.channel_alerts_desc)
-        enableVibration(true)
-    }
-    context.getSystemService(NotificationManager::class.java)
-        .createNotificationChannel(channel)
+fun showMessageNotification(context: Context, title: String, body: String) {
+    createChannel(context)
+    val intent = Intent(context, MainActivity::class.java)
+    val pi = PendingIntent.getActivity(
+        context, 0, intent,
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    )
+    val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+        .setSmallIcon(R.drawable.ic_notification)
+        .setContentTitle(title)
+        .setContentText(body)
+        .setContentIntent(pi)
+        .setAutoCancel(true)
+        .build()
+    NotificationManagerCompat.from(context).notify(NOTIF_ID, notification)
 }
 
 Consejo para entrevista:
-Explica que sin canal la notificación no se muestra bien en O+. Menciona importancia y que el usuario puede bloquear canal. Varios canales = mejor UX.
+Menciona canal obligatorio, permiso API 33 y PendingIntent FLAG_IMMUTABLE. Diferencia notify normal vs startForeground.

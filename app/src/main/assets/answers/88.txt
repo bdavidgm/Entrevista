@@ -1,14 +1,12 @@
 Concepto:
-JUnit es el framework estándar de pruebas unitarias en JVM y Android (JUnit 4 y JUnit 5 en proyectos Kotlin). Proporciona anotaciones @Test, assertions, reglas y organización de suites para verificar comportamiento de forma automatizada.
+En Android existen varias pirámides de pruebas: unit tests (JVM, lógica pura), instrumented tests (dispositivo/emulador, framework Android), y UI tests (Espresso, Compose UI Test). Se organizan por velocidad, coste y alcance.
 
 Explicación detallada:
-@Test marca métodos ejecutables por Gradle testDebugUnitTest. Assertions: assertEquals, assertTrue, assertThrows. @Before y @After preparan estado. Parameterized tests para muchos inputs.
+Unit tests en test/: ViewModel, use cases, mappers, reducers MVI sin Robolectric. Rápidos, CI barato. Instrumented en androidTest/: requieren dispositivo; DAO Room real, integración con Context. UI tests: Espresso para Views, createComposeRule para Compose; lentos y frágiles, usar para flujos críticos.
 
-En Android Kotlin, kotlinx-coroutines-test ofrece runTest en lugar de runBlocking en tests de suspend. InstantTaskExecutorRule legacy para LiveData; MainDispatcherRule para coroutines.
+Robolectric simula Android en JVM para tests intermedios (menos usado hoy con mejor testabilidad por capas). Snapshot/screenshot tests opcionales.
 
-JUnit 5 (Jupiter) con Kotlin: @ExtendWith, tags, nested classes; adopción variable en Android por tooling.
-
-Integración CI: fallo de test bloquea merge. Naming descriptivo: backticks `when X then Y`.
+Proporción ideal: muchos unit, algunos integration, pocos UI end-to-end. Hilt test modules, fakes, TestDispatcher para coroutines.
 
 En el contexto de proyectos Android reales, combina esta idea con las guías oficiales de Android Developers y con métricas de calidad (crashes, ANR, Vitals) cuando aplique. En code review, pregunta siempre por ciclo de vida, testabilidad y si la solución escala cuando el equipo crece.
 
@@ -23,16 +21,16 @@ Durante la entrevista, estructura la respuesta en definición, ejemplo concreto 
 Para profundizar tras la entrevista, revisa documentación oficial, codelabs y el código fuente de tu propio proyecto Entrevista aplicando el concepto en un flujo mínimo reproducible. La práctica deliberada con tests unitarios refuerza la confianza al explicar el tema en viva voz.
 
 Cuándo usarlo:
-Toda lógica testeable sin emulador. Combina con MockK, Turbine, Truth según necesidad.
+Unit para regresión diaria; androidTest para migraciones Room y permisos; UI para checkout o login crítico.
 
 Ejemplo:
-class DiscountTest {
-    @Test
-    fun `applies ten percent`() {
-        val result = calculateDiscount(100, 0.10)
-        assertEquals(90.0, result, 0.001)
-    }
-}
+// test/ — unit
+@Test
+fun `when refresh then loading then data`() = runTest { /* ViewModel */ }
+
+// androidTest/ — instrumented
+@Test
+fun migrateDatabase() { /* MigrationTestHelper */ }
 
 Consejo para entrevista:
-Menciona runTest y reglas Android. Diferencia JUnit test vs androidTest source set.
+Dibuja pirámide. Menciona qué va en cada capa. No digas solo Espresso; unit tests son la base.

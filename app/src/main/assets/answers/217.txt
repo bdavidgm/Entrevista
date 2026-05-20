@@ -1,46 +1,38 @@
 Concepto:
-ProGuard y R8 son herramientas de ofuscación, reducción y optimización de bytecode en builds release; R8 es el default del Android Gradle Plugin y combina shrinking, obfuscation y optimización.
+App signing (firma de aplicaciones) es el proceso criptográfico que garantiza que un APK/AAB proviene del desarrollador autorizado usando un keystore privado; Play App Signing separa upload key y signing key de distribución.
 
 Explicación detallada:
-R8 en release (minifyEnabled true):
-- Shrinking (tree shaking): elimina clases/métodos no usados según análisis de entrada.
-- Obfuscation: renombra clases/métodos a a, b, c dificultando ingeniería inversa.
-- Optimización: inline, elimina código muerto.
+Android usa esquema v2/v3/v4 de firma en APK. Cada build release se firma con clave privada; el dispositivo/Play verifica con certificado público.
 
-Reglas proguard-rules.pro:
--keep para clases reflejadas (Retrofit interfaces, Room entities, Parcelable, Gson/Moshi models si reflexión).
--keepattributes Signature, InnerClasses para stack traces.
--dontwarn para dependencias opcionales.
+Keystore: archivo .jks o .keystore con alias, passwords (guardar en CI secrets, no en repo). signingConfigs en Gradle apuntan a keystore o variables de entorno.
 
-Mapping file: mapping.txt asocia nombres ofuscados con originales; subir a Play Console y Crashlytics para crashes legibles.
+Play App Signing: subes con upload key; Google re-firma con app signing key para usuarios finales. Permite reset upload key si se pierde (proceso soporte).
 
-Riesgos: reflexión sin reglas rompe runtime; Serializable/Parcelable mal configurados; demasiados -keep anulan beneficio.
+Debug: debug.keystore automático con contraseñas conocidas; solo desarrollo.
 
-ProGuard manual ya no es flujo típico; AGP invoca R8.
+Implicaciones: misma applicationId con distinta firma no actualiza instalada; modules deben alinearse.
 
 Cuándo usarlo:
-- Siempre release en producción (tamaño APK/AAB y seguridad básica).
-- Desactivar solo temporalmente para depurar crash ofuscación.
+- Todo build release (internal testing incluido en Play).
+- Configurar en CI con secretos cifrados.
 
 Ejemplo:
 android {
+    signingConfigs {
+        create("release") {
+            storeFile = file(System.getenv("KEYSTORE_PATH") ?: "release.jks")
+            storePassword = System.getenv("STORE_PASSWORD")
+            keyAlias = System.getenv("KEY_ALIAS")
+            keyPassword = System.getenv("KEY_PASSWORD")
+        }
+    }
     buildTypes {
         release {
+            signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
-            isShrinkResources = true
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
         }
     }
 }
 
-# proguard-rules.pro
--keep class com.example.data.api.** { *; }
--keepclassmembers class * {
-    @com.squareup.moshi.Json <fields>;
-}
-
 Consejo para entrevista:
-Di R8 reemplaza ProGuard, explica shrinking vs obfuscation, mapping file y reglas -keep para Retrofit/Room/Moshi. Menciona isShrinkResources y probar release build en QA.
+Diferencia debug vs release keystore, Play App Signing, y nunca commitear keystores. Menciona que la firma prueba integridad e identidad del publicador, no cifrado del código (eso es R8/ProGuard aparte).

@@ -1,20 +1,16 @@
 Concepto:
-DataStore es la solución moderna de Jetpack para persistir datos clave-valor y preferencias, reemplazando SharedPreferences. Ofrece API asíncrona con coroutines y Flow, transacciones seguras y manejo de errores de corrupción superior al XML de preferences.
+WorkManager es la API recomendada de Jetpack para ejecutar trabajo en segundo plano garantizado, flexible y consciente de restricciones del sistema (red, batería, almacenamiento). Sustituye patrones frágiles como IntentService o AlarmManager para tareas diferibles y persistentes.
 
 Explicación detallada:
-Dos variantes: Preferences DataStore (como SharedPreferences con keys tipadas) y Proto DataStore (objetos tipados con protobuf). Lectura: dataStore.data es Flow<Preferences>; escritura: edit { prefs -> prefs[KEY] = value } suspend.
+Defines Worker o CoroutineWorker que implementa doWork() y devuelve Result.success(), failure() o retry(). Encolas con OneTimeWorkRequest o PeriodicWorkRequest (mínimo 15 min en período). Constraints: setRequiredNetworkType(UNMETERED), requiresCharging(), etc.
 
-Ventajas sobre SharedPreferences: no hay apply/commit en main thread problemático, consistencia con Flow reactivo, y migración oficial desde SharedPreferences con SharedPreferencesMigration.
+WorkManager persiste la cola: si el proceso muere, el trabajo se reanuda. Encadena con WorkContinuation (A luego B). Unique work evita duplicados (KEEP, REPLACE). Observa estado con getWorkInfoByIdLiveData o Flow.
 
-Inyección: provide DataStore<Preferences> singleton en Hilt. En ViewModel collectLatest o first() según necesidad. No guardes objetos enormes ni bases relacionales.
+CoroutineWorker usa suspend doWork() en dispatcher apropiado. Hilt integra HiltWorkerFactory para inyectar dependencias en Workers.
 
-Encrypted DataStore o EncryptedSharedPreferences para tokens: combinar con seguridad de Keystore en datos sensibles.
+Diferencia con Foreground Service: trabajo inmediato visible al usuario (música, GPS activo) vs trabajo deferible (sync, upload, limpieza). Diferencia con coroutine en ViewModel: ViewModel se cancela al salir; WorkManager sobrevive.
 
-En el contexto de proyectos Android reales, combina esta idea con las guías oficiales de Android Developers y con métricas de calidad (crashes, ANR, Vitals) cuando aplique. En code review, pregunta siempre por ciclo de vida, testabilidad y si la solución escala cuando el equipo crece.
-
-Durante la entrevista, estructura la respuesta en definición, ejemplo concreto de tu experiencia o proyecto demo, y trade-offs frente a alternativas. Mencionar versiones recientes de API o biblioteca (Material3, Paging 3, Hilt 2.x) demuestra que sigues el ecosistema, sin necesidad de memorizar números de versión exactos.
-
-Para profundizar tras la entrevista, revisa documentación oficial, codelabs y el código fuente de tu propio proyecto Entrevista aplicando el concepto en un flujo mínimo reproducible. La práctica deliberada con tests unitarios refuerza la confianza al explicar el tema en viva voz.
+Restricciones Android 12+: Doze y battery saver retrasan jobs; WorkManager respeta políticas mejor que AlarmManager para la mayoría de casos no exactos.
 
 En el contexto de proyectos Android reales, combina esta idea con las guías oficiales de Android Developers y con métricas de calidad (crashes, ANR, Vitals) cuando aplique. En code review, pregunta siempre por ciclo de vida, testabilidad y si la solución escala cuando el equipo crece.
 
@@ -23,21 +19,25 @@ Durante la entrevista, estructura la respuesta en definición, ejemplo concreto 
 Para profundizar tras la entrevista, revisa documentación oficial, codelabs y el código fuente de tu propio proyecto Entrevista aplicando el concepto en un flujo mínimo reproducible. La práctica deliberada con tests unitarios refuerza la confianza al explicar el tema en viva voz.
 
 Cuándo usarlo:
-Flags de usuario, tema, tokens de sesión pequeños, última pantalla visitada. Room para datos relacionales; archivos para blobs grandes.
+Sincronización periódica, subida de logs, backup, indexación. No para UI en tiempo real ni latencia sub-segundo (usa FGS o alarm exacto con justificación). No reemplaza push de servidor para notificaciones instantáneas.
 
 Ejemplo:
-private val Context.dataStore by preferencesDataStore("settings")
-
-object Keys {
-    val DARK_MODE = booleanPreferencesKey("dark_mode")
+class SyncWorker @AssistedInject constructor(
+    @Assisted context: Context,
+    @Assisted params: WorkerParameters,
+    private val repo: SyncRepository
+) : CoroutineWorker(context, params) {
+    override suspend fun doWork(): Result = runCatching {
+        repo.syncAll()
+        Result.success()
+    }.getOrElse { Result.retry() }
 }
 
-suspend fun Context.setDarkMode(enabled: Boolean) {
-    dataStore.edit { it[Keys.DARK_MODE] = enabled }
-}
-
-fun Context.darkModeFlow(): Flow<Boolean> =
-    dataStore.data.map { it[Keys.DARK_MODE] ?: false }
+// En Application o ViewModel
+val request = OneTimeWorkRequestBuilder<SyncWorker>()
+    .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
+    .build()
+WorkManager.getInstance(context).enqueue(request)
 
 Consejo para entrevista:
-Di "reemplazo de SharedPreferences". Menciona Flow y corrupción. No uses DataStore como base de datos de listas de productos.
+Contrasta con AlarmManager, JobScheduler legacy y Foreground Service. Menciona Result.retry() y constraints. Pregunta: ¿Garantiza ejecución exacta a las 8:00? No para periódico estricto; AlarmManager o exact alarms con permiso.

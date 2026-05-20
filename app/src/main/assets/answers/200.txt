@@ -1,48 +1,39 @@
 Concepto:
-RecyclerView muestra listas largas reciclando vistas: el Adapter crea ViewHolders, los enlaza con datos en onBindViewHolder y el LayoutManager define disposición (linear, grid, staggered).
+ConstraintLayout es un ViewGroup plano que posiciona hijos con restricciones (constraints) a otros widgets o al padre, soportando bias, chains, barriers y guidelines para layouts flexibles con un solo nivel de anidamiento.
 
 Explicación detallada:
-Componentes:
-1) RecyclerView: contenedor; setLayoutManager, setAdapter, addItemDecoration, setHasFixedSize(true) si tamaño fijo optimiza.
-2) Adapter<VH>: getItemCount, onCreateViewHolder (inflar layout), onBindViewHolder (poblar datos), getItemViewType para múltiples layouts.
-3) ViewHolder: referencias a views (findViewById o ViewBinding) para evitar lookup repetido.
-4) LayoutManager: LinearLayoutManager, GridLayoutManager, StaggeredGridLayoutManager.
+Cada vista tiene constraints horizontales y verticales (start/end/top/bottom) anclados a referencias. Ventajas:
+- Layouts planos → mejor rendimiento que muchos LinearLayout anidados.
+- Responsive: percent, ratio, dimension ratio en ImageView.
+- Chains: distribuyen espacio horizontal/vertical (spread, packed, spread_inside).
+- Barrier: alinea múltiples vistas al borde más extremo (útil con textos de altura variable).
+- Guideline: línea virtual al 50% para centrar.
+- Group: visibilidad conjunta.
 
-Reciclaje: cuando una fila sale de pantalla, su ViewHolder se reutiliza para nuevos datos; onBind debe resetear estado (imágenes, listeners) para evitar bugs visuales.
+Editor visual en Android Studio facilita diseño. Programático: ConstraintSet para animaciones o cambios dinámicos.
 
-Actualizaciones: notifyDataSetChanged() fuerza redraw completo (evitar); prefer notifyItemInserted/Removed/Changed o ListAdapter + DiffUtil.
-
-Lista con separadores: ItemDecoration.
-
-En arquitectura moderna: ListAdapter<T, VH> con DiffUtil.ItemCallback en background; ViewBinding; datos desde ViewModel LiveData/StateFlow.
-
-Compose equivalente: LazyColumn/LazyRow con items() y key estable.
+Compose: ConstraintLayout también existe en androidx.constraintlayout.compose para casos complejos, aunque muchas UIs usan Box/Column/Row.
 
 Cuándo usarlo:
-- Cualquier lista scrollable en UI basada en Views.
-- Grids de productos, chats, settings.
+- Pantallas XML complejas sin migrar a Compose.
+- Formularios, cards con elementos alineados en distintas posiciones.
+- Reemplazo de RelativeLayout/LinearLayout anidados.
 
 Ejemplo:
-class UserAdapter : ListAdapter<User, UserAdapter.VH>(DIFF) {
-    class VH(val binding: ItemUserBinding) : RecyclerView.ViewHolder(binding.root)
+<androidx.constraintlayout.widget.ConstraintLayout
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
-        val binding = ItemUserBinding.inflate(
-            LayoutInflater.from(parent.context), parent, false
-        )
-        return VH(binding)
-    }
-    override fun onBindViewHolder(holder: VH, position: Int) {
-        val user = getItem(position)
-        holder.binding.name.text = user.name
-    }
-    companion object {
-        val DIFF = object : DiffUtil.ItemCallback<User>() {
-            override fun areItemsTheSame(a: User, b: User) = a.id == b.id
-            override fun areContentsTheSame(a: User, b: User) = a == b
-        }
-    }
-}
+    <Button
+        android:id="@+id/btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="OK"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        android:layout_marginBottom="24dp" />
+</androidx.constraintlayout.widget.ConstraintLayout>
 
 Consejo para entrevista:
-Explica reciclaje, ViewHolder, DiffUtil vs notifyDataSetChanged. Menciona ListAdapter. Si preguntan Compose, contraste LazyColumn y recomposición vs reciclaje de vistas.
+Enfatiza “layout plano”, chains y barrier. Contrasta con LinearLayout anidado. Si el proyecto es Compose-first, di que ConstraintLayout XML es conocimiento legacy pero ConstraintLayout compose sirve para pantallas híbridas.

@@ -1,12 +1,18 @@
 Concepto:
-Android Keystore es el almacén seguro de claves criptográficas respaldado por hardware (TEE/StrongBox cuando disponible) que impide exportar la clave privada en claro. Se usa para cifrar datos locales, firmar, TLS client certs y autenticación biométrica vinculada.
+ProGuard y R8 son herramientas de ofuscación, reducción y optimización de bytecode en builds release de Android. R8 es el shrinker por defecto que elimina código no usado, renombra clases/métodos y optimiza dex, integrado en el pipeline de Gradle.
 
 Explicación detallada:
-KeyGenParameterSpec genera clave AES o RSA dentro del Keystore. Las operaciones cifran/descifran sin exponer clave a la app. setUserAuthenticationRequired exige biometría o PIN reciente.
+minifyEnabled true activa R8. shrinkResources elimina recursos huérfanos tras análisis de código. Reglas -keep en proguard-rules.pro protegen reflexión (Retrofit, Room, Parcelable, Hilt, Serializable) de rotura.
 
-EncryptedSharedPreferences usa claves del Keystore. BiometricPrompt + CryptoObject descifra solo tras huella válida.
+Ofuscación dificulta ingeniería inversa pero no es seguridad fuerte. mapping.txt subir a Play para deobfuscate crashes. fullMode y reglas específicas por librería.
 
-Limitaciones: emuladores, dispositivos sin TEE, backup. Rotación de claves y invalidación si cambian huellas registradas (setInvalidatedByBiometricEnrollment).
+Debug no minifica para stack traces legibles. Errores ClassNotFound en release suelen ser reglas -keep faltantes.
+
+En el contexto de proyectos Android reales, combina esta idea con las guías oficiales de Android Developers y con métricas de calidad (crashes, ANR, Vitals) cuando aplique. En code review, pregunta siempre por ciclo de vida, testabilidad y si la solución escala cuando el equipo crece.
+
+Durante la entrevista, estructura la respuesta en definición, ejemplo concreto de tu experiencia o proyecto demo, y trade-offs frente a alternativas. Mencionar versiones recientes de API o biblioteca (Material3, Paging 3, Hilt 2.x) demuestra que sigues el ecosistema, sin necesidad de memorizar números de versión exactos.
+
+Para profundizar tras la entrevista, revisa documentación oficial, codelabs y el código fuente de tu propio proyecto Entrevista aplicando el concepto en un flujo mínimo reproducible. La práctica deliberada con tests unitarios refuerza la confianza al explicar el tema en viva voz.
 
 En el contexto de proyectos Android reales, combina esta idea con las guías oficiales de Android Developers y con métricas de calidad (crashes, ANR, Vitals) cuando aplique. En code review, pregunta siempre por ciclo de vida, testabilidad y si la solución escala cuando el equipo crece.
 
@@ -14,28 +20,33 @@ Durante la entrevista, estructura la respuesta en definición, ejemplo concreto 
 
 Para profundizar tras la entrevista, revisa documentación oficial, codelabs y el código fuente de tu propio proyecto Entrevista aplicando el concepto en un flujo mínimo reproducible. La práctica deliberada con tests unitarios refuerza la confianza al explicar el tema en viva voz.
 
-En el contexto de proyectos Android reales, combina esta idea con las guías oficiales de Android Developers y con métricas de calidad (crashes, ANR, Vitals) cuando aplique. En code review, pregunta siempre por ciclo de vida, testabilidad y si la solución escala cuando el equipo crece.
+Preguntas de seguimiento frecuentes en entrevistas para este tema incluyen comparación con alternativas del ecosistema, implicaciones en testing y en el ciclo de vida de Android, y cómo lo aplicarías en una app modular con varios flavors. Si el entrevistador pide profundidad, menciona herramientas de diagnóstico (Profiler, Lint, StrictMode, Layout Inspector) y cómo validarías en CI que no hay regresiones.
 
-Durante la entrevista, estructura la respuesta en definición, ejemplo concreto de tu experiencia o proyecto demo, y trade-offs frente a alternativas. Mencionar versiones recientes de API o biblioteca (Material3, Paging 3, Hilt 2.x) demuestra que sigues el ecosistema, sin necesidad de memorizar números de versión exactos.
+En proyectos reales, documenta decisiones en ADR breves o en README del módulo para que el equipo no revierta el patrón por desconocimiento. La mejor respuesta de entrevista combina definición precisa, ejemplo Kotlin o Compose concreto y honestidad sobre límites: ninguna solución es gratis en complejidad o tamaño de APK.
 
-Para profundizar tras la entrevista, revisa documentación oficial, codelabs y el código fuente de tu propio proyecto Entrevista aplicando el concepto en un flujo mínimo reproducible. La práctica deliberada con tests unitarios refuerza la confianza al explicar el tema en viva voz.
+Relaciona este concepto con los demás bloques del manifiesto Entrevista (arquitectura, corrutinas, seguridad, build) para demostrar visión de sistema completo, no conocimiento aislado de una API.
 
 Cuándo usarlo:
-Secretos locales, PIN de app, cifrado de archivos sensibles. No para almacenar contraseña usuario en claro; hash en servidor.
+Siempre release producción. Probar release build en QA. Mantener reglas documentadas por dependencia.
 
 Ejemplo:
-val keyGenerator = KeyGenerator.getInstance(
-    KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore"
-)
-keyGenerator.init(
-    KeyGenParameterSpec.Builder(
-        "app_master_key",
-        KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
-    )
-        .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
-        .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
-        .build()
-)
+// proguard-rules.pro
+-keep class com.example.data.api.** { *; }
+-keepclassmembers class * {
+    @com.google.gson.annotations.SerializedName <fields>;
+}
+
+android {
+    buildTypes {
+        release {
+            isMinifyEnabled = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+        }
+    }
+}
 
 Consejo para entrevista:
-Hardware-backed, no exportable. Contrasta con guardar AES key en prefs (inseguro). Seguimiento: EncryptedSharedPreferences.
+R8 reemplaza ProGuard; shrink + obfuscate. Menciona mapping.txt. No confundas con Baseline Profile.

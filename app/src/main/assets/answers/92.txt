@@ -1,46 +1,42 @@
 Concepto:
-Turbine es una librería de testing para Flow que facilita assertar emisiones de forma declarativa con awaitItem(), awaitComplete() y cancel, reduciendo race conditions frente a collect manual en tests de corrutinas.
+Un test de ViewModel verifica la lógica de presentación de forma aislada: dado un evento o acción, el estado expuesto (StateFlow/LiveData) o efectos esperados cambian correctamente, usando repositorios fake o mocks y TestDispatcher sin UI ni emulador.
 
 Explicación detallada:
-flow.test { } abre un scope donde cada awaitItem() suspende hasta la siguiente emisión o falla por timeout. assertEquals sobre el valor recibido. awaitComplete() verifica cierre limpio del Flow. Para StateFlow hot, el primer awaitItem suele ser el valor actual al suscribirse; planifica el orden de asserts.
+Configura MainDispatcherRule o StandardTestDispatcher para controlar coroutines. Instancia ViewModel con FakeRepository. Llama onAction() o métodos públicos. Assert en uiState.value o collect con Turbine.
 
-Operadores útiles: skipItems(n) salta emisiones iniciales; expectNoEvents() dentro de un bloque verifica que no lleguen más valores en un intervalo; cancelAndIgnoreRemainingEvents() termina el test sin esperar infinito en flows que no completan.
+Casos: loading -> success, loading -> error, cancelación no actualiza estado tras destroy (opcional). No uses Robolectric si el ViewModel no toca Android.
 
-Combina con kotlinx-coroutines-test runTest y MainDispatcherRule. Para debounce, advanceTimeBy en el TestScope antes de awaitItem. Para flatMapLatest, emite búsquedas rápidas y verifica que solo la última llega al collector.
+SavedStateHandle: pasar SavedStateHandle(mapOf("id" to 1)) en constructor si aplica. Hilt: sin @HiltAndroidTest si inyectas manualmente en unit test.
 
-Turbine evita el patrón frágil de launch + delay + assert en un MutableList compartido, que causa flakes en CI. Es estándar en proyectos Kotlin que testean ViewModel StateFlow, repository Room Flow y operadores personalizados.
+Turbine: vm.uiState.test { awaitItem(); ... }. advanceUntilIdle() con test scheduler.
 
-En el contexto de proyectos Android reales, combina esta idea con las guías oficiales de Android Developers y con métricas de calidad cuando aplique. En code review, pregunta siempre por ciclo de vida, testabilidad y si la solución escala cuando el equipo crece.
+En el contexto de proyectos Android reales, combina esta idea con las guías oficiales de Android Developers y con métricas de calidad (crashes, ANR, Vitals) cuando aplique. En code review, pregunta siempre por ciclo de vida, testabilidad y si la solución escala cuando el equipo crece.
 
-Durante la entrevista, estructura la respuesta en definición, ejemplo concreto y trade-offs frente a collect manual o toList(). Mencionar Turbine demuestra experiencia con corrutinas modernas en tests.
+Durante la entrevista, estructura la respuesta en definición, ejemplo concreto de tu experiencia o proyecto demo, y trade-offs frente a alternativas. Mencionar versiones recientes de API o biblioteca (Material3, Paging 3, Hilt 2.x) demuestra que sigues el ecosistema, sin necesidad de memorizar números de versión exactos.
 
-Errores comunes: no cancelar el test y dejar collectors colgados; olvidar advanceUntilIdle antes de awaitItem cuando el Flow emite desde otra coroutine; comparar listas completas sin tener en cuenta emisiones intermedias de loading. La dependencia es cashapp.turbine:turbine en testImplementation.
+Para profundizar tras la entrevista, revisa documentación oficial, codelabs y el código fuente de tu propio proyecto Entrevista aplicando el concepto en un flujo mínimo reproducible. La práctica deliberada con tests unitarios refuerza la confianza al explicar el tema en viva voz.
 
-Para SharedFlow de eventos UI, usa test { action(); awaitItem() es el evento esperado } y verifica que no hay replay no deseado. Integración con Hilt y ViewModel: instancia ViewModel con fakes, llama métodos públicos, Turbine en uiState o effects.
+En el contexto de proyectos Android reales, combina esta idea con las guías oficiales de Android Developers y con métricas de calidad (crashes, ANR, Vitals) cuando aplique. En code review, pregunta siempre por ciclo de vida, testabilidad y si la solución escala cuando el equipo crece.
+
+Durante la entrevista, estructura la respuesta en definición, ejemplo concreto de tu experiencia o proyecto demo, y trade-offs frente a alternativas. Mencionar versiones recientes de API o biblioteca (Material3, Paging 3, Hilt 2.x) demuestra que sigues el ecosistema, sin necesidad de memorizar números de versión exactos.
+
+Para profundizar tras la entrevista, revisa documentación oficial, codelabs y el código fuente de tu propio proyecto Entrevista aplicando el concepto en un flujo mínimo reproducible. La práctica deliberada con tests unitarios refuerza la confianza al explicar el tema en viva voz.
 
 Cuándo usarlo:
-Cualquier test que colecte Flow en proyecto Kotlin moderno. Alternativa manual es frágil y propenso a flakes. No uses toList() en flows infinitos o sin complete.
+Cada ViewModel con lógica no trivial. Complementa tests de use case y repository.
 
 Ejemplo:
-@Test
-fun searchEmitsResults() = runTest {
-    repository.results.test {
-        repository.search("kotlin")
-        assertEquals(listOf("item"), awaitItem())
-        cancelAndIgnoreRemainingEvents()
-    }
-}
+@OptIn(ExperimentalCoroutinesApi::class)
+class CartViewModelTest {
+    @get:Rule val main = MainDispatcherRule()
 
-@Test
-fun debouncedSearch() = runTest {
-    viewModel.queryFlow.test {
-        viewModel.onQuery("a")
-        advanceTimeBy(300)
-        val result = awaitItem()
-        assertTrue(result.isNotEmpty())
-        cancelAndIgnoreRemainingEvents()
+    @Test
+    fun addItemUpdatesTotal() = runTest {
+        val vm = CartViewModel(FakeCartRepo())
+        vm.addItem(Item("1", 10.0))
+        assertEquals(10.0, vm.uiState.value.total, 0.0)
     }
 }
 
 Consejo para entrevista:
-Nombre Turbine y awaitItem. Contrasta con toList() que puede colgar si flow infinito. Menciona timeout y primer valor de StateFlow.
+Menciona runTest, fake repo, Turbine. No pruebes framework Android en unit test de ViewModel.

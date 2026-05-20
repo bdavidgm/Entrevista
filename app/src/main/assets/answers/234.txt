@@ -1,20 +1,20 @@
 Concepto:
-El acceso a archivos evolucionó de almacenamiento amplio (READ/WRITE_EXTERNAL_STORAGE) al modelo de sandbox y MediaStore con permisos granulares por tipo de medio.
+Los permisos de ubicación controlan acceso a GPS, red y Bluetooth (beacons). Incluyen ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION y desde Android 10 ACCESS_BACKGROUND_LOCATION por separado.
 
 Explicación detallada:
-Android 10+: scoped storage; apps acceden a su directorio y a URIs compartidos vía SAF (ACTION_OPEN_DOCUMENT, CREATE_DOCUMENT). Android 13+: READ_MEDIA_IMAGES/VIDEO/AUDIO sustituyen lectura amplia de imágenes.
+Foreground: suficiente para mapas en uso. Background: tracking continuo; Google Play exige justificación fuerte y formulario; el usuario debe conceder en dos pasos (primero foreground, luego background en Ajustes).
 
-MANAGE_EXTERNAL_STORAGE (All files access): solo para gestores de archivos, backup, antivirus; revisión estricta en Play; pedir en Ajustes, no runtime clásico.
+Android 12+: aproximada vs precisa (COARSE vs FINE). Sin permisos, usar solo ubicación aproximada por IP en servidor si la política lo permite.
 
-Seguridad: no exponer file:// en Intents (usar FileProvider); validar MIME y tamaño; escanear malware en servidor si suben archivos; no guardar PII en Downloads público.
+Seguridad: no loguear coordenadas en producción; almacenar mínimo necesario; informar en política de privacidad; ofrecer desactivar tracking; fuzzing de ubicación en emulador para tests.
 
-WRITE_EXTERNAL_STORAGE deprecated en target altos. Para compartir entre apps: content:// con permisos temporales FLAG_GRANT_READ_URI_PERMISSION.
+FusedLocationProviderClient pausa actualizaciones en onStop si no necesitas background. Geofencing y Activity Recognition tienen APIs propias con reglas similares.
 
 Cuándo usarlo:
-Galería, editor, backup, exportar PDF. Usar SAF para archivos arbitrarios del usuario.
+Apps de mapas, delivery, fitness, tiendas cercanas. Evitar background si no es core de la app.
 
 Ejemplo:
-val uri = contentResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
+if (hasFineLocation()) fusedClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, token)
 
 Consejo para entrevista:
-Scoped storage, SAF, READ_MEDIA_* y por qué MANAGE_EXTERNAL_STORAGE es excepcional.
+Foreground vs background, doble permiso Play, FusedLocationProvider.

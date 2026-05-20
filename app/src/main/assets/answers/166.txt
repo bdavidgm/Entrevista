@@ -1,64 +1,48 @@
 Concepto:
-Detectar el estado de red (conectividad) en Android consiste en saber si hay acceso a Internet usable y de qué tipo (Wi-Fi, celular, metered), usando ConnectivityManager y, desde API 24+, NetworkCallback en lugar de APIs deprecadas como NetworkInfo.
+FusedLocationProviderClient es la API de Google Play Services Location que fusiona señales de GPS, red y sensores para ofrecer la mejor ubicación disponible con menor consumo de batería que usar LocationManager por separado.
 
 Explicación detallada:
-ConnectivityManager:
-- getSystemService(Context.CONNECTIVITY_SERVICE)
-- activeNetwork y getNetworkCapabilities(activeNetwork) en API 23+.
+Obtención:
+LocationServices.getFusedLocationProviderClient(context)
 
-NetworkCapabilities:
-- NET_CAPABILITY_INTERNET: tiene ruta potencial.
-- NET_CAPABILITY_VALIDATED: el sistema verificó conectividad real (ping captive portal).
-- TRANSPORT_WIFI, TRANSPORT_CELLULAR.
+Métodos principales:
+- getLastLocation(): última conocida, puede ser null o antigua.
+- getCurrentLocation(priority, cancellationToken): lectura actualizada bajo demanda (API moderna preferida).
+- requestLocationUpdates(LocationRequest, callback, looper): stream de actualizaciones.
+- removeLocationUpdates(callback)
 
-NetworkCallback (recomendado):
-registerDefaultNetworkCallback(callback) recibe onAvailable, onLost, onCapabilitiesChanged.
+LocationRequest (LocationRequest.Builder):
+- setIntervalMillis, setMinUpdateIntervalMillis
+- setPriority(PRIORITY_HIGH_ACCURACY, BALANCED, LOW_POWER, PASSIVE)
 
-Unregister en onDestroy para evitar leaks.
+Requisitos:
+- Google Play Services en el dispositivo (la mayoría con GMS).
+- Permisos ACCESS_FINE_LOCATION o COARSE según precisión.
+- Dependency play-services-location.
 
-Restricciones:
-- ACCESS_NETWORK_STATE permission en manifest (normal, no runtime).
-
-Alternativas:
-- ConnectivityManager.registerNetworkCallback con NetworkRequest filtrado (solo Wi-Fi, etc.).
-- WorkManager Constraints.Builder().setRequiredNetworkType(CONNECTED).
-- Library androidx: NetworkObserver patterns.
-
-No confundir:
-- Tener Wi-Fi conectado sin Internet (portal cautivo) -> usar VALIDATED.
-- isActiveNetworkMetered para evitar descargas grandes en datos móviles.
+Integración con corrutinas:
+- await() de kotlinx-coroutines-play-services en getCurrentLocation suspend.
 
 Cuándo usarlo:
-Antes de sync, mostrar banner offline, elegir calidad de streaming, decidir si encolar WorkManager.
+Cualquier app con GMS que necesite ubicación; es el estándar recomendado por Google frente a LocationManager directo.
 
 Ejemplo:
-class NetworkMonitor @Inject constructor(
-    @ApplicationContext context: Context
+class LocationRepository @Inject constructor(
+    @ApplicationContext private val context: Context
 ) {
-    private val cm = context.getSystemService(ConnectivityManager::class.java)
-    private val _online = MutableStateFlow(false)
-    val online: StateFlow<Boolean> = _online.asStateFlow()
+    private val client = LocationServices.getFusedLocationProviderClient(context)
 
-    private val callback = object : ConnectivityManager.NetworkCallback() {
-        override fun onCapabilitiesChanged(
-            network: Network,
-            caps: NetworkCapabilities
-        ) {
-            _online.value = caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
-        }
-        override fun onLost(network: Network) {
-            _online.value = false
-        }
-    }
-
-    fun start() {
-        cm.registerDefaultNetworkCallback(callback)
-    }
-
-    fun stop() {
-        cm.unregisterNetworkCallback(callback)
+    suspend fun currentLocation(): Location? {
+        if (!hasFineLocation(context)) return null
+        return client.getCurrentLocation(
+            Priority.PRIORITY_BALANCED_POWER_ACCURACY,
+            CancellationTokenSource().token
+        ).await()
     }
 }
 
+// build.gradle
+// implementation("com.google.android.gms:play-services-location:21.3.0")
+
 Consejo para entrevista:
-Menciona NetworkCallback vs NetworkInfo deprecado. NET_CAPABILITY_VALIDATED para Internet real. Relaciona con WorkManager constraints y Repository offline-first.
+Explica fusión de proveedores y prioridades de batería. Contrasta con LocationManager. Menciona getCurrentLocation vs lastLocation obsoleto para UX.

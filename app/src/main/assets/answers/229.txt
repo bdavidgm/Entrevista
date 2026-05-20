@@ -1,21 +1,21 @@
 Concepto:
-Recovery es una partición o modo de arranque mínimo para mantenimiento: factory reset, aplicar OTA, sideload, montar /data y a veces backups.
+Flashear es escribir una imagen de firmware en particiones del dispositivo (boot, system, vendor, super, recovery, etc.) para instalar, actualizar o reparar el sistema operativo.
 
 Explicación detallada:
-Stock recovery: limitado, firmado por OEM, wipe data/cache, OTA oficial. Custom recovery (TWRP, OrangeFox): interfaz táctil, backups Nandroid, flash zips, explorador de archivos, adb en recovery.
+Tipos: OTA oficial (incremental o full), fastboot flash de imágenes sueltas, herramientas OEM (Odin AP/BL/CP/CSC, Mi Flash, QPST), recovery sideload (adb sideload), EDL/QPST en Qualcomm cuando el dispositivo está en modo emergencia.
 
-Se entra con adb reboot recovery o teclas (Vol+ + Power según marca). Sin unlock muchos equipos no permiten recovery custom.
+ROM custom (LineageOS, etc.): requiere unlock, recovery custom, zip de la ROM y a menudo GApps por separado. Siempre usar builds para el modelo exacto (codename).
 
-Wipe data/factory reset borra apps y datos de usuario; wipe cache dalvik/ART menos drástico. Formatear /data en TWRP equivale a reset completo.
+Precauciones: batería cargada, cable de calidad, backup de datos, verificar checksums, no interrumpir el proceso. Brick duro si se corrompe partición crítica sin modo recuperación.
 
-Técnico usa recovery para desbloquear patrón olvidado solo en dispositivos propios o autorizados; en la práctica legal depende de la jurisdicción y política de la empresa.
+Técnico restaura software tras fallo de actualización, pantalla rota con ADB activo, o cambio de región en equipos permitidos por el fabricante.
 
 Cuándo usarlo:
-Actualizaciones manuales, wipes, flash de Magisk/ROM en entornos controlados.
+Reparación, downgrade/upgrade oficial, instalación de ROM cuando el usuario lo solicita y es legal.
 
 Ejemplo:
-adb reboot recovery
-# En TWRP: Install > zip de ROM o Magisk
+fastboot flashall -w   # script del fabricante, usar solo paquete correcto
+adb sideload ota.zip   # en recovery oficial
 
 Consejo para entrevista:
-Stock vs TWRP, wipe data vs cache, sideload en recovery oficial.
+Diferencia OTA vs fastboot vs Odin. Insiste en modelo exacto y riesgo de brick.

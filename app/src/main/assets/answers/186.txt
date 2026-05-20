@@ -1,44 +1,40 @@
 Concepto:
-JobScheduler (API 21+) es la API del sistema para programar trabajos en background con restricciones (red, carga, idle); WorkManager lo usa internamente y es la capa que debes preferir en apps modernas.
+DownloadManager es un servicio del sistema que gestiona descargas HTTP en segundo plano con notificación de progreso, reintentos y persistencia, accesible vía getSystemService(DOWNLOAD_SERVICE).
 
 Explicación detallada:
-JobInfo describe el trabajo:
-- setRequiredNetworkType (ANY, UNMETERED, NOT_ROAMING)
-- setRequiresCharging / setRequiresDeviceIdle / setPersisted (requiere RECEIVE_BOOT_COMPLETED)
-- setPeriodic (mínimo 15 min en API 24+ para periódicos)
-- setBackoffCriteria en fallos
+Encolas descargas con Request(uri):
+- setDestinationUri / setDestinationInExternalPublicDir (legacy) / setDestinationInExternalFilesDir
+- setNotificationVisibility (VISIBLE, HIDDEN si no quieres notificación pública)
+- setAllowedNetworkTypes (WIFI, MOBILE)
+- setRequiresCharging, setRequiresDeviceIdle (API 24+)
+- addRequestHeader para auth tokens (cuidado: no logs sensibles)
 
-JobScheduler.schedule(jobInfo) devuelve RESULT_SUCCESS o error. La ejecución ocurre en JobService.onStartJob / onStopJob (debes llamar jobFinished cuando termines).
+Devuelve downloadId (long). Consultas estado con query(Query().setFilterById(id)): COLUMN_STATUS (SUCCESSFUL, FAILED, PENDING), bytes descargados, reason failure.
 
-Ventajas: batching con otros jobs, respeto a Doze, eficiencia energética.
+Ventajas: sobrevive cierre de app, integración con notificaciones del sistema, manejo de red pausada.
 
-Limitaciones: solo Android propio (no multiplataforma); API verbosa; límites de jobs por app; no es ideal para tareas inmediatas.
+Limitaciones: solo HTTP(S) simple; poca flexibilidad (no GraphQL streaming complejo); menos control que OkHttp + WorkManager; políticas de almacenamiento en scoped storage.
 
-WorkManager abstrae JobScheduler en API 23+, AlarmManager en versiones antiguas, y ofrece garantías de ejecución, observabilidad y testing más simple.
+Alternativa moderna: WorkManager + OkHttp + ForegroundService para descargas grandes con lógica custom; o DownloadManager para archivos públicos simples (PDF, APK interno).
 
 Cuándo usarlo:
-- Casi nunca directamente en apps nuevas: usa WorkManager.
-- Librerías de sistema o código de plataforma que no puede depender de Jetpack.
-- Entender qué hay “debajo” de WorkManager en entrevistas.
+- Descargar PDF, imagen, actualización OTA sin lógica compleja.
+- Cuando quieres barra de progreso en shade sin implementar notificación propia.
+
+Evitar: APIs autenticadas complejas, parsing en stream, múltiples formatos con transformación.
 
 Ejemplo:
-// Uso directo (conocimiento; en app real usa WorkManager)
-class SyncJobService : JobService() {
-    override fun onStartJob(params: JobParameters): Boolean {
-        CoroutineScope(Dispatchers.IO).launch {
-            doSync()
-            jobFinished(params, false)
-        }
-        return true // trabajo async
-    }
-    override fun onStopJob(params: JobParameters) = false
-}
-
-val jobInfo = JobInfo.Builder(1, ComponentName(this, SyncJobService::class.java))
-    .setRequiredNetworkType(JobInfo.NETWORK_TYPE_UNMETERED)
-    .setPersisted(true)
-    .build()
-getSystemService(JobScheduler::class.java).schedule(jobInfo)
+val dm = context.getSystemService(DownloadManager::class.java)
+val request = DownloadManager.Request(Uri.parse(url))
+    .setTitle("Manual")
+    .setDescription("Descargando...")
+    .setNotificationVisibility(
+        DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED
+    )
+    .setDestinationInExternalFilesDir(
+        context, Environment.DIRECTORY_DOWNLOADS, "manual.pdf"
+    )
+val id = dm.enqueue(request)
 
 Consejo para entrevista:
-Respuesta corta ganadora: “JobScheduler es la primitiva de Android; WorkManager es la abstracción recomendada que lo usa.” Explica restricciones y JobService. No digas que usarías JobScheduler directo en un proyecto greenfield sin motivo.
+Contrasta con WorkManager + Retrofit/OkHttp. Menciona consulta por Cursor y permisos de almacenamiento según destino. Para entrevista senior: “DownloadManager para ficheros grandes simples; cola propia si necesitas cancelación fina o headers dinámicos”.

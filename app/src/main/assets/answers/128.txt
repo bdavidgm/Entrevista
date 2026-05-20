@@ -1,49 +1,43 @@
 Concepto:
-Parcelable es la interfaz de Android para serializar objetos en un Parcel de forma eficiente y pasarlos entre componentes (Intent extras, Bundle, IPC, SavedState) con menor overhead que Serializable de Java.
+Application es la clase que representa el proceso Android de tu app antes de que exista cualquier Activity; se instancia una vez al arrancar el proceso y vive hasta que el sistema mata el proceso.
 
 Explicación detallada:
-Parcelable escribe campos en orden con Parcel.write* y los lee en el mismo orden en el constructor o factory CREATOR.
+Declaración en AndroidManifest:
+<application android:name=".MyApplication" ... />
 
-Ventajas vs Serializable:
-- Más rápido y menos allocations (importante en intents y transacciones frecuentes).
-- Serializable usa reflexión y genera más basura.
+Callbacks:
+- onCreate(): inicialización global (timber, strict mode en debug, App Startup, migraciones ligeras). Debe ser rápido; trabajo pesado en background.
+- onTerminate(): no fiable en dispositivos reales; no depender para persistencia.
+- onLowMemory(), onTrimMemory(): liberar caches no críticos.
 
-En Kotlin moderno:
-- @Parcelize en data class (plugin kotlin-parcelize): el compilador genera el boilerplate.
-- Requiere plugins { id("kotlin-parcelize") } y @Parcelize annotation.
+Obtener instancia:
+- context.applicationContext as MyApplication (evitar cast en producción sin comprobar).
+- En Hilt: @HiltAndroidApp en Application activa generación de componente raíz.
 
-API 33+ (Tiramisu):
-- intent.getParcelableExtra("key", MyClass::class.java) tipado.
-- Bundle.getParcelableArrayList con Class parameter.
+Singleton de proceso:
+- Variables estáticas en Application sobreviven rotaciones de Activity pero no garantizan persistencia si el proceso muere.
+- Preferir DI con @Singleton scoped al componente Application de Hilt.
 
-Limitaciones:
-- Solo para datos simples y estables; no persistencia a largo plazo ni red.
-- Cambiar estructura del Parcelable rompe compatibilidad si no versionas.
-- Objetos grandes en Intent pueden causar TransactionTooLargeException (límite ~1MB binder).
-
-Alternativas:
-- Navigation Safe Args para argumentos tipados entre destinos.
-- JSON en SavedStateHandle para objetos complejos (con cuidado de tamaño).
-- Room/BD para datos grandes.
+No usar Application para:
+- Estado de UI de una pantalla (usar ViewModel).
+- Lógica que debería estar en UseCase o Repository.
 
 Cuándo usarlo:
-Argumentos entre Activities/Fragments, estado en Bundle, AIDL. Para red usa DTO JSON; para disco usa Room.
+Inicialización global: logging, analytics, configuración de imagen (Coil/Glide), WorkManager custom configuration, registro de ActivityLifecycleCallbacks para analytics.
 
 Ejemplo:
-@Parcelize
-data class User(
-    val id: String,
-    val name: String
-) : Parcelable
-
-// Enviar
-val intent = Intent(this, DetailActivity::class.java).apply {
-    putExtra("user", User("1", "Ana"))
+@HiltAndroidApp
+class MyApplication : Application() {
+    override fun onCreate() {
+        super.onCreate()
+        if (BuildConfig.DEBUG) {
+            Timber.plant(Timber.DebugTree())
+        }
+    }
 }
-startActivity(intent)
 
-// Recibir API 33+
-val user = intent.getParcelableExtra("user", User::class.java)
+// AndroidManifest.xml
+<application android:name=".MyApplication" ... />
 
 Consejo para entrevista:
-Contrasta Parcelable vs Serializable (rendimiento). Menciona @Parcelize y TransactionTooLargeException. Safe Args como alternativa moderna con Navigation.
+Diferencia Application (proceso) vs Activity (pantalla). Menciona @HiltAndroidApp y que onCreate debe ser ligero. Evita anti-patrón de guardar todo en Application.

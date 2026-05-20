@@ -1,12 +1,12 @@
 Concepto:
-VectorDrawable es un recurso XML escalable que describe gráficos con paths en lugar de mapas de bits, ideal para iconos e ilustraciones simples en múltiples densidades sin assets png duplicados.
+El modo oscuro (dark theme) es una variante de tema UI con fondos oscuros y texto claro que reduce fatiga visual en poca luz, puede ahorrar batería en pantallas OLED y respeta la preferencia del sistema o del usuario en la app.
 
 Explicación detallada:
-Un solo archivo res/drawable/ic_add.xml escala sin pixelación. VectorDrawableCompat en versiones antiguas. AnimatedVectorDrawable para animaciones vectoriales ligeras.
+Android 10+ soporta forceDark y configuración uiMode UI_MODE_NIGHT_YES. Material3: darkColorScheme() vs lightColorScheme(). En Compose: isSystemInDarkTheme() o estado guardado en DataStore para override manual (Sistema / Claro / Oscuro).
 
-En Compose: ImageVector desde Icons o vectorResource(R.drawable.ic_add). Material Icons extended. Limitación: paths muy complejos aumentan coste de render; fotos siguen siendo WebP/PNG.
+themes.xml: Theme.Material3.DayNight sin parent fijo light. values-night/ para recursos alternativos. Status bar y navigation bar icons contrast con WindowInsetsController.
 
-app:srcCompat en ImageView en lugar de android:src para compatibilidad. tint para colorizar iconos con tema.
+Evita imágenes solo para light sin variante. Prueba contraste accesibilidad en ambos modos. dynamic color adapta paleta en ambos.
 
 En el contexto de proyectos Android reales, combina esta idea con las guías oficiales de Android Developers y con métricas de calidad (crashes, ANR, Vitals) cuando aplique. En code review, pregunta siempre por ciclo de vida, testabilidad y si la solución escala cuando el equipo crece.
 
@@ -21,25 +21,17 @@ Durante la entrevista, estructura la respuesta en definición, ejemplo concreto 
 Para profundizar tras la entrevista, revisa documentación oficial, codelabs y el código fuente de tu propio proyecto Entrevista aplicando el concepto en un flujo mínimo reproducible. La práctica deliberada con tests unitarios refuerza la confianza al explicar el tema en viva voz.
 
 Cuándo usarlo:
-Iconos UI, logos simples, ilustraciones flat. No para fotos ni gradientes complejos masivos.
+Toda app moderna debe soportar dark o DayNight. Ofrece toggle en ajustes si producto lo requiere además del sistema.
 
 Ejemplo:
-// res/drawable/ic_launcher_foreground.xml — vector paths
-
 @Composable
-fun AddIcon() {
-    Icon(
-        imageVector = Icons.Default.Add,
-        contentDescription = null
-    )
+fun EntrevistaTheme(
+    darkTheme: Boolean = isSystemInDarkTheme(),
+    content: @Composable () -> Unit
+) {
+    val colors = if (darkTheme) darkColorScheme() else lightColorScheme()
+    MaterialTheme(colorScheme = colors, content = content)
 }
 
-// XML ImageView
-<ImageView
-    android:layout_width="24dp"
-    android:layout_height="24dp"
-    app:srcCompat="@drawable/ic_add"
-    app:tint="?attr/colorPrimary" />
-
 Consejo para entrevista:
-Escalable, un XML, tint. Contrasta con PNG por densidad. Compose ImageVector equivalente.
+DayNight, darkColorScheme, preferencia usuario + sistema. Menciona OLED battery. No hardcodear colores fuera de tokens.

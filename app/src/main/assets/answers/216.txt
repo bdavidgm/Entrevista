@@ -1,38 +1,34 @@
 Concepto:
-App signing (firma de aplicaciones) es el proceso criptográfico que garantiza que un APK/AAB proviene del desarrollador autorizado usando un keystore privado; Play App Signing separa upload key y signing key de distribución.
+Android App Bundle (AAB) es el formato de publicación obligatorio en Play que contiene módulos divididos; Google Play genera APKs optimizados por dispositivo (ABI, densidad, idioma) reduciendo descarga del usuario.
 
 Explicación detallada:
-Android usa esquema v2/v3/v4 de firma en APK. Cada build release se firma con clave privada; el dispositivo/Play verifica con certificado público.
+Ventajas vs APK universal:
+- Dynamic delivery: feature modules on-demand (si usas Play Feature Delivery).
+- Split APKs por arquitectura (arm64-v8a vs armeabi) — usuario no descarga todas.
+- Asset packs para recursos grandes.
+- Play signing y optimizaciones automáticas.
 
-Keystore: archivo .jks o .keystore con alias, passwords (guardar en CI secrets, no en repo). signingConfigs en Gradle apuntan a keystore o variables de entorno.
+Build: bundleRelease produce .aab; no instalable directamente en dispositivo sin bundletool o Play.
 
-Play App Signing: subes con upload key; Google re-firma con app signing key para usuarios finales. Permite reset upload key si se pierde (proceso soporte).
+APK local debug sigue siendo .apk para desarrollo.
 
-Debug: debug.keystore automático con contraseñas conocidas; solo desarrollo.
+Play Console requiere AAB para apps nuevas; excepciones muy limitadas.
 
-Implicaciones: misma applicationId con distinta firma no actualiza instalada; modules deben alinearse.
+Relacionado con versionCode por módulo en dynamic features.
 
 Cuándo usarlo:
-- Todo build release (internal testing incluido en Play).
-- Configurar en CI con secretos cifrados.
+- Siempre al subir a Play Store producción y tracks de prueba oficiales.
+- Cuando quieres reducir tamaño percibido y usar dynamic features.
 
 Ejemplo:
 android {
-    signingConfigs {
-        create("release") {
-            storeFile = file(System.getenv("KEYSTORE_PATH") ?: "release.jks")
-            storePassword = System.getenv("STORE_PASSWORD")
-            keyAlias = System.getenv("KEY_ALIAS")
-            keyPassword = System.getenv("KEY_PASSWORD")
-        }
-    }
-    buildTypes {
-        release {
-            signingConfig = signingConfigs.getByName("release")
-            isMinifyEnabled = true
-        }
+    defaultConfig {
+        versionCode = 42
+        versionName = "2.1.0"
     }
 }
+// ./gradlew bundleRelease
+// Subir app-release.aab a Play Console
 
 Consejo para entrevista:
-Diferencia debug vs release keystore, Play App Signing, y nunca commitear keystores. Menciona que la firma prueba integridad e identidad del publicador, no cifrado del código (eso es R8/ProGuard aparte).
+Explica que AAB no es el archivo que compartes fuera de Play salvo testers con bundletool. Menciona splits por ABI y que el APK de debug local no invalida usar AAB en release. Conecta con pregunta 119/213.

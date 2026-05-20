@@ -1,41 +1,39 @@
 Concepto:
-launchMode define cómo el sistema instancia una Activity cuando recibe un Intent: si crea siempre una nueva, reutiliza la del tope, o reutiliza una task existente.
+Tasks y Back Stack son el mecanismo con el que Android organiza Activities en pilas (tasks) asociadas a apps recientes: cada startActivity puede apilar, reordenar o limpiar entradas según flags y launchMode.
 
 Explicación detallada:
-Cuatro modos en AndroidManifest (android:launchMode):
+Task: colección de Activities en orden LIFO (última en entrar, primera en salir con Back). Una app puede tener varias tasks (document launch mode, intents con NEW_TASK).
 
-1) standard (default): cada startActivity crea nueva instancia en la task actual (salvo otras reglas). Puedes apilar muchas copias.
+Back Stack por task: A → B → C; Back desde C destruye C y muestra B. Si C es fin de task, usuario vuelve al launcher u otra app.
 
-2) singleTop: si la Activity ya está en el TOP de la stack, no crea otra; onNewIntent() con el nuevo intent. Si no está en top, crea nueva. Útil para pantallas de detalle que reciben deep links repetidos.
+Intent flags que afectan la pila:
+- FLAG_ACTIVITY_NEW_TASK: nueva task o reutilizar según affinity.
+- FLAG_ACTIVITY_CLEAR_TOP: si Activity ya existe, destruye instancias encima y llama onNewIntent.
+- FLAG_ACTIVITY_SINGLE_TOP: si está en top, no crea otra instancia.
+- FLAG_ACTIVITY_CLEAR_TASK + NEW_TASK: reset total (splash/logout).
 
-3) singleTask: busca task con affinity; si existe la Activity en esa task, trae task al frente y onNewIntent; si no, crea task/instancia. Limpia Activities encima de ella en esa task. Patrón “home root” (cuidado con UX inesperada).
+launchMode en manifest (ver pregunta 196): standard, singleTop, singleTask, singleInstance.
 
-4) singleInstance: la Activity vive sola en su propia task; cualquier otra Activity se abre en otra task. Muy restrictivo (launchers, widgets config); raro en apps normales.
+Fragments: back stack propio gestionado por FragmentManager (addToBackStack); Navigation Component unifica popBackStack.
 
-Complemento: taskAffinity agrupa tasks; allowTaskReparenting mueve task entre apps.
-
-Flags en Intent pueden modificar comportamiento además del launchMode.
+Recents (multitarea): cada task tiene thumbnail; document mode muestra varias tasks de la misma app (navegador).
 
 Cuándo usarlo:
-- singleTop: SearchActivity, Notification click que abre misma pantalla.
-- singleTask: una sola MainActivity como raíz (usar con Navigation interna en lugar de muchas activities).
-- standard: mayoría de pantallas de flujo lineal.
-- Evitar singleInstance salvo casos muy específicos.
+- Diseñar flujos login → home sin volver a login con Back.
+- Deep links que deben abrir pantalla concreta sin duplicar home.
+- Evitar múltiples copias de MainActivity.
 
 Ejemplo:
-<activity
-    android:name=".MainActivity"
-    android:launchMode="singleTask"
-    android:exported="true">
-    <intent-filter>
-        <action android:name="android.intent.action.MAIN" />
-        <category android:name="android.intent.category.LAUNCHER" />
-    </intent-filter>
-</activity>
+// Tras login, limpiar stack y dejar Home
+val intent = Intent(this, HomeActivity::class.java).apply {
+    flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+            Intent.FLAG_ACTIVITY_CLEAR_TASK
+}
+startActivity(intent)
+finish()
 
-<activity
-    android:name=".DetailActivity"
-    android:launchMode="singleTop" />
+// Navigation Component
+navController.popBackStack() // equivalente conceptual a desapilar fragmentos
 
 Consejo para entrevista:
-Tabla mental: standard=múltiples; singleTop=solo si en top; singleTask=una por task/affinity; singleInstance=task exclusiva. Da ejemplo de notificación que reutiliza Activity con onNewIntent. Menciona que Compose+single Activity reduce necesidad de launchModes complejos.
+Dibuja la pila A-B-C. Explica diferencia task vs back stack de fragments. Menciona CLEAR_TASK tras auth y singleTask para “home raíz”. Conecta con predictive back (Android 13+).

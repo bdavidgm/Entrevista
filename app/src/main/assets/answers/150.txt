@@ -1,45 +1,56 @@
 Concepto:
-El patrón Mapper transforma datos entre capas (DTO de red, entidad Room, modelo de dominio, UiModel) manteniendo cada capa independiente y evitando que la UI conozca detalles de serialización o BD.
+Un evento de UI one-shot es una acción que debe consumirse una sola vez por el observador (navegar, mostrar Snackbar, Toast), a diferencia del estado persistente que la UI puede re-renderizar tras rotación sin repetir el efecto.
 
 Explicación detallada:
-Motivación:
-- API devuelve JSON con nombres y tipos distintos al dominio.
-- Room Entity tiene anotaciones y columnas que no deben filtrarse a Compose.
-- Separación Clean Architecture: capa de datos != dominio != presentación.
+Problema:
+- Si expones navegación como parte de UiState data class y la pantalla rota, al recomponer o re-observar se dispara otra vez NavigateToLogin.
+- LiveData con Event wrapper o Channel/SharedFlow para eventos.
 
-Implementación:
-- Funciones puras: fun UserDto.toDomain(): User
-- Clases Mapper @Inject si hay dependencias (formateo, locale).
-- MapStruct en Java; en Kotlin extension functions o clases dedicadas.
+Patrones:
+1) Channel + receiveAsFlow (consumo único):
+private val _events = Channel<UiEvent>(Channel.BUFFERED)
+val events = _events.receiveAsFlow()
 
-Direcciones:
-- Dto -> Domain en Repository tras fetch.
-- Entity <-> Domain en capa data.
-- Domain -> UiModel en ViewModel o mapper de presentación.
+2) SharedFlow con replay=0 y extraBufferCapacity.
 
-Evitar:
-- Mapear en Composable (difícil de testear).
-- Un solo modelo para todo (acopla API a cambios de UI).
+3) Wrapper Event<T> con getContentIfNotHandled() (patrón legacy LiveData).
+
+4) Snackbar en Compose con LaunchedEffect(eventId) y incrementar id por evento.
+
+Estado vs evento:
+- State: lista de items, loading — siempre reflejado en UI.
+- Event: Navigate, ShowError — fire once.
 
 Cuándo usarlo:
-Siempre que haya más de una representación del mismo concepto. Especialmente con múltiples fuentes (cache + network).
+Navegación, diálogos, mensajes tras acción exitosa, permisos denegados. No mezclar en el mismo StateFlow sin diseño.
 
 Ejemplo:
-data class UserDto(val user_id: String, val full_name: String)
-data class User(val id: String, val name: String)
-data class UserUiModel(val id: String, val displayName: String)
+sealed interface UiEvent {
+    data class ShowMessage(val text: String) : UiEvent
+    data object NavigateBack : UiEvent
+}
 
-fun UserDto.toDomain() = User(id = user_id, name = full_name)
-fun User.toUiModel() = UserUiModel(id = id, displayName = name.uppercase())
+@HiltViewModel
+class CheckoutViewModel @Inject constructor(...) : ViewModel() {
+    private val _events = Channel<UiEvent>(Channel.BUFFERED)
+    val events = _events.receiveAsFlow()
 
-class UserRepository @Inject constructor(private val api: UserApi, private val dao: UserDao) {
-    suspend fun refresh(id: String): User {
-        val dto = api.getUser(id)
-        val domain = dto.toDomain()
-        dao.insert(domain.toEntity())
-        return domain
+    fun onPaymentSuccess() {
+        viewModelScope.launch { _events.send(UiEvent.NavigateBack) }
+    }
+}
+
+@Composable
+fun CheckoutScreen(vm: CheckoutViewModel = hiltViewModel()) {
+    LaunchedEffect(Unit) {
+        vm.events.collect { event ->
+            when (event) {
+                UiEvent.NavigateBack -> navController.popBackStack()
+                is UiEvent.ShowMessage -> snackbarHost.showSnackbar(event.text)
+            }
+        }
     }
 }
 
 Consejo para entrevista:
-Explica por capas y testabilidad de funciones puras. Menciona extension toDomain() idiomática en Kotlin vs clase Mapper cuando la lógica crece.
+Explica rotación y repetición. Contrasta StateFlow para estado vs Channel/SharedFlow para eventos. Menciona anti-patrón de poner navigate en UiState sin consumo.

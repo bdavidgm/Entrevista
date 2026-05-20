@@ -1,49 +1,47 @@
 Concepto:
-AudioManager gestiona el flujo de audio del dispositivo: volumen por stream (música, ring, alarma), modo (normal, vibración, silencio), audio focus y rutas (altavoz, auricular, Bluetooth).
+Vibrator (y VibratorManager en API 31+) produce feedback háptico: vibraciones simples, patrones o efectos predefinidos (VibrationEffect) según capacidades del hardware.
 
 Explicación detallada:
-Streams principales (STREAM_*):
-- STREAM_MUSIC: media, juegos.
-- STREAM_RING / STREAM_NOTIFICATION / STREAM_ALARM.
-- STREAM_VOICE_CALL: llamadas.
+Obtención:
+- context.getSystemService(Vibrator::class.java)
+- API 31+: vibratorManager.defaultVibrator
 
-Métodos:
-- setStreamVolume / getStreamVolume / getMaxVolume
-- adjustStreamVolume(ADJUST_RAISE/LOWER, flags)
-- getRingerMode / setRingerMode (puede estar restringido)
-- requestAudioFocus / abandonAudioFocus (OnAudioFocusChangeListener): pausar cuando otra app reproduce o hay llamada.
+Permiso VIBRATE en manifest (normal, concedido en install).
 
-Modo comunicación: MODE_IN_COMMUNICATION para VoIP; setSpeakerphoneOn; routing Bluetooth SCO para headsets.
+Evolución:
+- vibrate(long milliseconds) — legacy.
+- vibrate(VibrationEffect) API 26+: createOneShot, createWaveform, createPredefined (EFFECT_CLICK, DOUBLE_CLICK, TICK).
+- Android 12+: VibrationAttributes (USAGE_TOUCH, USAGE_NOTIFICATION) para contexto semántico.
+- Compose: LocalHapticFeedback.performHapticFeedback (no siempre usa Vibrator directamente).
 
-MediaPlayer/ExoPlayer integran audio focus automáticamente si configuras AudioAttributes (USAGE_MEDIA, CONTENT_TYPE_MUSIC).
+hasVibrator() y areEffectsSupported() evitan fallos en tablets sin motor.
 
-Do Not Disturb: NotificationManager.Policy puede afectar si suena notificación.
+Buenas prácticas: vibraciones cortas para confirmación UI; no abusar en listas largas; respetar accesibilidad (algunos usuarios desactivan vibración); en juegos puede usarse más intensidad con patrones.
 
 Cuándo usarlo:
-- App de música/podcast: focus y pausa en llamadas entrantes.
-- Ajustar volumen solo de tu stream con UI custom (raro).
-- VoIP: gestión de modo y altavoz.
+- Confirmar acción (eliminar, enviar).
+- Alertas silenciosas en wearable companion (limitado).
+- Juegos y simulaciones.
 
-Evitar: manipular ringer global sin permiso o sin UX clara; ignorar audio focus (dos apps sonando).
+Evitar: vibración continua en background (batería y molestia).
 
 Ejemplo:
-val am = context.getSystemService(AudioManager::class.java)
-val focusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
-    .setAudioAttributes(
-        AudioAttributes.Builder()
-            .setUsage(AudioAttributes.USAGE_MEDIA)
-            .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-            .build()
+val vibrator = context.getSystemService(Vibrator::class.java)
+if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+    vibrator.vibrate(
+        VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK)
     )
-    .setOnAudioFocusChangeListener { change ->
-        when (change) {
-            AudioManager.AUDIOFOCUS_LOSS -> player.pause()
-            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> player.pause()
-            AudioManager.AUDIOFOCUS_GAIN -> player.play()
-        }
-    }
-    .build()
-am.requestAudioFocus(focusRequest)
+} else {
+    @Suppress("DEPRECATION")
+    vibrator.vibrate(50)
+}
+
+// Haptic en Compose
+val haptic = LocalHapticFeedback.current
+Button(onClick = {
+    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+    onConfirm()
+}) { Text("Confirmar") }
 
 Consejo para entrevista:
-Explica audio focus como concepto central, streams distintos, y ExoPlayer para reproducción real. Menciona que no necesitas AudioManager para sonidos UI cortos (SoundPool). Conecta con foreground service tipo mediaPlayback.
+Menciona VibrationEffect vs API antigua, permiso VIBRATE, y preferir HapticFeedback en Compose para botones. Di que compruebas hasVibrator() y que vibración larga en background es mala práctica.

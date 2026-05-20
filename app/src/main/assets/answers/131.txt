@@ -1,43 +1,46 @@
 Concepto:
-El parámetro key en items() de LazyColumn (y LazyVerticalGrid, etc.) identifica de forma estable cada elemento de la lista para que Compose pueda reutilizar, animar y posicionar composables correctamente cuando la lista cambia.
+viewModelScope es el CoroutineScope definido en androidx.lifecycle.ViewModel que cancela todas las corrutinas hijas cuando el ViewModel se limpia (onCleared), típicamente cuando el usuario sale de la pantalla asociada de forma permanente.
 
 Explicación detallada:
-Sin key, Compose usa posición en la lista como identidad. Si reordenas, insertas o borras, puede recomponer el item equivocado, perder estado interno (scroll de item, TextField) o animaciones incorrectas.
+- Propiedad val viewModelScope: CoroutineScope en ViewModel KTX.
+- Dispatcher Main por defecto; usa withContext(Dispatchers.IO) para red/BD.
+- Sobrevive rotación de configuración: el ViewModel persiste en ViewModelStore, el scope no se cancela al girar.
 
-Con key = { item.id }:
-- Compose asocia el composable al id lógico del dato, no al índice.
-- Mejor rendimiento en listas grandes (menos recreaciones).
-- Obligatorio para ciertas APIs como animateItemPlacement en versiones recientes.
+Uso típico:
+viewModelScope.launch {
+    _uiState.value = UiState.Loading
+    runCatching { repository.load() }
+        .onSuccess { _uiState.value = UiState.Success(it) }
+        .onFailure { _uiState.value = UiState.Error(it.message) }
+}
 
-Buenas prácticas de key:
-- Usar ID único del dominio (UUID, primary key).
-- Evitar key = { index } salvo listas estáticas inmutables.
-- No usar objetos que cambian identidad (hashCode de data class sin id estable).
+Cancelación:
+- Si el usuario navega atrás y el ViewModel se elimina del store, onCleared cancela jobs.
+- Jobs hijos cooperativos deben comprobar isActive en bucles largos.
+- SupervisorJob no es el default del scope; excepción no manejada puede cancelar hermanos según configuración.
 
-Relacionado: contentType para optimizar recycling de layouts distintos en el mismo lazy list.
+No confundir con lifecycleScope en la View: el ViewModel no debe referenciar View ni Context de Activity.
 
 Cuándo usarlo:
-Siempre en listas dinámicas de usuarios, mensajes, productos. Especialmente si hay campos editables, animaciones o paginación.
+Toda operación asíncrona iniciada desde ViewModel: carga de datos, paginación, transformaciones de estado. Nunca GlobalScope desde ViewModel.
 
 Ejemplo:
-@Composable
-fun MessageList(messages: List<Message>) {
-    LazyColumn {
-        items(
-            items = messages,
-            key = { it.id }
-        ) { message ->
-            MessageRow(message)
+@HiltViewModel
+class ProductsViewModel @Inject constructor(
+    private val repository: ProductRepository
+) : ViewModel() {
+
+    private val _state = MutableStateFlow<ProductsUiState>(ProductsUiState.Loading)
+    val state: StateFlow<ProductsUiState> = _state.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            repository.productsFlow()
+                .catch { e -> _state.value = ProductsUiState.Error(e.message) }
+                .collect { list -> _state.value = ProductsUiState.Success(list) }
         }
     }
 }
 
-// Múltiples tipos
-items(
-    items = items,
-    key = { when (it) { is Header -> "h-${it.title}"; is Row -> "r-${it.id}" } },
-    contentType = { if (it is Header) 0 else 1 }
-) { ... }
-
 Consejo para entrevista:
-Explica bug de estado en TextField al borrar fila sin key. Menciona animateItemPlacement y diferencia key vs contentType.
+Enlaza con supervivencia a rotación y cancelación en onCleared. Menciona withContext(IO) y que ViewModel no guarda Activity.

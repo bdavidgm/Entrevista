@@ -1,39 +1,39 @@
 Concepto:
-Cloud Firestore es una base de datos NoSQL documental en la nube de Firebase: colecciones, documentos, campos tipados, consultas indexadas, sincronización offline y listeners en tiempo real.
+Firebase Crashlytics es un servicio de informes de fallos en tiempo casi real que agrupa crashes y ANRs por stack trace, versión, dispositivo y permite añadir logs/breadcrumbs custom para diagnosticar producción.
 
 Explicación detallada:
-Modelo: Collection "users" → Document "uid123" → fields { name, age, tags[] }. Subcolecciones anidadas.
+Integración Gradle: plugin com.google.firebase.crashlytics, google-services.json, dependencia firebase-crashlytics-ktx.
 
-API Android:
-- get(), add(), set(), update(), delete()
-- whereEqualTo, orderBy, limit (requieren índices compuestos en consola)
-- addSnapshotListener para UI reactiva
-- Persistencia offline habilitada por defecto; sincroniza al recuperar red
+Automático: captura excepciones no controladas en main thread y nativas (con NDK config). Reportes tras reinicio de app (no siempre instantáneo en debug).
 
-Transacciones y batches para consistencia. Security Rules en servidor definen quién lee/escribe por auth.uid.
+API útil:
+- Firebase.crashlytics.log("Paso antes del pago")
+- setCustomKey("cart_id", id)
+- setUserId(hashAnonymized) — cuidado GDPR
+- recordException(Throwable) para errores capturados no fatales
+- crashlytics.setCrashlyticsCollectionEnabled(BuildConfig.DEBUG.not())
 
-Vs Realtime Database: Firestore mejor para consultas complejas y escalado; RTDB más simple JSON tree baja latencia.
+Dashboard: issues por frecuencia, regresiones en versiones nuevas, comparar builds.
+
+Complementos: Performance Monitoring, Analytics events para correlacionar.
 
 Cuándo usarlo:
-- Apps con datos compartidos en tiempo real (chat ligero, colaboración).
-- Prototipos sin backend propio.
-- Complemento con Cloud Functions para lógica sensible.
+- Toda app en producción necesita telemetría de crashes.
+- Priorizar fixes por impacto en usuarios.
 
-Evitar: datos altamente relacionales complejos sin diseño; queries sin índices; poner lógica crítica solo en cliente.
+Alternativas: Sentry, Bugsnag, Datadog RUM.
 
 Ejemplo:
-val db = Firebase.firestore
-db.collection("orders")
-    .whereEqualTo("userId", uid)
-    .orderBy("createdAt", Query.Direction.DESCENDING)
-    .limit(20)
-    .addSnapshotListener { snapshot, error ->
-        if (error != null) return@addSnapshotListener
-        val orders = snapshot?.documents?.mapNotNull {
-            it.toObject<Order>()
-        } ?: emptyList()
-        _uiState.value = OrdersState(orders)
-    }
+Firebase.crashlytics.apply {
+    setCustomKey("feature_flag_checkout_v2", true)
+    log("Checkout iniciado")
+}
+try {
+    processPayment()
+} catch (e: PaymentException) {
+    Firebase.crashlytics.recordException(e)
+    showErrorToUser()
+}
 
 Consejo para entrevista:
-Explica modelo documental, rules, offline cache, índices. Contrasta con Room local (source of truth offline-first híbrido). Menciona coste por lecturas y diseño de denormalización.
+Menciona custom keys/logs, no usar crash() en prod, deshabilitar collection en debug si quieres, y privacidad de userId. Conecta con CI mapping de ProGuard/R8 (upload mapping file) para stacks legibles.

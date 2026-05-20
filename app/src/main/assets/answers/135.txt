@@ -1,42 +1,50 @@
 Concepto:
-recomposeScope (ámbito de recomposición) es el límite del compilador de Compose dentro del cual un cambio de estado provoca recomposición de los Composables hijos afectados, sin invalidar todo el árbol de la app.
+Animatable es una clase de Compose Animation que mantiene un valor animado de tipo arbitrario (Float, Offset, Color, etc.) con APIs suspend para animar hacia un target con especificación de animación.
 
 Explicación detallada:
-Cada función @Composable se compila en una función que recibe Composer y slot table. El compiler inserta grupos (groups) y keys para rastrear qué leer en cada pasada.
+A diferencia de animate*AsState (declarativo: cambias target y Compose anima), Animatable es imperativo y programable:
+- val offset = remember { Animatable(Offset.Zero) }
+- offset.animateTo(targetValue, animationSpec)
+- Soporte para snapTo, stop, updateBounds.
 
-Cuando cambia un State observado:
-- Compose marca scopes inválidos desde el punto de lectura hacia arriba hasta el root del subtree afectado.
-- Solo esos Composables se re-ejecutan (recomposition), no necesariamente padres que no leyeron ese state.
+Ventajas:
+- Secuencias encadenadas en corrutinas (rebote, luego fade).
+- Control fino de interrupciones y gestos (drag que pelea con animación spring).
+- animateDecay para inercia tras fling.
 
-Optimizaciones:
-- Skip: si parámetros son estables e iguales, el hijo puede saltarse.
-- strong skipping mode (Kotlin 2 + compiler plugin): más agilidad para evitar trabajo.
-- Mover lectura de state lo más abajo posible en el árbol (principle of state locality) reduce trabajo.
+Se usa con remember en Composable; las animaciones son suspend y se lanzan desde LaunchedEffect o gesture coroutines.
 
-Herramientas:
-- Layout Inspector recomposition counts.
-- Log recompositions en debug con Modifier o tooling.
-
-No confundir con CoroutineScope ni ViewModelScope: es concepto de UI declarativa.
+Especificaciones: spring(), tween(), keyframes; AnimationVector para tipos custom.
 
 Cuándo usarlo:
-Al optimizar pantallas con listas, contadores o animaciones que recomponen de más. Entender scopes ayuda a diseñar state hoisting correcto.
+Gestos complejos, animaciones multi-paso, drag-to-dismiss, contadores animados donde animateFloatAsState no basta.
 
 Ejemplo:
 @Composable
-fun Parent() {
-    var count by remember { mutableIntStateOf(0) }
-  // Solo Counter lee count; si Title no lee count, idealmente no recompondría
-  // (depende de estabilidad y estructura)
-    Title()           // sin state
-    Counter(count)    // lee count -> su scope se invalida
-    Button(onClick = { count++ }) { Text("+") }
-}
-
-@Composable
-fun Counter(value: Int) {
-    Text("Count: $value") // lectura de state aquí acota invalidación
+fun DraggableBox() {
+    val offsetX = remember { Animatable(0f) }
+    Box(
+        Modifier
+            .offset { IntOffset(offsetX.value.roundToInt(), 0) }
+            .pointerInput(Unit) {
+                detectDragGestures(
+                    onDrag = { change, drag ->
+                        change.consume()
+                        coroutineScope {
+                            launch { offsetX.snapTo(offsetX.value + drag.x) }
+                        }
+                    },
+                    onDragEnd = {
+                        coroutineScope {
+                            launch { offsetX.animateTo(0f, spring()) }
+                        }
+                    }
+                )
+            }
+            .size(80.dp)
+            .background(Color.Blue)
+    )
 }
 
 Consejo para entrevista:
-Explica que recomposition no es layout ni draw completos siempre. Menciona estabilidad, keys en LazyColumn y leer state en el nivel más bajo posible.
+Contrasta Animatable (imperativo, gestos) vs animate*AsState (declarativo, state-driven). Menciona spring y consumo de eventos en drag.

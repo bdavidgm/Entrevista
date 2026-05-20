@@ -1,16 +1,16 @@
 Concepto:
-Inyectar dependencias en el constructor significa que una clase recibe sus colaboradores (repositorios, use cases, dispatchers) como parámetros del constructor en lugar de instanciarlos internamente o usar singletons estáticos. Es la forma recomendada con Hilt, Dagger y Koin para lograr inversión de control y testabilidad.
+Un Use Case (o Interactor) encapsula una única acción o regla de negocio reutilizable, independiente de la UI y de frameworks Android. En Clean Architecture vive en la capa de dominio y orquesta uno o más repositorios para cumplir un objetivo concreto de la aplicación.
 
 Explicación detallada:
-Sin inyección, ViewModel haría val repo = ProductRepositoryImpl() y acoplaría implementación concreta, imposibilitando tests con fake y violando Open/Closed. Con @Inject constructor(private val repo: ProductRepository) Hilt resuelve el grafo en tiempo de compilación (o Koin en runtime).
+En lugar de que el ViewModel contenga validación de email, cálculo de descuento y llamada a API, delegas en LoginUseCase, ApplyDiscountUseCase, etc. Cada clase tiene una responsabilidad (SRP) y operator fun invoke() facilita lectura: loginUseCase(email, password).
 
-Ventajas en entrevista: (1) Testabilidad — pasas mock en test sin framework de DI. (2) Transparencia — las dependencias son explícitas en la firma. (3) Ciclo de vida — Hilt enlaza scopes (@Singleton, @ViewModelScoped). (4) Sustitución — módulos @Test reemplazan bindings.
+Beneficios: reutilización entre ViewModels (misma lógica en pantalla login y registro), tests unitarios puros sin Robolectric, y documentación viva del negocio ("qué puede hacer la app"). Los use cases pueden devolver Result, Flow o suspend según necesidad.
 
-Field injection (@Inject lateinit var) se desaconseja: oculta dependencias, dificulta tests y requiere inicialización post-construct. Constructor injection es el estándar en Kotlin por inmutabilidad con val.
+No todo método del repository es un use case: "getUser from DB" es acceso a datos; "AuthenticateUserWithBiometricIfEnabled" combina reglas y es use case. Evita use cases que solo reenvían una línea al repository sin lógica, salvo que anticipes reglas futuras.
 
-Para interfaces, @Binds en módulo abstracto o @Provides en módulo object. Qualifiers resuelven ambigüedad (dos Retrofit). No abuses @Singleton en todo: solo dependencias costosas o verdaderamente globales.
+Inyección: Hilt provee use cases en ViewModel. En tests sustituyes FakeAuthRepository y pruebas LoginUseCase aisladamente.
 
-En Compose, hiltViewModel() usa el factory que ya conoce el grafo; no uses ServiceLocator manual salvo legacy.
+Relación con ViewModel: ViewModel mapea eventos UI a invocaciones de use cases y adapta resultados a UiState. El use case no conoce Compose ni strings de UI.
 
 En el contexto de proyectos Android reales, combina esta idea con las guías oficiales de Android Developers y con métricas de calidad (crashes, ANR, Vitals) cuando aplique. En code review, pregunta siempre por ciclo de vida, testabilidad y si la solución escala cuando el equipo crece.
 
@@ -18,24 +18,27 @@ Durante la entrevista, estructura la respuesta en definición, ejemplo concreto 
 
 Para profundizar tras la entrevista, revisa documentación oficial, codelabs y el código fuente de tu propio proyecto Entrevista aplicando el concepto en un flujo mínimo reproducible. La práctica deliberada con tests unitarios refuerza la confianza al explicar el tema en viva voz.
 
+Preguntas de seguimiento frecuentes en entrevistas para este tema incluyen comparación con alternativas del ecosistema, implicaciones en testing y en el ciclo de vida de Android, y cómo lo aplicarías en una app modular con varios flavors. Si el entrevistador pide profundidad, menciona herramientas de diagnóstico (Profiler, Lint, StrictMode, Layout Inspector) y cómo validarías en CI que no hay regresiones.
+
+En proyectos reales, documenta decisiones en ADR breves o en README del módulo para que el equipo no revierta el patrón por desconocimiento. La mejor respuesta de entrevista combina definición precisa, ejemplo Kotlin o Compose concreto y honestidad sobre límites: ninguna solución es gratis en complejidad o tamaño de APK.
+
+Relaciona este concepto con los demás bloques del manifiesto Entrevista (arquitectura, corrutinas, seguridad, build) para demostrar visión de sistema completo, no conocimiento aislado de una API.
+
 Cuándo usarlo:
-Toda clase de lógica (ViewModel, use case, repository impl) en proyectos con Hilt/Koin. Evita new en capas de negocio. Context solo vía @ApplicationContext o interfaces, nunca Activity context en singleton.
+Proyectos Clean o dominio no trivial, reglas compartidas entre features, o equipos que quieren contratos de negocio explícitos. En apps pequeñas, lógica en ViewModel más repository puede ser suficiente; menciona cuándo extraerías el primer use case.
 
 Ejemplo:
-@HiltViewModel
-class ProfileViewModel @Inject constructor(
-    private val getUser: GetUserUseCase,
-    @IoDispatcher private val io: CoroutineDispatcher
-) : ViewModel() { /* ... */ }
-
-// Test sin Hilt
-class ProfileViewModelTest {
-    @Test
-    fun loadsUser() = runTest {
-        val vm = ProfileViewModel(FakeGetUserUseCase(), StandardTestDispatcher())
-        // assert
+class ValidateCheckoutUseCase @Inject constructor(
+    private val cartRepo: CartRepository,
+    private val userRepo: UserRepository
+) {
+    suspend operator fun invoke(): Result<CheckoutSummary> {
+        val cart = cartRepo.getCart()
+        if (cart.isEmpty()) return Result.failure(EmptyCartException())
+        val user = userRepo.getCurrent() ?: return Result.failure(NotLoggedInException())
+        return Result.success(CheckoutSummary(cart, user))
     }
 }
 
 Consejo para entrevista:
-Di "constructor injection over field injection". Menciona interfaces en dominio e implementación en data. Trampa: ¿Por qué no object singleton Kotlin? Difícil de testear y oculta dependencias.
+Un use case = una acción de negocio. Contrasta con Repository (datos) y ViewModel (presentación). Pregunta: ¿Use case devuelve UiState? No, entidades o Result; el ViewModel adapta a UI.

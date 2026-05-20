@@ -1,39 +1,45 @@
 Concepto:
-El patrón Singleton garantiza que una clase tenga una única instancia global en el proceso y proporciona un punto de acceso centralizado a ella.
+El patrón Mapper transforma datos entre capas (DTO de red, entidad Room, modelo de dominio, UiModel) manteniendo cada capa independiente y evitando que la UI conozca detalles de serialización o BD.
 
 Explicación detallada:
-En Kotlin:
-object NetworkClient { ... } // singleton declarativo del lenguaje, thread-safe en carga de clase.
+Motivación:
+- API devuelve JSON con nombres y tipos distintos al dominio.
+- Room Entity tiene anotaciones y columnas que no deben filtrarse a Compose.
+- Separación Clean Architecture: capa de datos != dominio != presentación.
 
-En Java/Android clásico:
-- private constructor + getInstance() sincronizado o holder idiom.
-- Riesgo en tests: estado global compartido entre tests.
+Implementación:
+- Funciones puras: fun UserDto.toDomain(): User
+- Clases Mapper @Inject si hay dependencias (formateo, locale).
+- MapStruct en Java; en Kotlin extension functions o clases dedicadas.
 
-En Android moderno con Hilt:
-- @Singleton @Provides fun provideClient(): OkHttpClient — una instancia por componente Application de Hilt, preferible a object manual.
-- Evita object singletons que ocultan dependencias y dificultan tests.
+Direcciones:
+- Dto -> Domain en Repository tras fetch.
+- Entity <-> Domain en capa data.
+- Domain -> UiModel en ViewModel o mapper de presentación.
 
-Problemas en Android:
-- Retener Context de Activity en singleton -> memory leak.
-- Estado mutable global -> condiciones de carrera.
-- Acoplamiento alto.
+Evitar:
+- Mapear en Composable (difícil de testear).
+- Un solo modelo para todo (acopla API a cambios de UI).
 
 Cuándo usarlo:
-Clientes de red, BD, configuración costosa de crear una vez por proceso. Preferir DI scoped @Singleton sobre object suelto.
+Siempre que haya más de una representación del mismo concepto. Especialmente con múltiples fuentes (cache + network).
 
 Ejemplo:
-// Kotlin object (simple)
-object DateFormatter {
-    fun format(epoch: Long): String = ...
-}
+data class UserDto(val user_id: String, val full_name: String)
+data class User(val id: String, val name: String)
+data class UserUiModel(val id: String, val displayName: String)
 
-// Hilt (recomendado en apps grandes)
-@Module
-@InstallIn(SingletonComponent::class)
-object NetworkModule {
-    @Provides @Singleton
-    fun provideOkHttp(): OkHttpClient = OkHttpClient.Builder().build()
+fun UserDto.toDomain() = User(id = user_id, name = full_name)
+fun User.toUiModel() = UserUiModel(id = id, displayName = name.uppercase())
+
+class UserRepository @Inject constructor(private val api: UserApi, private val dao: UserDao) {
+    suspend fun refresh(id: String): User {
+        val dto = api.getUser(id)
+        val domain = dto.toDomain()
+        dao.insert(domain.toEntity())
+        return domain
+    }
 }
 
 Consejo para entrevista:
-Menciona object en Kotlin vs @Singleton en Hilt. Habla de testabilidad y no guardar Activity en singleton. No defiendas singleton para todo.
+Explica por capas y testabilidad de funciones puras. Menciona extension toDomain() idiomática en Kotlin vs clase Mapper cuando la lógica crece.

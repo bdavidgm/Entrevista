@@ -1,30 +1,24 @@
 Concepto:
-Los comandos ADB más usados cubren instalación, logs, shell, archivos, reinicios y información del dispositivo.
+ADB (Android Debug Bridge) es la herramienta de línea de comandos del Android SDK que permite comunicarse con un dispositivo o emulador por USB o red. Actúa como puente entre el PC y el daemon adbd que corre en el dispositivo (modo Android normal, con depuración USB activada).
 
 Explicación detallada:
-Instalación: adb install [-r reemplazar] [-d permitir downgrade] ruta.apk. adb uninstall <paquete>.
+El cliente adb en el PC envía órdenes al servidor adb local, que las reenvía al dispositivo. Permite instalar y desinstalar APKs, ver logs, ejecutar shell, reenviar puertos (port forwarding), copiar archivos, capturar pantalla, reiniciar en bootloader/recovery y depurar apps.
 
-Diagnóstico: adb devices -l (lista), adb get-state, adb shell getprop ro.build.version.release, adb shell dumpsys battery|meminfo|package <pkg>.
+Para un desarrollador: depuración con Android Studio, logcat, profiling, tests instrumentados. Para un técnico: diagnóstico de fallos, extracción de logs tras un crash, desbloqueo de pantalla en laboratorio autorizado, sideload de actualizaciones oficiales, reset de caché de app, comprobar si el dispositivo es reconocido.
 
-Logs: adb logcat, filtros por tag/prioridad, adb bugreport (informe completo, pesado).
+Requisitos: drivers USB del fabricante (o Google USB Driver), depuración USB activada, y en muchos equipos confirmar la huella RSA del PC. adb kill-server / adb start-server resuelve problemas de conexión frecuentes.
 
-Shell: adb shell entra al dispositivo; pm list packages, am start -n para lanzar Activity, settings put global development_settings_enabled 1 (con cuidado).
-
-Archivos: adb push / adb pull entre PC y /sdcard/ o rutas accesibles.
-
-Reinicios: adb reboot, adb reboot bootloader, adb reboot recovery.
-
-Red: adb tcpip 5555 y adb connect IP:5555 para inalámbrico en la misma LAN.
-
-Técnico: adb sideload update.zip en recovery oficial para OTA locales; adb backup (legacy) casi obsoleto.
+No confundir con Fastboot: ADB opera con Android arrancado (o recovery que expone adbd); Fastboot habla con el bootloader.
 
 Cuándo usarlo:
-Cualquier sesión de depuración, soporte remoto o taller con PC autorizado.
+Desarrollo diario, QA, soporte técnico y laboratorios de reparación cuando el sistema arranca y acepta depuración.
 
 Ejemplo:
-adb shell pm list packages -3
-adb logcat -s AndroidRuntime:E
-adb pull /sdcard/screenshot.png .
+adb devices
+adb install app-debug.apk
+adb logcat | grep MyApp
+adb shell pm clear com.example.app
+adb reboot bootloader
 
 Consejo para entrevista:
-Demuestra dominio con logcat, install, shell pm/am y reboot bootloader.
+Define ADB como puente PC-dispositivo con adbd. Menciona depuración USB y diferencia con Fastboot.

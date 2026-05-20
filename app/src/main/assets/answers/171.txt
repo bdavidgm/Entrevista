@@ -1,41 +1,50 @@
 Concepto:
-PackageManager es la API del sistema que permite consultar información sobre paquetes instalados (apps), componentes (activities, services), permisos, features del dispositivo y resolver intents.
+Leer sensores en Android consiste en obtener una instancia de SensorManager, registrar un SensorEventListener sobre sensores como TYPE_ACCELEROMETER o TYPE_GYROSCOPE, y consumir valores en el callback onSensorChanged con la frecuencia adecuada.
 
 Explicación detallada:
-Cada app Android es un package (applicationId). PackageManager ofrece métodos para:
-- getPackageInfo(packageName, flags): versión, firmas, permisos declarados, etc. (cuidado con flags deprecados; en API 33+ usar PackageManager.PackageInfoFlags).
-- queryIntentActivities / resolveActivity: comprobar si hay app que maneje un intent (evitar ActivityNotFoundException).
-- getApplicationInfo / getApplicationLabel: metadatos y nombre visible.
-- hasSystemFeature(FEATURE_CAMERA, FEATURE_NFC): capacidades hardware/software.
-- checkPermission / checkSelfPermission: permisos concedidos (junto con ContextCompat).
-- getInstalledPackages / getInstalledApplications: listar apps (restringido en versiones recientes por privacidad).
-- setComponentEnabledSetting: habilitar/deshabilitar componentes dinámicamente (poco común).
+SensorManager es un system service que expone hardware del dispositivo: acelerómetro (m/s² en ejes X,Y,Z), giroscopio (rad/s), magnetómetro, barómetro, sensor de luz, proximidad, etc. Cada Sensor tiene nombre, vendor, resolución, rango y power.
 
-Se obtiene con context.packageManager o getSystemService(PackageManager::class.java) según API.
+Flujo:
+1) sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
+2) sensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+3) registerListener(listener, sensor, samplingPeriodUs, maxReportLatencyUs)
 
-Cambios de privacidad: Android 11+ limita visibilidad de paquetes; debes declarar <queries> en el manifest para intents específicos que consultes. Sin ello queryIntentActivities puede devolver lista vacía aunque exista la app.
+Constantes de frecuencia: SENSOR_DELAY_FASTEST, GAME, UI, NORMAL (trade-off batería vs latencia). Desde API 19 puedes usar SensorManager.registerListener con Handler para recibir eventos en un hilo concreto.
 
-Usos en entrevista: feature detection antes de usar cámara, Bluetooth, leanback; verificar actualización propia comparando versionCode; deep links; launchers alternativos; plugins que enumeran apps instaladas (ahora regulado).
+onSensorChanged(SensorEvent): event.values[0..2] según tipo; event.timestamp en nanosegundos; event.accuracy puede degradarse (calibración). onAccuracyChanged avisa cambios de precisión.
+
+Buenas prácticas:
+- Registrar en onResume y unregister en onPause para no drenar batería.
+- Filtrar ruido (low-pass, umbral) si usas datos para UI.
+- Para orientación de pantalla el framework ya usa sensores; no reinventes salvo AR/juegos.
+- TYPE_LINEAR_ACCELERATION y TYPE_GRAVITY separan gravedad del movimiento.
+- Sensor fusion (Rotation Vector) combina giro + acelerómetro + magnetómetro.
+
+Sensores “software” o limitados en emulador; prueba en dispositivo real.
 
 Cuándo usarlo:
-- Antes de startActivity con intent implícito (¿hay navegador?).
-- Comprobar si el dispositivo soporta una feature antes de mostrar funcionalidad.
-- Obtener versión de tu app o de un SDK integrado (package name conocido).
-- Leer meta-data de otro componente (raro en apps consumer).
+- Juegos, fitness (contar pasos con TYPE_STEP_DETECTOR), brújula, estabilización de imagen.
+- Detección de sacudida (shake to refresh).
+- ARKit/ARCore complementan con sensores de movimiento.
 
 Ejemplo:
-fun canOpenMaps(pm: PackageManager): Boolean {
-    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=Madrid"))
-    return intent.resolveActivity(pm) != null
-}
+class MotionController(context: Context) : SensorEventListener {
+    private val sm = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
+    private val accel = sm.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
 
-fun supportsNfc(pm: PackageManager): Boolean =
-    pm.hasSystemFeature(PackageManager.FEATURE_NFC)
+    fun start() {
+        sm.registerListener(this, accel, SensorManager.SENSOR_DELAY_UI)
+    }
+    fun stop() = sm.unregisterListener(this)
 
-fun appVersionName(context: Context): String {
-    val info = context.packageManager.getPackageInfo(context.packageName, 0)
-    return info.versionName ?: ""
+    override fun onSensorChanged(event: SensorEvent) {
+        val x = event.values[0]
+        val y = event.values[1]
+        val z = event.values[2]
+        val magnitude = kotlin.math.sqrt(x*x + y*y + z*z)
+    }
+    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
 }
 
 Consejo para entrevista:
-Menciona <queries> en Android 11+, no abuses de getInstalledPackages, y diferencia PackageManager de ActivityManager (tareas recientes). Ejemplo clásico: resolveActivity antes de abrir URL.
+Insiste en register/unregister con lifecycle, impacto en batería, y diferencia entre acelerómetro (incluye gravedad) y linear acceleration. Si hablan de pasos, menciona Sensor.TYPE_STEP_COUNTER vs STEP_DETECTOR y que Google Fit/Health Connect pueden ser alternativas de alto nivel.

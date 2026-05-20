@@ -1,53 +1,45 @@
 Concepto:
-Kotlin DSL (Domain Specific Language) es la forma de escribir scripts de Gradle usando sintaxis Kotlin en archivos .gradle.kts en lugar de Groovy en .gradle.
+El BOM (Bill of Materials) de Compose es un artefacto Maven platform que alinea versiones compatibles de todas las librerías Compose (ui, material3, animation, etc.) declarando una sola versión BOM y omitiendo versión en cada dependencia individual.
 
 Explicación detallada:
-Gradle es el sistema de build de Android. Tradicionalmente los archivos eran build.gradle en Groovy. Desde Gradle 5+ se soporta oficialmente Kotlin DSL: build.gradle.kts a nivel de proyecto y de módulo, settings.gradle.kts y gradle/libs.versions.toml para version catalogs.
+implementation(platform("androidx.compose:compose-bom:2024.09.00")) y luego implementation("androidx.compose.material3:material3") sin versión explícita. Evita conflictos donde material3 1.2 requiere runtime 1.5 distinto y crashes sutiles.
 
-Ventajas del Kotlin DSL frente a Groovy:
-- Tipado estático: el IDE resuelve referencias a tasks, extensiones y propiedades; menos errores en tiempo de compilación del script.
-- Autocompletado y navegación (Go to Definition) en Android Studio.
-- Refactor seguro de nombres de módulos y dependencias.
-- Misma sintaxis que el código de la app: plugins { }, dependencies { }.
+Actualizar Compose = bump versión BOM en catalog. Otras BOMs: Firebase BOM, Coil a veces documentado junto.
 
-Estructura típica en app/build.gradle.kts:
-- plugins { alias(libs.plugins.android.application); alias(libs.plugins.kotlin.android) }
-- android { compileSdk, defaultConfig, buildTypes }
-- dependencies { implementation(...), kapt(...), testImplementation(...) }
+No incluye Kotlin compiler extension version: compiler extension version en composeOptions o plugin Compose debe alinearse con release notes del BOM.
 
-El archivo settings.gradle.kts define include(":app"), módulos feature, repositorios y pluginManagement. El version catalog (libs.versions.toml) centraliza versiones en [versions], [libraries] y [plugins]. Gradle genera tipos de acceso (Libs, Plugins) a partir del TOML. Los scripts .kts se compilan a bytecode antes de ejecutarse; el primer sync puede ser más lento que Groovy.
+En el contexto de proyectos Android reales, combina esta idea con las guías oficiales de Android Developers y con métricas de calidad (crashes, ANR, Vitals) cuando aplique. En code review, pregunta siempre por ciclo de vida, testabilidad y si la solución escala cuando el equipo crece.
 
-Migración desde Groovy: renombrar a .kts, usar = en asignaciones, comillas dobles consistentes, importar clases cuando el IDE lo sugiera.
+Durante la entrevista, estructura la respuesta en definición, ejemplo concreto de tu experiencia o proyecto demo, y trade-offs frente a alternativas. Mencionar versiones recientes de API o biblioteca (Material3, Paging 3, Hilt 2.x) demuestra que sigues el ecosistema, sin necesidad de memorizar números de versión exactos.
+
+Para profundizar tras la entrevista, revisa documentación oficial, codelabs y el código fuente de tu propio proyecto Entrevista aplicando el concepto en un flujo mínimo reproducible. La práctica deliberada con tests unitarios refuerza la confianza al explicar el tema en viva voz.
+
+En el contexto de proyectos Android reales, combina esta idea con las guías oficiales de Android Developers y con métricas de calidad (crashes, ANR, Vitals) cuando aplique. En code review, pregunta siempre por ciclo de vida, testabilidad y si la solución escala cuando el equipo crece.
+
+Durante la entrevista, estructura la respuesta en definición, ejemplo concreto de tu experiencia o proyecto demo, y trade-offs frente a alternativas. Mencionar versiones recientes de API o biblioteca (Material3, Paging 3, Hilt 2.x) demuestra que sigues el ecosistema, sin necesidad de memorizar números de versión exactos.
+
+Para profundizar tras la entrevista, revisa documentación oficial, codelabs y el código fuente de tu propio proyecto Entrevista aplicando el concepto en un flujo mínimo reproducible. La práctica deliberada con tests unitarios refuerza la confianza al explicar el tema en viva voz.
 
 Cuándo usarlo:
-En proyectos nuevos de Android se recomienda Kotlin DSL por defecto. En equipos que ya usan Kotlin en la app, unifica el lenguaje en todo el repositorio. Version catalogs escalan mejor con muchos módulos y dependencias compartidas.
+Todo proyecto Compose multi-módulo. Obligatorio en entrevistas 2024+ como buena práctica.
 
 Ejemplo:
-// settings.gradle.kts
-pluginManagement {
-    repositories { google(); mavenCentral(); gradlePluginPortal() }
-}
-dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-    repositories { google(); mavenCentral() }
-}
-rootProject.name = "Entrevista"
-include(":app")
+// libs.versions.toml
+[versions]
+composeBom = "2024.09.00"
 
-// app/build.gradle.kts
-plugins {
-    alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
-}
-android {
-    namespace = "com.example.entrevista"
-    compileSdk = 35
-    defaultConfig {
-        applicationId = "com.example.entrevista"
-        minSdk = 26
-        targetSdk = 35
-    }
+[libraries]
+compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
+compose-ui = { group = "androidx.compose.ui", name = "ui" }
+compose-material3 = { group = "androidx.compose.material3", name = "material3" }
+
+// build.gradle.kts
+dependencies {
+    implementation(platform(libs.compose.bom))
+    implementation(libs.compose.ui)
+    implementation(libs.compose.material3)
+    androidTestImplementation(platform(libs.compose.bom))
 }
 
 Consejo para entrevista:
-Menciona tipado, version catalogs (libs.versions.toml) y que .kts es el estándar actual. No confundas Kotlin DSL (scripts de build) con Kotlin de la aplicación (runtime): son capas distintas.
+Explica platform() y una versión BOM. Menciona alinear compiler plugin. No mezclar versiones manuales sueltas sin BOM.

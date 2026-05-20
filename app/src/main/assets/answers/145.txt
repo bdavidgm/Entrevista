@@ -1,43 +1,40 @@
 Concepto:
-catch en Flow es un operador que intercepta excepciones lanzadas en operadores upstream y permite emitir valores de recuperación o re-lanzar, sin cancelar necesariamente todo el collector si manejas el error.
+flowOn es un operador de Flow que cambia el CoroutineContext (típicamente el Dispatcher) en el que se ejecuta el upstream del operador, sin afectar al downstream que sigue en el contexto del collector.
 
 Explicación detallada:
 flow {
-    emit(api.load())
-}.catch { e ->
-    emit(emptyList()) // valor fallback
-    // o log y no emitir
-}.collect { list -> updateUi(list) }
+    // trabajo pesado
+    emit(compute())
+}.flowOn(Dispatchers.Default)
+ .map { it.toUiModel() }  // puede seguir en Default si no hay otro flowOn
+ .flowOn(Dispatchers.IO)   // upstream de este punto en IO
+ .collect { }             // collector en el scope del llamador (Main en UI)
 
-Comportamiento:
-- Solo captura excepciones del upstream, no del propio collector (las del collect van fuera).
-- Es terminal en el sentido de manejo de error en la cadena; después de catch puedes usar onCompletion.
+Reglas:
+- flowOn solo afecta operadores anteriores en la cadena (upstream).
+- Múltiples flowOn: el más cercano al emit define contexto de esa sección.
+- No cambia el contexto de collect; para eso usa withContext en el collector o launch en Main.
 
-Otros operadores relacionados:
-- retry(n) { cause -> delay(1000); true }
-- onEach, onCompletion { cause -> } para logging.
+Buenas prácticas Android:
+- Repository: flow { emit(dao.getAll()) }.flowOn(Dispatchers.IO)
+- ViewModel collect en viewModelScope (Main) y mapea a UiState.
 
-En ViewModel:
-repository.users()
-    .catch { e -> _uiState.value = UiState.Error(e.message) }
-    .collect { _uiState.value = UiState.Success(it) }
-
-Diferencia con try/catch alrededor de collect:
-- catch en Flow integra con operadores y múltiples emisiones.
-- try/catch en collect captura también errores del lambda collect.
+No confundir con subscribeOn de Rx (afecta distinto). En Flow el collector define hilo final de entrega salvo operadores que cambien contexto downstream (raro).
 
 Cuándo usarlo:
-Streams largos donde quieres degradación graceful (lista vacía, mensaje de error en UiState) sin tumbar la corrutina entera.
+Operaciones de BD, red o CPU en Flow sin bloquear Main. Encadenar tras map pesado en capa de datos.
 
 Ejemplo:
-fun observeUser(id: String): Flow<User> = flow {
-    emit(api.getUser(id))
-}.flowOn(Dispatchers.IO)
- .retry(2) { it is IOException }
- .catch { e ->
-     if (e is HttpException && e.code() == 404) emit(User.guest())
-     else throw e
- }
+class NewsRepository @Inject constructor(private val api: NewsApi, private val dao: NewsDao) {
+    fun headlines(): Flow<List<Article>> = flow {
+        emit(api.fetchHeadlines())
+    }.flowOn(Dispatchers.IO)
+     .map { articles ->
+         dao.insertAll(articles)
+         articles
+     }
+     .flowOn(Dispatchers.IO)
+}
 
 Consejo para entrevista:
-Contrasta catch vs try en collect. Menciona retry y que las excepciones en collect no las atrapa catch del upstream anterior sin relanzar.
+Dibuja upstream vs downstream. Menciona que collect en ViewModel suele estar en Main y flowOn protege el hilo UI.

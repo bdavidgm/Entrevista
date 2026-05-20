@@ -1,12 +1,14 @@
 Concepto:
-StrictMode es una herramienta de desarrollo de Android que detecta en tiempo de ejecución (debug) políticas violadas: operaciones de disco o red en el hilo principal, leaks de Activity, uso incorrecto de intents, etc., mediante logs o diálogo según configuración.
+ViewHolder en RecyclerView es el objeto que mantiene referencias a las Views de un ítem de lista (findViewById cacheado). RecyclerView recicla ViewHolders al hacer scroll para evitar inflar XML repetidamente y mejorar rendimiento y memoria.
 
 Explicación detallada:
-ThreadPolicy penaliza diskReads, network en main con penaltyLog o penaltyDeath en tests agresivos. VmPolicy detecta leaks con detectActivityLeaks(). Habilitar solo en Application.onCreate si BuildConfig.DEBUG.
+Adapter onCreateViewHolder infla layout una vez por tipo de vista; onBindViewHolder asocia datos al holder existente. Sin ViewHolder (anti-patrón antiguo ListView) cada scroll llamaba findViewById costoso.
 
-Útil al migrar código legacy o auditar arranque. No va en release: impacto rendimiento y falsos positivos en librerías.
+ViewTypes múltiples cuando hay layouts distintos (header, item, ad). DiffUtil calcula diferencias y anima cambios eficientemente con ListAdapter.
 
-Complementa Lint (estático) con runtime. Combina con Profiler para ANR.
+En Compose, LazyColumn con key estable cumple rol similar de reciclaje interno; conceptualmente sigue siendo pregunta clásica de entrevista Views.
+
+Pool de scrap views limitado; demasiados view types reduce reciclaje.
 
 En el contexto de proyectos Android reales, combina esta idea con las guías oficiales de Android Developers y con métricas de calidad (crashes, ANR, Vitals) cuando aplique. En code review, pregunta siempre por ciclo de vida, testabilidad y si la solución escala cuando el equipo crece.
 
@@ -21,18 +23,22 @@ Durante la entrevista, estructura la respuesta en definición, ejemplo concreto 
 Para profundizar tras la entrevista, revisa documentación oficial, codelabs y el código fuente de tu propio proyecto Entrevista aplicando el concepto en un flujo mínimo reproducible. La práctica deliberada con tests unitarios refuerza la confianza al explicar el tema en viva voz.
 
 Cuándo usarlo:
-Debug builds durante desarrollo y refactor. Desactivar en release. Investigar stack trace StrictMode al ver warning.
+RecyclerView en código legacy. En Compose explica equivalencia LazyColumn + keys.
 
 Ejemplo:
-if (BuildConfig.DEBUG) {
-    StrictMode.setThreadPolicy(
-        StrictMode.ThreadPolicy.Builder()
-            .detectDiskReads()
-            .detectNetwork()
-            .penaltyLog()
-            .build()
-    )
+class ProductVH(private val binding: ItemProductBinding) :
+    RecyclerView.ViewHolder(binding.root) {
+    fun bind(item: Product) {
+        binding.title.text = item.name
+    }
+}
+
+class ProductAdapter : ListAdapter<Product, ProductVH>(DIFF) {
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) =
+        ProductVH(ItemProductBinding.inflate(LayoutInflater.from(parent.context), parent, false))
+    override fun onBindViewHolder(holder: ProductVH, position: Int) =
+        holder.bind(getItem(position))
 }
 
 Consejo para entrevista:
-Solo debug, detecta disk/network en main. No confundas con ProGuard ni Lint.
+Explica reciclaje y DiffUtil. Pregunta: ¿cuántas inflaciones? Una por tipo visible aproximadamente, no una por ítem de datos.

@@ -1,40 +1,49 @@
 Concepto:
-RelativeLayout posiciona vistas hijas relativas entre sí o al padre (alignParentTop, below, toRightOf), permitiendo solapamientos sin anidar tantos contenedores lineales.
+LinearLayout es un ViewGroup que dispone hijos en una sola fila (horizontal) o columna (vertical), uno tras otro, con pesos opcionales para repartir espacio restante.
 
 Explicación detallada:
-Reglas clásicas (API antigua):
-- layout_alignParentStart/End, centerInParent
-- layout_below="@id/title", layout_toEndOf="@id/icon"
-- layout_centerVertical junto a otras reglas
+Atributos clave:
+- android:orientation="vertical" | "horizontal"
+- layout_width/height: match_parent, wrap_content, 0dp con layout_weight para ocupar proporción del espacio libre (solo útil en una dimensión según orientación).
+- gravity: alineación del contenido dentro del LinearLayout.
+- layout_gravity en hijos (en horizontal, weight en width).
 
-Ventaja histórica: pantallas con icono a la izquierda y texto a la derecha sin linear anidados. Problemas: dos pasadas de medida en algunos casos, reglas conflictivas, mantenimiento difícil cuando hay muchos ids cruzados.
+Ventajas: simple, predecible para formularios cortos. Desventajas: anidamiento profundo (nested weights) es lento en medición/layout; difícil alinear elementos no adyacentes (botón al fondo y texto arriba sin spacer).
 
-RelativeLayout está deprecado en favor de ConstraintLayout, que expresa las mismas relaciones con constraints y chains, mejor rendimiento y herramientas visuales en Android Studio.
+Hoy en Views se prefiere ConstraintLayout para pantallas complejas; en proyectos nuevos muchas UIs son Jetpack Compose (Column/Row con Modifier.weight).
 
-En entrevistas junior aún preguntan RelativeLayout para ver si conoces la evolución hacia ConstraintLayout.
+LinearLayout sigue en layouts legacy, widgets simples y entrevistas que prueban conocimiento clásico.
 
 Cuándo usarlo:
-- Solo en código legacy; no en proyectos nuevos XML.
-- Entender equivalencia: below → constraintTop_toBottomOf en ConstraintLayout.
+- Lista vertical de 2-3 campos en tutorial o pantallas muy simples.
+- Mantenimiento de XML antiguo.
+- En Compose: equivalente Column/Row (no uses LinearLayout dentro de Compose salvo AndroidView).
 
 Ejemplo:
-<!-- Legacy RelativeLayout -->
-<RelativeLayout
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content">
-    <ImageView
-        android:id="@+id/icon"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:layout_alignParentStart="true" />
-    <TextView
-        android:id="@+id/title"
-        android:layout_width="wrap_content"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <EditText
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_toEndOf="@id/icon"
-        android:layout_centerVertical="true"
-        android:text="Título" />
-</RelativeLayout>
+        android:hint="Email" />
+
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="Entrar" />
+</LinearLayout>
+
+// Compose equivalente
+Column(Modifier.fillMaxSize().padding(16.dp)) {
+    TextField(value = email, onValueChange = { email = it })
+    Button(onClick = onLogin) { Text("Entrar") }
+}
 
 Consejo para entrevista:
-Di que está deprecado y usarías ConstraintLayout o Compose. Si te piden reglas, menciona below/toEndOf y cómo las mapearías a constraints. No defiendas RelativeLayout en proyecto nuevo.
+Explica orientation y weight, y por qué anidar muchos LinearLayout es anti-patrón (performance, flexibilidad). Menciona migración a ConstraintLayout o Compose Column/Row.

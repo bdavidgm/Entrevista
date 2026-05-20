@@ -1,16 +1,16 @@
 Concepto:
-El patrón Repository es una capa de abstracción que unifica el acceso a datos desde una o varias fuentes (API, Room, DataStore, caché en memoria) y expone una API orientada al dominio o a la app. Oculta detalles de red y persistencia al ViewModel y facilita tests con implementaciones fake.
+MVVM (Model-View-ViewModel) es un patrón de arquitectura de presentación donde la View solo muestra datos y reenvía interacciones, el ViewModel expone estado y lógica de UI sin conocer Android Views, y el Model representa datos y reglas de negocio. En Android moderno se combina con Jetpack ViewModel, Flow y Compose o XML.
 
 Explicación detallada:
-El ViewModel no debe llamar a Retrofit ni DAO directamente: pide productRepository.getProducts() y el repository decide si leer de red, caché local o ambos (estrategia network-first, cache-first). Esto centraliza políticas de sincronización, reintentos y mapeo DTO -> entidad de dominio.
+La View (Activity, Fragment o Composable) observa el ViewModel vía LiveData, StateFlow o uiState. El ViewModel sobrevive rotaciones, obtiene datos del Repository y transforma eventos de usuario en actualizaciones de estado. No debe referenciar Context de UI ni navegar directamente en código limpio: los eventos de navegación se exponen como efectos secundarios observables o callbacks inyectados en capa UI.
 
-Un repository puede ser una interfaz ProductRepository con implementación DefaultProductRepository inyectada por Hilt. Internamente usa ProductApi, ProductDao y quizá DataStore para timestamps. Los errores se mapean a Result o excepciones de dominio legibles para la UI.
+El Model no es solo una clase de datos: incluye entidades de dominio, use cases y el repository que abstrae fuentes (red, BD, preferencias). MVVM no define capas de dominio completas como Clean Architecture, pero la separación View-ViewModel-Model ya mejora testabilidad: puedes unit-testear ViewModel con repositorios fake sin Espresso.
 
-En Clean Architecture el repository pertenece a la capa de datos pero implementa interfaces definidas en dominio (Dependency Inversion). En MVVM pragmático a veces la interfaz vive en el mismo módulo data; en proyectos grandes, módulo :domain define contrato y :data implementa.
+Flujo típico: usuario pulsa "actualizar" -> View llama viewModel.refresh() -> ViewModel lanza coroutine, llama repository -> emite loading/success/error en StateFlow -> View recomponer o actualiza UI. Binding unidireccional: estado baja, eventos suben.
 
-Testing: FakeProductRepository en tests de ViewModel devuelve listas fijas sin Mockito de Retrofit. Tests de integración prueban la implementación real contra base en memoria.
+Comparación en entrevista: MVP usa Presenter con referencia a View (más acoplamiento); MVI usa intents y reduce a un solo state inmutable con ciclo cerrado; MVVM es más flexible y el estándar de facto con Jetpack. MVVM con UiState data class evita múltiples LiveData sueltos.
 
-Cache: el repository puede mantener StateFlow compartido o invalidar tras escrituras. Paging 3 integra RemoteMediator que actúa como capa de sincronización entre red y Room dentro del ecosistema repository-like.
+Anti-patrones: "God ViewModel" con toda la lógica de la app, lógica de negocio compleja sin use cases, y exponer MutableStateFlow público. Usa funciones y StateFlow de solo lectura.
 
 En el contexto de proyectos Android reales, combina esta idea con las guías oficiales de Android Developers y con métricas de calidad (crashes, ANR, Vitals) cuando aplique. En code review, pregunta siempre por ciclo de vida, testabilidad y si la solución escala cuando el equipo crece.
 
@@ -25,26 +25,20 @@ En proyectos reales, documenta decisiones en ADR breves o en README del módulo 
 Relaciona este concepto con los demás bloques del manifiesto Entrevista (arquitectura, corrutinas, seguridad, build) para demostrar visión de sistema completo, no conocimiento aislado de una API.
 
 Cuándo usarlo:
-Siempre que haya más de una fuente de datos o posibilidad de cambiar implementación (mock en debug, API staging). Evita repository de un solo método que solo reenvía una llamada API sin valor; en ese caso evalúa si la capa aporta o es over-engineering.
+Proyectos Android medianos y grandes, equipos que usan Jetpack y testing de presentación. Es el patrón por defecto recomendado por Google para apps nuevas. Para flujos muy predecibles con muchos estados discretos, MVI puede ser alternativa.
 
 Ejemplo:
-interface ProductRepository {
-    suspend fun getProducts(): List<Product>
-    suspend fun refresh()
-}
+data class HomeUiState(val items: List<Item> = emptyList(), val loading: Boolean = false)
 
-class ProductRepositoryImpl @Inject constructor(
-    private val api: ProductApi,
-    private val dao: ProductDao
-) : ProductRepository {
-    override suspend fun getProducts(): List<Product> =
-        dao.getAll().ifEmpty { refresh(); dao.getAll() }
+class HomeViewModel(private val repo: ItemRepository) : ViewModel() {
+    private val _state = MutableStateFlow(HomeUiState())
+    val state = _state.asStateFlow()
 
-    override suspend fun refresh() {
-        val remote = api.fetchAll()
-        dao.insertAll(remote.map { it.toEntity() })
+    fun onRefresh() = viewModelScope.launch {
+        _state.update { it.copy(loading = true) }
+        _state.update { it.copy(loading = false, items = repo.fetch()) }
     }
 }
 
 Consejo para entrevista:
-Explica una fuente de verdad, estrategia de caché y test con fake. No confundas Repository con DAO: DAO es SQLite; Repository orquesta. Seguimiento: ¿Dónde va el mapper? En data layer o use case según Clean.
+Dibuja el flujo unidireccional y menciona que ViewModel no conoce View. Pregunta clásica: diferencia MVP/MVI/MVVM en una frase cada uno. Evita decir que MVVM obliga a LiveData; StateFlow es igualmente válido.

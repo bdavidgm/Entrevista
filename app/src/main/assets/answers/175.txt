@@ -1,45 +1,40 @@
 Concepto:
-ContentResolver es la puerta de entrada para acceder a datos expuestos por ContentProviders: consultas, inserciones, actualizaciones y borrados mediante URIs content:// con cursores o contratos tipados.
+SharedPreferences es un almacenamiento clave-valor ligero y privado por app para preferencias pequeñas (booleanos, strings, enteros) persistidos en XML en el almacenamiento interno.
 
 Explicación detallada:
-En Android, los datos de otras apps o del sistema (contactos, calendario, media, downloads) no se leen abriendo archivos ajenos directamente, sino a través de un ContentProvider que abstrae permisos y columnas. Tu app usa contentResolver.query(uri, projection, selection, selectionArgs, sortOrder) y obtiene un Cursor (o versión moderna con ContentResolver.query con Bundle en API 30+).
+API clásica: getSharedPreferences(name, MODE_PRIVATE) devuelve SharedPreferences; edición con edit { putX; apply() o commit() }. apply() es asíncrono; commit() bloquea y devuelve boolean (tests o necesidad síncrona).
 
-Operaciones CRUD vía insert, update, delete con ContentValues. openInputStream(uri) para leer bytes de un documento SAF o MediaStore.
+Limitaciones conocidas:
+- No es seguro para datos sensibles (tokens, contraseñas): archivo XML sin cifrado fuerte; usa EncryptedSharedPreferences o DataStore con cifrado.
+- No tipado; errores de clave silenciosos.
+- Operaciones no atómicas entre claves sin sincronización.
+- Puede causar ANR si abusas de commit() en main thread con archivos grandes.
+- No hay Flow reactivo nativo (registerOnSharedPreferenceChangeListener es callback antiguo).
 
-Ejemplos de URIs conocidos:
-- ContactsContract.Contacts.CONTENT_URI
-- MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-- CalendarContract.Events.CONTENT_URI
-- Settings.System (limitado)
+Reemplazo recomendado: Preferences DataStore (Jetpack), API asíncrona con coroutines/Flow, migración desde SharedPreferences, mejor manejo de concurrencia.
 
-Permisos: READ_CONTACTS, READ_EXTERNAL_STORAGE (legacy), o permisos granulares READ_MEDIA_IMAGES en Android 13+. SAF no requiere permiso de almacenamiento amplio: el usuario elige el archivo.
-
-ContentResolver también resuelve sync adapters y notifica cambios con ContentObserver para UI reactiva.
-
-Buenas prácticas: cerrar Cursor (o usar extensiones), projection mínima, selection parametrizada (evitar SQL injection en providers custom), mover queries pesadas fuera del main thread, usar ContentUris.withAppendedId.
+Sigue apareciendo en entrevistas y código legacy. Migración típica: wrapper que lee DataStore en ViewModel y expone StateFlow.
 
 Cuándo usarlo:
-- Leer/escribir contactos, galería, calendario del sistema.
-- Integrar con providers de tu propia app multi-módulo.
-- Abrir streams de URIs devueltos por picker o cámara.
+- Flags simples: onboarding visto, tema, última pestaña.
+- Prototipos y apps muy pequeñas.
+- Mantenimiento de código existente hasta migrar a DataStore.
+
+Evitar: listas grandes, JSON enormes, PII, configuración multiusuario compleja (usa Room).
 
 Ejemplo:
-fun loadRecentImages(context: Context): List<Uri> {
-    val resolver = context.contentResolver
-    val collection = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-    val projection = arrayOf(MediaStore.Images.Media._ID)
-    val sort = "${MediaStore.Images.Media.DATE_ADDED} DESC"
-  resolver.query(collection, projection, null, null, sort)?.use { cursor ->
-        val idCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
-        return buildList {
-            while (cursor.moveToNext()) {
-                val id = cursor.getLong(idCol)
-                add(ContentUris.withAppendedId(collection, id))
-            }
-        }
-    }
-    return emptyList()
+// SharedPreferences clásico
+val prefs = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
+prefs.edit {
+    putString("token", null) // no guardar tokens así
+    putBoolean("dark_mode", true)
+}
+
+// DataStore (preferido hoy)
+val Context.dataStore by preferencesDataStore("settings")
+suspend fun saveDarkMode(enabled: Boolean) {
+    context.dataStore.edit { it[booleanPreferencesKey("dark_mode")] = enabled }
 }
 
 Consejo para entrevista:
-Explica el patrón Provider + Resolver + URI. Contrasta acceso directo a paths (obsoleto) con MediaStore y SAF. Menciona que Room no usa ContentResolver para tu BD privada; solo para datos compartidos o del sistema.
+Di que lo conoces por legacy pero recomiendas DataStore; menciona apply vs commit, MODE_PRIVATE obsoleto (solo private), y nunca tokens en claro. Ofrece EncryptedSharedPreferences si insisten en “preferencias seguras”.

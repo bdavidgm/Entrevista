@@ -1,40 +1,42 @@
 Concepto:
-El modificador in en tipos genéricos de Kotlin declara contravarianza: el tipo solo aparece en posiciones de entrada (consumidor); puedes tratar Consumer<Animal> como Consumer<Cat> si Cat es subtipo de Animal.
+El modificador out en tipos genéricos de Kotlin declara covarianza: el tipo solo aparece en posiciones de salida (productor); puedes tratar Producer<Cat> como Producer<Animal> si Cat es subtipo de Animal.
 
 Explicación detallada:
-Contravarianza (in):
-- interface Consumer<in T> { fun accept(item: T) }
-- T solo en parámetros y posiciones in; no puedes devolver T (salvo en posiciones donde no expone T al llamador de forma covariante problemática — el compilador restringe).
+Variance en genéricos responde: si B es subtipo de A, ¿G<B> es subtipo de G<A>?
 
-Intuición: un consumidor de animales puede aceptar gatos; un Consumer<Animal> puede usarse donde se espera Consumer<Cat>.
+Covarianza (out):
+- interface Producer<out T> { fun get(): T }
+- Solo T en retornos y posiciones out; no puedes tener fun set(value: T) con T en parámetro de entrada (sería inseguro).
+- List<out E> en Kotlin es interface List<out E> — solo lectura a nivel de API de List (MutableList es invariante).
 
-Comparación:
-- out T: productor, covariante (List como solo lectura de E).
-- in T: consumidor, contravariante.
-- Sin modificador: invariante (T en in y out), necesario para estructuras mutables como MutableList<T>.
+Analogía: puedes leer un canal que entrega gatos como canal que entrega animales; no puedes escribir un animal genérico en un canal de gatos.
 
-En Android y Kotlin estándar:
-- Comparable<in T> en la biblioteca (simplificado conceptualmente).
-- Observers y listeners que reciben eventos de tipo T.
-- Handlers que procesan mensajes de un tipo base.
+En Android:
+- LiveData y Flow exponen valores producidos (out conceptual).
+- PagingSource y APIs de solo lectura.
+- Definir interfaces de repositorio que solo devuelven T: interface ReadStore<out T>
+
+Sin out, List<Cat> no sería subtipo de List<Animal> porque List es mutable en Java y sería inseguro añadir Animal a List<Cat>.
 
 Cuándo usarlo:
-Interfaces que solo reciben T y no lo producen como tipo principal de retorno. Menos frecuente que out en APIs de lectura, pero aparece en diseño de frameworks y comparadores.
+Al diseñar APIs que solo producen T y nunca lo consumen como parámetro de escritura. Marca out en el tipo del parámetro genérico de la interfaz o clase.
 
 Ejemplo:
-interface Consumer<in T> {
-    fun consume(item: T)
+interface Producer<out T> {
+    fun produce(): T
 }
 
 open class Animal
 class Cat : Animal()
 
-fun registerCatHandler(handler: Consumer<Cat>) { ... }
-
-val animalConsumer: Consumer<Animal> = object : Consumer<Animal> {
-    override fun consume(item: Animal) { println(item) }
+fun feed(animals: Producer<Animal>) {
+    val a: Animal = animals.produce()
 }
-registerCatHandler(animalConsumer) // OK: Consumer<Animal> es Consumer<Cat>
+
+val catProducer: Producer<Cat> = object : Producer<Cat> {
+    override fun produce() = Cat()
+}
+feed(catProducer) // OK por out
 
 Consejo para entrevista:
-Empareja out (productor) con in (consumidor). PECS en Java: Consumer super (in). Si mezclas in y out en la misma interfaz mutable, suele ser invariante.
+Usa PECS mentalmente: Producer Extends (out). Contrasta con in (contravariante) e invariante sin modificador. Ejemplo List solo lectura vs MutableList.

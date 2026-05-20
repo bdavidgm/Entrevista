@@ -1,40 +1,42 @@
 Concepto:
-flowOn es un operador de Flow que cambia el CoroutineContext (típicamente el Dispatcher) en el que se ejecuta el upstream del operador, sin afectar al downstream que sigue en el contexto del collector.
+Channel es una primitiva de comunicación hot entre corrutinas: transmite elementos de forma similar a una cola bloqueante, con capacidad configurable y soporte para múltiples productores y consumidores.
 
 Explicación detallada:
-flow {
-    // trabajo pesado
-    emit(compute())
-}.flowOn(Dispatchers.Default)
- .map { it.toUiModel() }  // puede seguir en Default si no hay otro flowOn
- .flowOn(Dispatchers.IO)   // upstream de este punto en IO
- .collect { }             // collector en el scope del llamador (Main en UI)
+Tipos de capacidad:
+- Channel.RENDEZVOUS: sin buffer, emisor espera receptor.
+- BUFFERED, CONFLATED (solo último valor), UNLIMITED.
 
-Reglas:
-- flowOn solo afecta operadores anteriores en la cadena (upstream).
-- Múltiples flowOn: el más cercano al emit define contexto de esa sección.
-- No cambia el contexto de collect; para eso usa withContext en el collector o launch en Main.
+Operaciones:
+- send(element) / receive()
+- trySend, close, cancel.
 
-Buenas prácticas Android:
-- Repository: flow { emit(dao.getAll()) }.flowOn(Dispatchers.IO)
-- ViewModel collect en viewModelScope (Main) y mapea a UiState.
+Channel vs Flow:
+- Channel: hot, típicamente 1:1 o N:M con API imperativa; puede perder backpressure si mal usado.
+- Flow: cold por defecto, declarativo, operadores (map, filter), mejor para streams de UI y datos.
 
-No confundir con subscribeOn de Rx (afecta distinto). En Flow el collector define hilo final de entrega salvo operadores que cambien contexto downstream (raro).
+En arquitectura moderna Android se prefiere SharedFlow/StateFlow para eventos y estado; Channel para pipelines internos o integración con APIs callback.
+
+Patrón actor: una corrutina consume channel y serializa mutaciones de estado.
 
 Cuándo usarlo:
-Operaciones de BD, red o CPU en Flow sin bloquear Main. Encadenar tras map pesado en capa de datos.
+Comunicación puntual entre corrutinas, colas de trabajo internas, puente desde callback a corrutinas (channel.trySend). Para UI state expuesto, StateFlow suele ser más idiomático.
 
 Ejemplo:
-class NewsRepository @Inject constructor(private val api: NewsApi, private val dao: NewsDao) {
-    fun headlines(): Flow<List<Article>> = flow {
-        emit(api.fetchHeadlines())
-    }.flowOn(Dispatchers.IO)
-     .map { articles ->
-         dao.insertAll(articles)
-         articles
-     }
-     .flowOn(Dispatchers.IO)
+val channel = Channel<Command>(Channel.BUFFERED)
+
+// Productor
+scope.launch {
+    channel.send(Command.Refresh)
+}
+
+// Consumidor
+scope.launch {
+    for (cmd in channel) {
+        when (cmd) {
+            Command.Refresh -> loadData()
+        }
+    }
 }
 
 Consejo para entrevista:
-Dibuja upstream vs downstream. Menciona que collect en ViewModel suele estar en Main y flowOn protege el hilo UI.
+Contrasta Channel (hot, cola) vs Flow (cold, reactivo). Menciona que SharedFlow reemplaza muchos usos de Channel en MVVM. Habla de cerrar channel y cancelación.

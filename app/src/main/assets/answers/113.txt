@@ -1,46 +1,39 @@
 Concepto:
-El patrón Observer define una relación uno-a-muchos: cuando el sujeto (observable) cambia de estado, todos los observadores registrados son notificados automáticamente.
+El plugin de Kotlin para Compose (org.jetbrains.kotlin.plugin.compose) habilita el compilador de Compose: transforma funciones @Composable, aplica optimizaciones y es requisito para proyectos Compose con Kotlin 2.0+.
 
 Explicación detallada:
-Componentes clásicos:
-- Subject/Observable: mantiene estado y lista de observadores.
-- Observer: interfaz con update() o callback equivalente.
-- Implementaciones concretas en cada capa.
+Jetpack Compose necesita un compilador que procesa anotaciones @Composable, genera código de recomposición, skippers y agrupa lambdas estables. Antes se configuraba composeCompilerOptions con versiones alineadas manualmente al compilador de Kotlin. Desde Kotlin 2.0 el Compose Compiler se integra como plugin de Kotlin unificado.
 
-En Android el Observer está omnipresente:
-- LiveData.observe(lifecycleOwner) { } notifica cambios de valor respetando el ciclo de vida.
-- StateFlow y SharedFlow: collectors reaccionan a cada emisión.
-- RxJava Observable con subscribe (legacy en muchos codebases).
-- ViewModel como productor de estado; Activity, Fragment o Compose como consumidores.
-- Listeners de sistema y vistas: OnClickListener, TextWatcher, addOnPropertyChangedCallback.
-
-Ventajas: desacoplamiento entre quien produce datos y quien los muestra; varias pantallas o widgets pueden reaccionar al mismo estado (sincronización de tabs, widgets de escritorio).
-
-Riesgos frecuentes en entrevistas:
-- Memory leaks si el subject retiene la Activity o View destruida (registrar listener sin desregistrar, LiveData sin LifecycleOwner).
-- Actualizar UI desde un hilo de fondo (debe ser Main).
-- Cascadas de callbacks difíciles de seguir sin arquitectura clara.
-
-Variantes modernas: MVVM + StateFlow; Compose recompone cuando cambia el state observado (collectAsState). La idea Observer sigue siendo la base del reactive UI.
-
-Cuándo usarlo:
-Siempre que la interfaz deba reaccionar a datos asíncronos o que cambian con el tiempo: red, base de datos, ubicación, otro componente, usuario en otra pantalla.
-
-Ejemplo:
-class UserRepository {
-    private val _user = MutableStateFlow<User?>(null)
-    val user: StateFlow<User?> = _user.asStateFlow()
-
-    suspend fun refresh() {
-        _user.value = api.fetchUser()
-    }
+En build.gradle.kts del módulo:
+plugins {
+    alias(libs.plugins.kotlin.compose)
 }
 
-@Composable
-fun ProfileScreen(viewModel: ProfileViewModel = hiltViewModel()) {
-    val user by viewModel.user.collectAsState()
-    Text(text = user?.name ?: "Cargando...")
+El plugin valida funciones Composable en tiempo de compilación, genera grupos de recomposición y soporta métricas de estabilidad en debug. Sin el plugin, el código Compose no compila o muestra errores del tipo que las funciones Composable requieren el compiler.
+
+Relación con buildFeatures { compose = true }: el flag del Android Gradle Plugin activa dependencias y tooling de UI; el plugin Kotlin Compose activa el compilador. Ambos son necesarios en módulos con UI declarativa.
+
+El BOM de Compose (platform) alinea versiones de androidx.compose.*; el plugin alinea el compiler con Kotlin.
+
+Cuándo usarlo:
+Siempre en módulos que usen Jetpack Compose (app, features con UI). No añadas el plugin en módulos pure-Kotlin de dominio o data sin @Composable.
+
+Ejemplo:
+// libs.versions.toml
+[plugins]
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+
+// app/build.gradle.kts
+plugins {
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.compose)
+}
+android { buildFeatures { compose = true } }
+dependencies {
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.material3)
 }
 
 Consejo para entrevista:
-Empieza con la definición genérica Subject/Observer y luego mapea a LiveData, Flow y Compose. Menciona observación lifecycle-aware y cancelación de suscripciones para evitar fugas.
+Distingue AGP (application plugin), Kotlin Android plugin y Kotlin Compose plugin. Con Kotlin 2.0 reduces desalineación Kotlin/Compose que causaba crashes sutiles en runtime.

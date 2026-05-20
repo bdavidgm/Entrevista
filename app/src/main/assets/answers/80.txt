@@ -1,14 +1,16 @@
 Concepto:
-CoroutineScope define el ámbito y ciclo de vida de las coroutines hijas: agrupa jobs y aplica structured concurrency (cancelación en cascada). En Android, scopes típicos son viewModelScope, lifecycleScope y applicationScope.
+launch y async son builders de coroutines en un CoroutineScope: launch inicia una coroutine sin devolver resultado útil (efectos secundarios); async devuelve Deferred<T> para obtener un valor más tarde con await(), útil para paralelizar tareas independientes.
 
 Explicación detallada:
-Un scope = CoroutineContext (Job + Dispatcher + opcional name). Al cancelar el Job del scope, todas las coroutines hijas reciben cancelación cooperativa. viewModelScope usa SupervisorJob en implementación que permite un hijo fallar sin cancelar hermanos según configuración.
+launch { } es fire-and-forget dentro del scope: si falla y no hay handler, puede propagar según el scope. Ideal para actualizar UI state tras operaciones, escribir en BD, o disparar eventos.
 
-lifecycleScope en Activity/Fragment cancela al destruir DESTROYED. repeatOnLifecycle(Lifecycle.State.STARTED) para collect Flow solo cuando visible.
+async { } calcula valor en paralelo; await() suspende hasta completar. Paralelizar dos redes: val a = async { api1() }; val b = async { api2() }; val result = a.await() to b.await() en el mismo scope.
 
-No crear scopes globales sin Job vinculado a lifecycle. CoroutineScope(Dispatchers.Main + job) manual requiere cancelar en onDestroy.
+Structured concurrency: async hijos se cancelan si el scope padre cancela antes de await. No uses async sin await (fugas y excepciones silenciosas).
 
-Testing: TestScope y runTest controlan tiempo virtual. backgroundScope en runTest para trabajo async.
+Diferencia con runBlocking: builders para scopes con lifecycle, no bloquean el caller thread salvo runBlocking.
+
+En ViewModel: launch en viewModelScope es lo más común; async para combinar repositorios. supervisorScope si un hijo falla y otros deben continuar.
 
 En el contexto de proyectos Android reales, combina esta idea con las guías oficiales de Android Developers y con métricas de calidad (crashes, ANR, Vitals) cuando aplique. En code review, pregunta siempre por ciclo de vida, testabilidad y si la solución escala cuando el equipo crece.
 
@@ -23,21 +25,14 @@ Durante la entrevista, estructura la respuesta en definición, ejemplo concreto 
 Para profundizar tras la entrevista, revisa documentación oficial, codelabs y el código fuente de tu propio proyecto Entrevista aplicando el concepto en un flujo mínimo reproducible. La práctica deliberada con tests unitarios refuerza la confianza al explicar el tema en viva voz.
 
 Cuándo usarlo:
-Siempre que uses launch/async; nunca GlobalScope en features de app. Elige scope según duración del trabajo: pantalla vs app vs test.
+launch para trabajo sin retorno a caller; async cuando necesitas resultado combinado o paralelismo medible. Un solo suspend secuencial no necesita async.
 
 Ejemplo:
-class MyViewModel : ViewModel() {
-    fun save() = viewModelScope.launch {
-        repository.save()
-    }
-}
-
-// Activity
-lifecycleScope.launch {
-    repeatOnLifecycle(Lifecycle.State.STARTED) {
-        viewModel.uiState.collect { render(it) }
-    }
+viewModelScope.launch {
+    val profile = async(Dispatchers.IO) { userRepo.profile() }
+    val orders = async(Dispatchers.IO) { orderRepo.recent() }
+    _uiState.value = HomeUiState(profile.await(), orders.await())
 }
 
 Consejo para entrevista:
-Lista scopes Android y cuándo se cancelan. Pregunta viewModelScope vs lifecycleScope: ViewModel sobrevive rotación; lifecycleScope no para la misma Activity recreada igual... ViewModel persiste datos, lifecycleScope recolecta UI.
+launch vs async = sin vs con Deferred. Menciona await y cancelación. Trampa: async en GlobalScope sin await.
