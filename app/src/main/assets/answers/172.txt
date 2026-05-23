@@ -1,41 +1,14 @@
 Concepto:
-PackageManager es la API del sistema que permite consultar información sobre paquetes instalados (apps), componentes (activities, services), permisos, features del dispositivo y resolver intents.
+PackageManager consulta metadatos de apps instaladas: getPackageInfo, resolveActivity, queryIntentActivities, getApplicationInfo, etc. Sirve para comprobar si existe un manejador para un intent, leer versión, permisos declarados o features del dispositivo.
 
-Explicación detallada:
-Cada app Android es un package (applicationId). PackageManager ofrece métodos para:
-- getPackageInfo(packageName, flags): versión, firmas, permisos declarados, etc. (cuidado con flags deprecados; en API 33+ usar PackageManager.PackageInfoFlags).
-- queryIntentActivities / resolveActivity: comprobar si hay app que maneje un intent (evitar ActivityNotFoundException).
-- getApplicationInfo / getApplicationLabel: metadatos y nombre visible.
-- hasSystemFeature(FEATURE_CAMERA, FEATURE_NFC): capacidades hardware/software.
-- checkPermission / checkSelfPermission: permisos concedidos (junto con ContextCompat).
-- getInstalledPackages / getInstalledApplications: listar apps (restringido en versiones recientes por privacidad).
-- setComponentEnabledSetting: habilitar/deshabilitar componentes dinámicamente (poco común).
-
-Se obtiene con context.packageManager o getSystemService(PackageManager::class.java) según API.
-
-Cambios de privacidad: Android 11+ limita visibilidad de paquetes; debes declarar <queries> en el manifest para intents específicos que consultes. Sin ello queryIntentActivities puede devolver lista vacía aunque exista la app.
-
-Usos en entrevista: feature detection antes de usar cámara, Bluetooth, leanback; verificar actualización propia comparando versionCode; deep links; launchers alternativos; plugins que enumeran apps instaladas (ahora regulado).
-
-Cuándo usarlo:
-- Antes de startActivity con intent implícito (¿hay navegador?).
-- Comprobar si el dispositivo soporta una feature antes de mostrar funcionalidad.
-- Obtener versión de tu app o de un SDK integrado (package name conocido).
-- Leer meta-data de otro componente (raro en apps consumer).
+Desde Android 11 muchas consultas requieren declarar <queries> en el manifest por visibilidad de paquetes.
 
 Ejemplo:
-fun canOpenMaps(pm: PackageManager): Boolean {
-    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=Madrid"))
-    return intent.resolveActivity(pm) != null
-}
+val pm = packageManager
+val info = pm.getPackageInfo(packageName, PackageManager.PackageInfoFlags.of(0))
+val versionName = info.versionName
 
-fun supportsNfc(pm: PackageManager): Boolean =
-    pm.hasSystemFeature(PackageManager.FEATURE_NFC)
+val canHandle = pm.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY) != null
 
-fun appVersionName(context: Context): String {
-    val info = context.packageManager.getPackageInfo(context.packageName, 0)
-    return info.versionName ?: ""
-}
-
-Consejo para entrevista:
-Menciona <queries> en Android 11+, no abuses de getInstalledPackages, y diferencia PackageManager de ActivityManager (tareas recientes). Ejemplo clásico: resolveActivity antes de abrir URL.
+Consejo:
+Si resolveActivity devuelve null, ofrece fallback o mensaje. Declara queries explícitas para evitar listas vacías en Android 11+.

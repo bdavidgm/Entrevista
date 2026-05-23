@@ -1,41 +1,13 @@
 Concepto:
-MVP (Model-View-Presenter) separa la UI pasiva (View) de la lógica de presentación (Presenter) que orquesta el Model; el Presenter no conoce detalles de Android framework salvo contrato con View.
+MVP separa View (pasiva, interfaz) de Presenter, que contiene la lógica de presentación y habla con el Model. La View implementa contratos (showLoading) y reenvía eventos al Presenter; el Presenter no conoce detalles de Android salvo lo mínimo.
 
-Explicación detallada:
-Roles:
-- Model: datos y reglas de negocio (repositorio, API, Room).
-- View: Activity/Fragment que implementa interfaz IView (showLoading, showError, renderList); solo UI y delega eventos.
-- Presenter: recibe eventos (onLoginClicked), llama Model, actualiza View en hilo principal; en tests se mockea View y Model.
-
-Flujo login: View.notify click → Presenter.login(user, pass) → Model.authenticate → callback → Presenter.view.hideLoading(); view.navigateHome() o view.showError().
-
-Ventajas: testabilidad del Presenter sin instrumentación; separación clara en proyectos pre-Architecture Components.
-
-Desventajas: mucho boilerplate (interfaces View/Presenter); Presenter debe desacoplarse del ciclo de vida (memory leaks si View retiene Activity); duplicación con configuración changes si no usas ViewModel.
-
-Hoy MVVM + ViewModel + StateFlow reemplaza MVP en la mayoría de apps nuevas; MVP sigue en entrevistas y código legacy.
-
-Cuándo usarlo:
-- Mantenimiento de apps antiguas con MVP.
-- Entender evolución hacia MVVM/MVI.
-- Equipos que testean lógica de UI sin Robolectric pesado (Presenter unit tests).
+Fue popular antes de ViewModel; hoy MVVM/MVI + ViewModel es más idiomático.
 
 Ejemplo:
-interface LoginView {
-    fun showError(msg: String)
-    fun openHome()
-}
-class LoginPresenter(
-    private val view: LoginView,
-    private val repo: AuthRepository
-) {
-    fun onLogin(email: String, pass: String) {
-        repo.login(email, pass) { result ->
-            if (result.isSuccess) view.openHome()
-            else view.showError("Credenciales inválidas")
-        }
-    }
+interface LoginView { fun showError(msg: String) }
+class LoginPresenter(private val view: LoginView, private val repo: AuthRepository) {
+    fun login(email: String) { /* repo + view.showError */ }
 }
 
-Consejo para entrevista:
-Contrasta MVP con MVVM: Presenter vs ViewModel, View activa vs pasiva, supervivencia a rotación (ViewModel + SavedState). Di que conoces MVP pero implementarías MVVM con UDF en proyectos nuevos.
+Consejo:
+Contrasta con MVVM: Presenter no sobrevive a rotación salvo que lo gestiones tú; ViewModel lo resuelve de serie.

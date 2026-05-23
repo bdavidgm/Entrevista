@@ -1,42 +1,20 @@
 Concepto:
-Un Foreground Service (FGS) es un Service que muestra una notificación persistente mientras ejecuta trabajo perceptible para el usuario (música, navegación, llamada, sync visible), con prioridad alta y menos probabilidad de ser matado.
+Un Foreground Service es un Service que el sistema considera "visible" para el usuario y al que da prioridad para no matarlo en segundo plano. Debe mostrar una notificación persistente y declararse en el manifest con un foregroundServiceType (location, mediaPlayback, dataSync, etc., obligatorio en Android 10+).
 
-Explicación detallada:
-Desde Android 8 debe llamarse startForegroundService(); en pocos segundos startForeground(id, notification) o el sistema detiene la app (ANR/crash).
-
-Android 10+: requiere permiso FOREGROUND_SERVICE. Android 14+: declarar foregroundServiceType en manifest (location, camera, mediaPlayback, dataSync, etc.) y permisos asociados según tipo.
-
-Notificación: canal obligatorio, ongoing, no dismissable hasta stopForeground.
-
-stopForeground(STOP_FOREGROUND_REMOVE) y stopSelf al terminar.
-
-Cuándo usarlo:
-- Reproducción audio/video en background.
-- Navegación turn-by-turn activa.
-- Fitness tracking con ubicación en uso.
-- Compartir pantalla o llamadas VoIP.
-
-No usar para: sync silencioso (WorkManager), analytics, prefetch — viola políticas y restricciones.
-
-Alternativa: WorkManager con setForeground() para trabajo largo que debe mostrar progreso ocasional.
+Se usa para tareas largas y visibles para el usuario: reproductor, navegación GPS, llamadas VoIP, descargas grandes. No es para trabajo invisible: para eso, WorkManager.
 
 Ejemplo:
-class PlaybackService : Service() {
+class LocationService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val notification = buildNotification()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(NOTIF_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)
-        } else {
-            startForeground(NOTIF_ID, notification)
-        }
-        startPlayback()
+        val notif = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_loc)
+            .setContentTitle("Rastreando ubicación")
+            .build()
+        startForeground(NOTIF_ID, notif)
         return START_STICKY
     }
+    override fun onBind(intent: Intent?): IBinder? = null
 }
 
-// Manifest
-// <service android:foregroundServiceType="mediaPlayback" ... />
-// <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"/>
-
-Consejo para entrevista:
-Menciona notificación obligatoria, tipos Android 14, permisos FGS y que Play audita abuso. Contrasta con background service prohibido. Ejemplo concreto: mediaPlayback o location.
+Consejo:
+"Visible + notificación obligatoria + foregroundServiceType". A partir de Android 14 hay restricciones aún más estrictas para iniciar foreground services desde background.

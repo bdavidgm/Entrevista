@@ -1,34 +1,20 @@
 Concepto:
-Una sealed class (clase sellada) es una clase abstracta restringida: todas sus subclases directas deben declararse en el mismo módulo (archivo/compilación según reglas de Kotlin). El compilador conoce el conjunto cerrado de subtipos, lo que habilita exhaustividad en when y modelado de estados y resultados de forma type-safe.
+Una sealed class (o sealed interface) representa una jerarquía cerrada de tipos: el compilador conoce todas sus subclases en tiempo de compilación, lo que permite usarlas en when sin else y obtener exhaustividad. Sirve para modelar tipos suma como estados de UI o resultados de operaciones.
 
-Explicación detallada:
-A diferencia de enum, las subclases sealed pueden tener estado distinto (data class hijas, object para casos sin datos). Patrón dominante en Android moderno: sealed interface UiState { object Loading; data class Success(...); data class Error(...) }. También para eventos de UI de un solo consumo, resultados de repositorio (Success/Failure), y rutas de navegación tipadas.
-
-Las sealed class pueden contener lógica abstracta y propiedades en la base. sealed interface aparece en Kotlin 1.5+ para permitir múltiples jerarquías y mejor composición. En JVM, las subclases selladas son conocidas en compile time; el when puede omitir else si cubres todos los casos.
-
-Comparación: enum para conjunto fijo de constantes sin variación estructural; sealed para árbol de tipos con datos distintos; class abierta + instanceof para polimorfismo sin exhaustividad. Parcelable con sealed requiere @Parcelize en cada subtipo o estrategia de serialización.
-
-En MVI, sealed simplifica reducers: Event sealed + State sealed. En Navigation Compose, rutas sealed son populares. Testing: when exhaustivo detecta nuevos casos en compile time al añadir subtipo.
-
-En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
-
-Cuándo usarlo:
-Estados de pantalla, errores de dominio cerrados, eventos de ViewModel, AST internas. No uses sealed para jerarquías que deben extenderse por plugins externos desconocidos en compile time (usa interfaz normal).
+Las subclases pueden estar en el mismo archivo o (desde 1.5) en el mismo módulo y paquete. Combinadas con data class/object, permiten un dominio muy expresivo.
 
 Ejemplo:
-sealed interface LoginUiState {
-    data object Idle : LoginUiState
-    data object Loading : LoginUiState
-    data class Authenticated(val userId: String) : LoginUiState
-    data class Failed(val message: String) : LoginUiState
+sealed interface UiState<out T> {
+    data object Loading : UiState<Nothing>
+    data class Success<T>(val data: T) : UiState<T>
+    data class Error(val message: String) : UiState<Nothing>
 }
 
-fun render(state: LoginUiState) = when (state) {
-    LoginUiState.Idle -> Unit
-    LoginUiState.Loading -> showProgress()
-    is LoginUiState.Authenticated -> openHome(state.userId)
-    is LoginUiState.Failed -> showSnackbar(state.message)
+fun render(state: UiState<User>) = when (state) {
+    UiState.Loading -> showLoading()
+    is UiState.Success -> showUser(state.data)
+    is UiState.Error -> showError(state.message)
 }
 
-Consejo para entrevista:
-sealed vs enum vs data class abierta. Preguntan si pueden heredar muchas sealed (sí, lista cerrada en módulo). Menciona sealed interface y exhaustividad en when sin else.
+Consejo:
+Sealed vs enum: enum si son valores fijos sin datos; sealed si cada caso lleva datos distintos. Resalta la exhaustividad y comparte con Result<T> y MVI.

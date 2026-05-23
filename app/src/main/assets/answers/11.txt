@@ -1,41 +1,16 @@
 Concepto:
-when es la construcción de Kotlin para ramificación múltiple: sustituye al switch de Java con más expresividad y seguridad. Puede usarse como sentencia o como expresión que devuelve un valor, admite comparación por tipo (is), pertenencia en rangos (in), condiciones booleanas arbitrarias y trabaja de forma natural con sealed classes y enums.
+when es la expresión de control de flujo de Kotlin equivalente a un switch enriquecido. Puede usarse como sentencia o como expresión (que devuelve valor) y soporta condiciones arbitrarias, rangos, tipos (is) y deconstrucción.
 
-Explicación detallada:
-A diferencia del switch clásico, no hay fall-through: cada rama se ejecuta y termina sin necesidad de break. En modo expresión, el compilador exige que todas las rutas devuelvan un tipo compatible o que la exhaustividad esté garantizada (por ejemplo cubriendo todos los subtipos de una sealed class en el mismo módulo, o usando else).
-
-when sin argumento equivale a una cadena de if-else legible: when { x > 0 -> ...; y == null -> ... }. Con sealed class UiState o Result de dominio, when permite smart cast en cada rama: is Success -> usar result.data sin cast manual.
-
-En Android es central en renderizado de UI según estado (Loading, Content, Error), manejo de eventos de un solo uso, mapeo de códigos HTTP y selección de recursos por enum. En Compose, when(state) dentro de un Composable es el equivalente declarativo del antiguo if/else con múltiples fragments.
-
-Rendimiento: para enums y enteros el compilador puede optimizar; para jerarquías sealed suele generarse instanceof encadenado, aceptable frente a claridad. En MVI/MVVM, combinar sealed class + when expresivo comunica máquinas de estados de forma que el entrevistador valora.
-
-En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
-
-Cuándo usarlo:
-Cuando hay tres o más ramas, estados cerrados (sealed/enum) o mezcla de tipos y rangos. Para dos condiciones simples, if sigue siendo más claro. En capa de UI y presentación es preferible a cadenas largas de if-else anidados.
+Si se usa como expresión sobre un tipo sealed o enum, el compilador exige exhaustividad y avisa al añadir una variante nueva, lo que ayuda a mantener el código alineado con el dominio.
 
 Ejemplo:
-sealed interface PaymentResult {
-    data object Processing : PaymentResult
-    data class Approved(val receiptId: String) : PaymentResult
-    data class Declined(val reason: String) : PaymentResult
+fun describe(value: Any): String = when (value) {
+    is Int -> "Entero $value"
+    in 1..9 -> "Dígito"
+    "hola" -> "Saludo"
+    null -> "Vacío"
+    else -> "Otro"
 }
 
-fun handleResult(result: PaymentResult) = when (result) {
-    PaymentResult.Processing -> showSpinner()
-    is PaymentResult.Approved -> showReceipt(result.receiptId)
-    is PaymentResult.Declined -> showError(result.reason)
-}
-
-@Composable
-fun CheckoutScreen(state: CheckoutUiState) {
-    when {
-        state.isLoading -> CircularProgressIndicator()
-        state.error != null -> ErrorBanner(state.error)
-        else -> OrderSummary(state.items)
-    }
-}
-
-Consejo para entrevista:
-Explica exhaustividad con sealed class vs necesidad de else con Boolean. Muestra when como expresión asignando a val. Preguntan diferencia con if: when es más declarativo para muchos casos y admite is/in sin repetir variable.
+Consejo:
+Subraya when como expresión exhaustiva con sealed/enum (sin else). Compáralo con switch de Java y menciona el smart cast tras is.

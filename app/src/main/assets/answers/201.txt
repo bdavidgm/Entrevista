@@ -1,48 +1,16 @@
 Concepto:
-RecyclerView muestra listas largas reciclando vistas: el Adapter crea ViewHolders, los enlaza con datos en onBindViewHolder y el LayoutManager define disposición (linear, grid, staggered).
+RecyclerView recicla filas fuera de pantalla: el Adapter crea ViewHolder y enlaza datos en onBindViewHolder; el LayoutManager coloca ítems (Linear, Grid, Staggered). ListAdapter + DiffUtil automatiza animaciones y diffs.
 
-Explicación detallada:
-Componentes:
-1) RecyclerView: contenedor; setLayoutManager, setAdapter, addItemDecoration, setHasFixedSize(true) si tamaño fijo optimiza.
-2) Adapter<VH>: getItemCount, onCreateViewHolder (inflar layout), onBindViewHolder (poblar datos), getItemViewType para múltiples layouts.
-3) ViewHolder: referencias a views (findViewById o ViewBinding) para evitar lookup repetido.
-4) LayoutManager: LinearLayoutManager, GridLayoutManager, StaggeredGridLayoutManager.
-
-Reciclaje: cuando una fila sale de pantalla, su ViewHolder se reutiliza para nuevos datos; onBind debe resetear estado (imágenes, listeners) para evitar bugs visuales.
-
-Actualizaciones: notifyDataSetChanged() fuerza redraw completo (evitar); prefer notifyItemInserted/Removed/Changed o ListAdapter + DiffUtil.
-
-Lista con separadores: ItemDecoration.
-
-En arquitectura moderna: ListAdapter<T, VH> con DiffUtil.ItemCallback en background; ViewBinding; datos desde ViewModel LiveData/StateFlow.
-
-Compose equivalente: LazyColumn/LazyRow con items() y key estable.
-
-Cuándo usarlo:
-- Cualquier lista scrollable en UI basada en Views.
-- Grids de productos, chats, settings.
+Separar ViewHolder reduce trabajo en scroll.
 
 Ejemplo:
-class UserAdapter : ListAdapter<User, UserAdapter.VH>(DIFF) {
-    class VH(val binding: ItemUserBinding) : RecyclerView.ViewHolder(binding.root)
-
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
-        val binding = ItemUserBinding.inflate(
-            LayoutInflater.from(parent.context), parent, false
-        )
-        return VH(binding)
-    }
-    override fun onBindViewHolder(holder: VH, position: Int) {
-        val user = getItem(position)
-        holder.binding.name.text = user.name
-    }
-    companion object {
-        val DIFF = object : DiffUtil.ItemCallback<User>() {
-            override fun areItemsTheSame(a: User, b: User) = a.id == b.id
-            override fun areContentsTheSame(a: User, b: User) = a == b
-        }
+class UserAdapter : ListAdapter<User, UserVH>(UserDiff) {
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) =
+        UserVH(ItemUserBinding.inflate(LayoutInflater.from(parent.context), parent, false))
+    override fun onBindViewHolder(holder: UserVH, position: Int) {
+        holder.bind(getItem(position))
     }
 }
 
-Consejo para entrevista:
-Explica reciclaje, ViewHolder, DiffUtil vs notifyDataSetChanged. Menciona ListAdapter. Si preguntan Compose, contraste LazyColumn y recomposición vs reciclaje de vistas.
+Consejo:
+onBindViewHolder debe ser barato: usa payloads, evita allocations y mueve lógica pesada a background. DiffUtil calcula cambios mínimos.

@@ -1,43 +1,14 @@
 Concepto:
-El parámetro key en items() de LazyColumn (y LazyVerticalGrid, etc.) identifica de forma estable cada elemento de la lista para que Compose pueda reutilizar, animar y posicionar composables correctamente cuando la lista cambia.
+El parámetro key en LazyColumn/LazyRow le dice a Compose cómo identificar cada ítem para mantener su estado interno (estado de scroll, animaciones, foco) al reordenar, insertar o eliminar elementos de la lista. Sin key se usa la posición, lo que provoca recomposiciones innecesarias y "saltos" visuales al cambiar la lista.
 
-Explicación detallada:
-Sin key, Compose usa posición en la lista como identidad. Si reordenas, insertas o borras, puede recomponer el item equivocado, perder estado interno (scroll de item, TextField) o animaciones incorrectas.
-
-Con key = { item.id }:
-- Compose asocia el composable al id lógico del dato, no al índice.
-- Mejor rendimiento en listas grandes (menos recreaciones).
-- Obligatorio para ciertas APIs como animateItemPlacement en versiones recientes.
-
-Buenas prácticas de key:
-- Usar ID único del dominio (UUID, primary key).
-- Evitar key = { index } salvo listas estáticas inmutables.
-- No usar objetos que cambian identidad (hashCode de data class sin id estable).
-
-Relacionado: contentType para optimizar recycling de layouts distintos en el mismo lazy list.
-
-Cuándo usarlo:
-Siempre en listas dinámicas de usuarios, mensajes, productos. Especialmente si hay campos editables, animaciones o paginación.
+La key debe ser estable y única por ítem (típicamente el id del dominio).
 
 Ejemplo:
-@Composable
-fun MessageList(messages: List<Message>) {
-    LazyColumn {
-        items(
-            items = messages,
-            key = { it.id }
-        ) { message ->
-            MessageRow(message)
-        }
+LazyColumn {
+    items(users, key = { it.id }) { user ->
+        UserRow(user)
     }
 }
 
-// Múltiples tipos
-items(
-    items = items,
-    key = { when (it) { is Header -> "h-${it.title}"; is Row -> "r-${it.id}" } },
-    contentType = { if (it is Header) 0 else 1 }
-) { ... }
-
-Consejo para entrevista:
-Explica bug de estado en TextField al borrar fila sin key. Menciona animateItemPlacement y diferencia key vs contentType.
+Consejo:
+"key estable por ítem evita reusar la posición". Imprescindible para animateItemPlacement y para conservar el estado de hijos editables al reordenar.

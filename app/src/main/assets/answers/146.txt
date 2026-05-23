@@ -1,43 +1,14 @@
 Concepto:
-catch en Flow es un operador que intercepta excepciones lanzadas en operadores upstream y permite emitir valores de recuperación o re-lanzar, sin cancelar necesariamente todo el collector si manejas el error.
+catch es un operador de Flow que intercepta excepciones lanzadas en el upstream y permite emitir valores alternativos, relanzar o completar. Solo atrapa errores que ocurren antes en la cadena; no sustituye un try/catch alrededor de collect si el lambda del collector lanza.
 
-Explicación detallada:
-flow {
-    emit(api.load())
-}.catch { e ->
-    emit(emptyList()) // valor fallback
-    // o log y no emitir
-}.collect { list -> updateUi(list) }
-
-Comportamiento:
-- Solo captura excepciones del upstream, no del propio collector (las del collect van fuera).
-- Es terminal en el sentido de manejo de error en la cadena; después de catch puedes usar onCompletion.
-
-Otros operadores relacionados:
-- retry(n) { cause -> delay(1000); true }
-- onEach, onCompletion { cause -> } para logging.
-
-En ViewModel:
-repository.users()
-    .catch { e -> _uiState.value = UiState.Error(e.message) }
-    .collect { _uiState.value = UiState.Success(it) }
-
-Diferencia con try/catch alrededor de collect:
-- catch en Flow integra con operadores y múltiples emisiones.
-- try/catch en collect captura también errores del lambda collect.
-
-Cuándo usarlo:
-Streams largos donde quieres degradación graceful (lista vacía, mensaje de error en UiState) sin tumbar la corrutina entera.
+Es el sitio idóneo para mapear fallos de red a estados de error en la UI.
 
 Ejemplo:
-fun observeUser(id: String): Flow<User> = flow {
-    emit(api.getUser(id))
-}.flowOn(Dispatchers.IO)
- .retry(2) { it is IOException }
- .catch { e ->
-     if (e is HttpException && e.code() == 404) emit(User.guest())
-     else throw e
- }
+repository.observeUsers()
+    .catch { e ->
+        emit(emptyList()) // o log + emitAll(fallbackFlow())
+    }
+    .onEach { /* ... */ }
 
-Consejo para entrevista:
-Contrasta catch vs try en collect. Menciona retry y que las excepciones en collect no las atrapa catch del upstream anterior sin relanzar.
+Consejo:
+Si necesitas manejar errores también en el collector, combina catch upstream con try/catch en collect o usa Result.

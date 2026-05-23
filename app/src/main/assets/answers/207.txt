@@ -1,56 +1,17 @@
 Concepto:
-Combinar Retrofit con coroutines consiste en declarar funciones suspend en la interfaz API y llamarlas desde viewModelScope o repositorios con manejo de errores y dispatchers IO adecuados.
+Retrofit 2.6+ permite declarar endpoints como suspend fun; Retrofit ejecuta la llamada en el dispatcher adecuado y devuelve el resultado o lanza HttpException. Alternativamente, Call.enqueue sigue existiendo para callbacks.
 
-Explicación detallada:
-Retrofit 2.6+ soporta suspend sin CallAdapter custom: la llamada se suspende en hilo de OkHttp y reanuda en coroutine caller (no bloquea Main si llamas desde IO/Default).
-
-Patrón recomendado:
-interface Api { @GET("x") suspend fun load(): Data }
-
-class Repo(private val api: Api, private val io: CoroutineDispatcher = Dispatchers.IO) {
-    suspend fun fetch(): Result<Data> = withContext(io) {
-        try {
-            Result.success(api.load())
-        } catch (e: HttpException) {
-            Result.failure(e)
-        } catch (e: IOException) {
-            Result.failure(e)
-        }
-    }
-}
-
-ViewModel:
-viewModelScope.launch {
-    _state.value = UiState.Loading
-    repo.fetch()
-        .onSuccess { _state.value = UiState.Success(it) }
-        .onFailure { _state.value = UiState.Error(it.message) }
-}
-
-Evitar runBlocking en producción. Para varias peticiones paralelas: coroutineScope { async { api.a() }; async { api.b() } }.
-
-Cuándo usarlo:
-- Toda red nueva en apps Kotlin-first.
-- Sustituir Callback/Call.enqueue y RxJava en código legacy.
+Evita bloquear el hilo principal: suspend ya gestiona la suspensión correctamente.
 
 Ejemplo:
-class UserViewModel(
-    private val api: ApiService
-) : ViewModel() {
-    private val _users = MutableStateFlow<List<User>>(emptyList())
-    val users: StateFlow<List<User>> = _users.asStateFlow()
-
-    fun refresh() {
-        viewModelScope.launch {
-            try {
-                val dtos = api.getUsers()
-                _users.value = dtos.map { it.toDomain() }
-            } catch (e: Exception) {
-                // emit error state
-            }
-        }
-    }
+interface GitHubApi {
+    @GET("users/{login}")
+    suspend fun user(@Path("login") login: String): UserDto
 }
 
-Consejo para entrevista:
-Menciona suspend en interfaz, viewModelScope, withContext(IO), HttpException vs IOException. Opcional: Flow para streaming con @Streaming ResponseBody. Contrasta con RxJava si preguntan migración.
+viewModelScope.launch {
+    try { val u = api.user("octocat") } catch (e: HttpException) { /* 404, 500 */ }
+}
+
+Consejo:
+Para manejar errores de red vs HTTP usa runCatching o capa de Result en el repo. withContext(IO) solo si mezclas APIs no suspend.

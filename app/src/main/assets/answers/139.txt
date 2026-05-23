@@ -1,47 +1,18 @@
 Concepto:
-Una migración en Room es el mecanismo para actualizar el esquema de la base de datos local cuando incrementas version en @Database sin perder datos del usuario (ALTER TABLE, nuevas tablas, índices).
+Una migración en Room define cómo evolucionar el esquema de la base de datos de una versión a la siguiente sin perder datos. Cada vez que cambias entidades (nuevas tablas, columnas, índices) debes subir la versión y registrar una Migration que ejecute el SQL necesario.
 
-Explicación detallada:
-@Database(version = 2, ...)
-Al subir version, Room exige Migration object o fallback destructivo.
+Sin migración (o con fallbackToDestructiveMigration), Room borra y recrea la BBDD: aceptable en debug, inaceptable en producción.
 
-Migration explícita:
+Ejemplo:
 val MIGRATION_1_2 = object : Migration(1, 2) {
     override fun migrate(db: SupportSQLiteDatabase) {
-        db.execSQL("ALTER TABLE user ADD COLUMN avatar TEXT")
+        db.execSQL("ALTER TABLE User ADD COLUMN avatarUrl TEXT")
     }
 }
 
-Room.databaseBuilder(context, AppDatabase::class.java, "db")
+Room.databaseBuilder(context, AppDb::class.java, "app.db")
     .addMigrations(MIGRATION_1_2)
     .build()
 
-Auto Migration (Room 2.4+):
-- @AutoMigration(from = 1, to = 2) con esquemas exportados si cambios son compatibles.
-- Especificar @DeleteTable, @RenameColumn cuando haga falta.
-
-Destructive migration:
-- fallbackToDestructiveMigration() borra BD en upgrade — solo desarrollo o datos cacheables.
-
-Export schema:
-- room { schemaDirectory ... } para revisar diffs en PR y CI.
-
-Testing:
-- MigrationTestHelper en androidTest ejecuta migraciones contra versión anterior.
-
-Cuándo usarlo:
-Cada cambio de entidades, índices o columnas en producción. Nunca subir version sin plan de migración salvo datos desechables.
-
-Ejemplo:
-val MIGRATION_2_3 = object : Migration(2, 3) {
-    override fun migrate(db: SupportSQLiteDatabase) {
-        db.execSQL(
-            "CREATE TABLE IF NOT EXISTS bookmark (" +
-            "id TEXT NOT NULL PRIMARY KEY, " +
-            "userId TEXT NOT NULL)"
-        )
-    }
-}
-
-Consejo para entrevista:
-Contrasta migración explícita vs destructive. Menciona Auto Migration, export schema y tests de migración. Error típico: IllegalStateException schema changed sin migration.
+Consejo:
+Activa exportSchema = true y commitea los JSON del esquema; permite migraciones automáticas en versiones recientes de Room y revisión en CI.

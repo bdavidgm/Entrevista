@@ -1,40 +1,16 @@
 Concepto:
-El diseño adaptativo (tablet / large screen) adapta layout, navegación y densidad de contenido según el tamaño de pantalla, orientación y postura del dispositivo (teléfono, plegable, tablet, escritorio).
+UI adaptativa (tablet / pantallas grandes) reutiliza lógica pero cambia layout según ancho o ventana: paneles maestro-detalle, navigation rail, columnas extra. Jetpack WindowManager y breakpoints (Material3) ayudan a clasificar el espacio (compact, medium, expanded).
 
-Explicación detallada:
-Android ofrece:
-- Qualifiers: sw600dp, w600dp, large, xlarge en res/layout-sw600dp.
-- WindowSizeClass (Material3): Compact, Medium, Expanded para width/height.
-- SlidingPaneLayout, Navigation Rail, dos paneles lista-detalle en tablets.
-- Compose: BoxWithConstraints, WindowInsets, Material3 AdaptiveNavigationSuite.
-
-Patrones:
-- Lista + detalle simultáneos en tablet; solo uno en teléfono con back stack.
-- Grid de columnas variable (LazyVerticalGrid con min size).
-- Evitar solo escalar UI de teléfono; usar espacio horizontal (maestro-detalle).
-
-Foldables:
-- Jetpack WindowManager para postures y separadores.
-- Continuidad al plegar/desplegar.
-
-Pruebas:
-- Emuladores de tablet y Desktop mode.
-- Layout validation en Android Studio.
-
-Cuándo usarlo:
-Apps de productividad, medios, e-commerce. Google Play prioriza apps optimizadas para tablets en categorías grandes.
+Compose facilita el when(windowSizeClass) { ... } sin duplicar ViewModels.
 
 Ejemplo:
 @Composable
-fun HomeAdaptive(windowSizeClass: WindowSizeClass) {
-    when (windowSizeClass.widthSizeClass) {
-        WindowWidthSizeClass.Compact -> SinglePaneNav()
-        WindowWidthSizeClass.Medium,
-        WindowWidthSizeClass.Expanded -> ListDetailPaneScaffold()
+fun HomeRoute(window: WindowSizeClass) {
+    when (window.widthSizeClass) {
+        WindowWidthSizeClass.Expanded -> TwoPane(master = { List() }, detail = { Reader() })
+        else -> SinglePaneNav()
     }
 }
 
-// XML alternativa: res/layout/activity_main.xml y res/layout-sw600dp/activity_main.xml
-
-Consejo para entrevista:
-Menciona WindowSizeClass, list-detail y qualifiers sw600dp. Habla de Navigation Rail vs BottomBar. No confundas solo con orientación landscape.
+Consejo:
+Prueba en emulador tablet y en modo escritorio (freeform). No uses solo “sw600dp”: considera ventanas redimensionables y foldables.

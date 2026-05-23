@@ -1,39 +1,14 @@
 Concepto:
-Los callbacks del ciclo de vida de una Activity son métodos que el framework invoca cuando la activity transita entre estados: creación, visibilidad parcial o total, primer plano interactivo, y destrucción. Permiten inicializar y liberar recursos en el momento correcto.
+El ciclo de vida de una Activity está compuesto por callbacks que indican su estado: onCreate (creada, antes de mostrarse), onStart (visible), onResume (en primer plano e interactiva), onPause (parcialmente tapada, dejará de recibir input), onStop (totalmente oculta), onDestroy (se libera) y onRestart (al volver de onStop a onStart).
 
-Explicación detallada:
-Orden típico al abrir: onCreate (una vez por creación, setContentView/setContent), onStart (visible pero quizá no enfocada), onResume (interactiva, animaciones, sensores). Al perder foco: onPause (pausar animaciones, guardar datos ligeros), onStop (ya no visible), onDestroy (liberar). onRestart si vuelve desde stopped sin recrear.
-
-onCreate savedInstanceState restaura estado tras muerte de proceso. onSaveInstanceState guarda Bundle temporal (no para datos grandes ni persistentes). Configuration changes (rotación) pueden recrear activity si no usas configChanges o ViewModel.
-
-En entrevistas dibujan diagrama y preguntan dónde poner observadores (lifecycleScope, repeatOnLifecycle). Comparan con Fragment que añade onCreateView/onDestroyView.
-
-En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
-
-En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
-
-Cuándo usarlo:
-onCreate: setup UI y ViewModel. onResume: reanudar cámara o location si aplica. onPause/onStop: pausar. onDestroy: cleanup no cubierto por lifecycle-aware. Evita lógica de negocio pesada en cada callback; usa ViewModel.
+Conocer este orden es esencial para liberar recursos en onStop/onDestroy, registrar/desregistrar listeners en onStart/onStop y manejar cambios de configuración.
 
 Ejemplo:
-class PlayerActivity : AppCompatActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContent { PlayerScreen() }
-    }
-    override fun onStart() {
-        super.onStart()
-        // registrar observers ligados a visible
-    }
-    override fun onResume() {
-        super.onResume()
-        player.play()
-    }
-    override fun onPause() {
-        player.pause()
-        super.onPause()
-    }
+class MainActivity : AppCompatActivity() {
+    override fun onStart()  { super.onStart();  sensor.register() }
+    override fun onStop()   { sensor.unregister(); super.onStop() }
+    override fun onDestroy() { binding = null; super.onDestroy() }
 }
 
-Consejo para entrevista:
-Secuencia completa A→B y B→A al volver atrás. Dónde savedInstanceState. Process death vs rotación. repeatOnLifecycle(STARTED).
+Consejo:
+Visualiza la pirámide: create-start-resume al subir, pause-stop-destroy al bajar. Diferencia onPause (parcialmente cubierta) de onStop (totalmente oculta).

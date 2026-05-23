@@ -1,37 +1,26 @@
 Concepto:
-Las scope functions (let, run, with, apply, also) son funciones de ámbito de la biblioteca estándar que ejecutan un bloque de código en el contexto de un objeto receptor. Cada una difiere en si el receptor es it o this, si devuelve el resultado del lambda o el objeto receptor, y si el uso idiomático es transformación o efecto lateral de configuración.
+Las scope functions (let, run, with, apply, also) ejecutan un bloque de código en el contexto de un objeto. Se diferencian en dos ejes: cómo se refiere al receptor (this o it) y qué devuelven (el receptor o el resultado del bloque).
 
-Explicación detallada:
-let: receptor como it, devuelve resultado del lambda. Ideal para transformaciones y nullables con ?.let.
-run: receptor como this, devuelve resultado. Útil para computar valor final en objeto o Runnable anónimo modernizado.
-with: no es extensión; with(obj) { this = obj }, devuelve resultado. Agrupa llamadas sin repetir nombre.
-apply: this, devuelve el objeto. Configurar propiedades al crear (builder style).
-also: it, devuelve el objeto. Efectos laterales (log, analytics) encadenando el mismo objeto.
-
-Todas son inline salvo with que igualmente evita overhead de lambda en muchos casos. En Android verás apply al construir Intent, Notification.Builder, Snackbar; also para logging en cadenas; let para mapear DTO; run en tests y bloques que devuelven valor.
-
-Elegir mal la scope function es code smell común en entrevistas: demuestra criterio explicando intención. Tabla mental: ¿necesito el objeto de vuelta? apply/also. ¿Necesito otro tipo? let/run. ¿Solo agrupar llamadas sin extensión? with.
-
-En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
-
-Cuándo usarlo:
-Configuración fluente (apply), logging o debug (also), transformación nullable (let), expresión que devuelve valor calculado (run/with). Si el bloque es largo, extrae función con nombre.
+Tabla rápida:
+- let { it }: receptor por argumento, devuelve resultado.
+- run { this }: receptor implícito, devuelve resultado.
+- with(x) { this }: forma sin extension; devuelve resultado.
+- apply { this }: receptor implícito, devuelve el receptor.
+- also { it }: receptor por argumento, devuelve el receptor.
 
 Ejemplo:
-val intent = Intent(context, DetailActivity::class.java).apply {
-    putExtra(EXTRA_ID, id)
-    flags = Intent.FLAG_ACTIVITY_CLEAR_TOP
+val intent = Intent(context, Detail::class.java).apply {
+    putExtra("id", 42)
+    flags = Intent.FLAG_ACTIVITY_NEW_TASK
 }
 
-val user = repository.find(id)
-    .also { Log.d(TAG, "loaded=$it") }
-    ?.let { mapper.toUi(it) }
+val length = user?.name?.let { it.trim().length }
 
-val snapshot = with(binding) {
-    title.text = state.title
-    subtitle.text = state.subtitle
-    root.isVisible
+val message = with(StringBuilder()) {
+    append("Hola ")
+    append("mundo")
+    toString()
 }
 
-Consejo para entrevista:
-Memoriza tabla it/this y retorno. Pregunta apply vs also: apply configura y retorna objeto; also hace algo extra y retorna objeto. No anides cinco scope functions.
+Consejo:
+Elige la scope function por intención: apply/also si quieres seguir usando el objeto; let/run si quieres transformarlo. apply para configurar, also para side effects, let para nullable-safe.

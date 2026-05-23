@@ -1,30 +1,18 @@
 Concepto:
-LifecycleOwner es una interfaz implementada por Activity, Fragment, etc., que posee un Lifecycle observable. Lifecycle es el objeto que rastrea el estado actual (CREATED, STARTED, RESUMED, DESTROYED) y permite que observadores (LifecycleObserver) reaccionen de forma segura sin fugas de memoria.
+LifecycleOwner es cualquier objeto que tiene un Lifecycle: Activity, Fragment, View (en Compose), ProcessLifecycleOwner. Lifecycle representa el estado actual (INITIALIZED, CREATED, STARTED, RESUMED, DESTROYED) y notifica cambios mediante DefaultLifecycleObserver o lifecycleScope.
 
-Explicación detallada:
-lifecycleScope y viewModelScope integran corrutinas: cancelación automática al destruir owner. repeatOnLifecycle(Lifecycle.State.STARTED) { collect } evita consumir Flow cuando la UI no está visible, ahorrando batería y evitando crashes.
-
-LiveData.observe(owner) solo entrega si owner está al menos STARTED. DefaultLifecycleObserver simplifica callbacks. En Compose, LocalLifecycleOwner provee el owner para DisposableEffect ligado a lifecycle.
-
-En entrevistas: por qué no usar observeForever sin remover; diferencia lifecycle de fragment vs viewLifecycleOwner. Diagrama estados Lifecycle.State.
-
-En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
-
-En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
-
-Cuándo usarlo:
-Siempre que suscribas Flow, LiveData, listeners de sensor o location a una pantalla. Usa viewLifecycleOwner en Fragment para código que toca la vista.
+Permite acoplar trabajo asincrónico (coroutines, Flow.collect) al ciclo de vida del componente, evitando memory leaks y crashes al actualizar UI fuera de tiempo.
 
 Ejemplo:
-class FeedFragment : Fragment() {
+class MyFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.feed.collect { adapter.submitList(it) }
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.state.collect(::render)
             }
         }
     }
 }
 
-Consejo para entrevista:
-repeatOnLifecycle vs collect en onCreate directo. ESTADO mínimo para collectors. viewLifecycleOwner en Fragment obligatorio para UI.
+Consejo:
+"repeatOnLifecycle(STARTED) para colectar Flows en UI". En Fragments usa viewLifecycleOwner para evitar leaks tras onDestroyView.

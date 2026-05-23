@@ -1,45 +1,17 @@
 Concepto:
-El patrón Mapper transforma datos entre capas (DTO de red, entidad Room, modelo de dominio, UiModel) manteniendo cada capa independiente y evitando que la UI conozca detalles de serialización o BD.
+El patrón Mapper convierte modelos entre capas (DTO ↔ Entity ↔ Domain ↔ UI) en funciones puras y testeables. Cada capa expone su propio tipo y el mapper aísla los detalles, lo que permite cambiar el modelo de una capa sin afectar al resto.
 
-Explicación detallada:
-Motivación:
-- API devuelve JSON con nombres y tipos distintos al dominio.
-- Room Entity tiene anotaciones y columnas que no deben filtrarse a Compose.
-- Separación Clean Architecture: capa de datos != dominio != presentación.
-
-Implementación:
-- Funciones puras: fun UserDto.toDomain(): User
-- Clases Mapper @Inject si hay dependencias (formateo, locale).
-- MapStruct en Java; en Kotlin extension functions o clases dedicadas.
-
-Direcciones:
-- Dto -> Domain en Repository tras fetch.
-- Entity <-> Domain en capa data.
-- Domain -> UiModel en ViewModel o mapper de presentación.
-
-Evitar:
-- Mapear en Composable (difícil de testear).
-- Un solo modelo para todo (acopla API a cambios de UI).
-
-Cuándo usarlo:
-Siempre que haya más de una representación del mismo concepto. Especialmente con múltiples fuentes (cache + network).
+Suele implementarse como funciones de extensión (toDomain, toUi, toEntity) o como interfaces dedicadas en proyectos grandes.
 
 Ejemplo:
-data class UserDto(val user_id: String, val full_name: String)
-data class User(val id: String, val name: String)
-data class UserUiModel(val id: String, val displayName: String)
+data class UserDto(val id: String, val first: String, val last: String)
+data class User(val id: String, val fullName: String)
 
-fun UserDto.toDomain() = User(id = user_id, name = full_name)
-fun User.toUiModel() = UserUiModel(id = id, displayName = name.uppercase())
+fun UserDto.toDomain() = User(id, "$first $last")
 
-class UserRepository @Inject constructor(private val api: UserApi, private val dao: UserDao) {
-    suspend fun refresh(id: String): User {
-        val dto = api.getUser(id)
-        val domain = dto.toDomain()
-        dao.insert(domain.toEntity())
-        return domain
-    }
+class UserRepository(private val api: UserApi) {
+    suspend fun get(id: String): User = api.fetch(id).toDomain()
 }
 
-Consejo para entrevista:
-Explica por capas y testabilidad de funciones puras. Menciona extension toDomain() idiomática en Kotlin vs clase Mapper cuando la lógica crece.
+Consejo:
+"Una capa, un modelo, un mapper". Evita exponer DTOs en el ViewModel; eso filtra detalles de la red por toda la app.

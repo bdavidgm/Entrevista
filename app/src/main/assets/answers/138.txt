@@ -1,52 +1,19 @@
 Concepto:
-TypeConverter en Room convierte entre tipos de Kotlin/Java que SQLite no soporta nativamente (Date, UUID, enums, listas) y tipos que sí almacena (TEXT, INTEGER, REAL, BLOB).
+Un TypeConverter en Room indica cómo convertir tipos que no soporta SQLite (Date, Enum, List, Json, UUID) a tipos primitivos almacenables y viceversa. Se declaran como funciones marcadas con @TypeConverter en una clase, y se registran con @TypeConverters en la entidad, DAO o base de datos.
 
-Explicación detallada:
-SQLite solo tiene tipos almacenados limitados. Room persiste columnas como INTEGER, REAL, TEXT, BLOB.
-
-Implementación:
-class Converters {
-    @TypeConverter
-    fun fromTimestamp(value: Long?): Date? = value?.let { Date(it) }
-
-    @TypeConverter
-    fun dateToTimestamp(date: Date?): Long? = date?.time
-}
-
-Registro:
-@Database(entities = [...], version = 1)
-@TypeConverters(Converters::class)
-abstract class AppDatabase : RoomDatabase()
-
-También a nivel de campo o clase con @TypeConverters en Entity o DAO.
-
-Casos comunes:
-- Instant / LocalDateTime (java.time) a Long o String ISO.
-- Enum a String.
-- List<String> a JSON con Moshi/Gson en converter.
-
-Buenas prácticas:
-- Converters stateless y rápidos.
-- Migraciones si cambias formato de serialización.
-- Para relaciones complejas usar tablas relacionadas en lugar de JSON blob (normalización).
-
-Cuándo usarlo:
-Siempre que una propiedad de @Entity no sea primitiva ni String directamente mapeable.
+Permite usar tipos ricos del dominio dentro de las entidades sin renunciar a la persistencia.
 
 Ejemplo:
-enum class Status { ACTIVE, ARCHIVED }
-
-class StatusConverter {
-    @TypeConverter fun toString(s: Status) = s.name
-    @TypeConverter fun fromString(v: String) = Status.valueOf(v)
+class Converters {
+    @TypeConverter fun fromDate(value: Long?): Date? = value?.let(::Date)
+    @TypeConverter fun toDate(date: Date?): Long? = date?.time
+    @TypeConverter fun fromTags(value: String?): List<String> = value?.split(",") ?: emptyList()
+    @TypeConverter fun toTags(value: List<String>): String = value.joinToString(",")
 }
 
-@Entity
-@TypeConverters(StatusConverter::class)
-data class Task(
-    @PrimaryKey val id: String,
-    val status: Status
-)
+@Database(entities = [Note::class], version = 1)
+@TypeConverters(Converters::class)
+abstract class AppDb : RoomDatabase()
 
-Consejo para entrevista:
-Explica por qué hace falta (limitaciones SQLite). Menciona registro global vs local y riesgo de cambiar formato sin migración.
+Consejo:
+Mantén los conversores pequeños y deterministas. Para JSON evita acoplarte al parser dentro del converter: extrae la lógica para poder testearla aislada.

@@ -1,47 +1,22 @@
 Concepto:
-Los callbacks del ciclo de vida de un Service son onCreate, onStartCommand (started), onBind (bound), onUnbind, onRebind, onDestroy; el orden depende de si es started, bound o ambos.
+Los callbacks del ciclo de vida de un Service son: onCreate (al crearse), onStartCommand (cada vez que recibe un startService/startForegroundService), onBind / onUnbind / onRebind (en bound services) y onDestroy (al terminarse). El retorno de onStartCommand (START_STICKY, START_NOT_STICKY, START_REDELIVER_INTENT) indica al sistema cómo recrearlo si lo mata.
 
-Explicación detallada:
-Secuencia típica started:
-1) startService → onCreate (primera vez) → onStartCommand
-2) Más startService → solo onStartCommand (nuevo startId)
-3) stopSelf/stopService → onDestroy cuando no hay trabajo/startIds pendientes
-
-Secuencia bound:
-1) bindService → onCreate → onBind → cliente conectado
-2) unbind → onUnbind → onDestroy (si no started)
-
-Started + bound: onDestroy cuando sin clients Y stopped.
-
-onStartCommand flags: START_FLAG_REDELIVERY, START_FLAG_RETRY si proceso matado.
-
-onBind retorna null en pure started service.
-
-onRebind tras onUnbind cuando ACTIVITY_BIND_AUTO_CREATE y cliente vuelve.
-
-No confundir con Activity lifecycle; Service puede vivir con app en background limitado.
-
-Cuándo usarlo:
-- Depurar fugas (Service no destruido).
-- Entender cuándo liberar recursos (sensor, player) en onDestroy.
-- Entrevistas de ciclo de vida Android.
+Service vive en el hilo principal: el trabajo pesado se hace en coroutines, threads o WorkManager.
 
 Ejemplo:
-class LogService : Service() {
-    override fun onCreate() {
-        super.onCreate()
-        // init recursos
-    }
+class SyncService : Service() {
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    override fun onCreate() { super.onCreate() }
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        // procesar intent; stopSelf(startId) al final
+        scope.launch { repository.sync() }
         return START_NOT_STICKY
     }
-    override fun onBind(intent: Intent?) = null
     override fun onDestroy() {
-        // liberar recursos
-        super.onDestroy()
+        scope.cancel(); super.onDestroy()
     }
+    override fun onBind(intent: Intent?): IBinder? = null
 }
 
-Consejo para entrevista:
-Recita callbacks en orden lógico para started y bound por separado. Menciona startId y stopSelf. Conecta con ForegroundService añadiendo startForeground tras onCreate/onStartCommand.
+Consejo:
+Distinguir flags de retorno y aclarar que Service no es un hilo: hay que crear uno propio para no bloquear el Main.

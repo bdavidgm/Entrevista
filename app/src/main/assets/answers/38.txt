@@ -1,40 +1,19 @@
 Concepto:
-Un ContentProvider es un componente que expone datos estructurados de la app a otros procesos mediante un modelo de URIs y operaciones CRUD (query, insert, update, delete) mediadas por ContentResolver. También permite compartir archivos con FileProvider y es la base de acceso a datos del sistema (contactos, media).
+Un ContentProvider es un componente que expone datos estructurados a otras apps mediante una URI (content://) y un conjunto de operaciones tipo CRUD. Es el mecanismo estándar de Android para compartir datos entre aplicaciones (contactos, fotos, calendario).
 
-Explicación detallada:
-Los clientes no acceden a tu base de datos directamente; usan content://authority/path con cursor. Room puede exponer provider en casos raros; suele usarse FileProvider para compartir URI seguras de caché (cámara, share sheet).
-
-android:exported y permisos read/write protegen datos sensibles. Contract class documenta columnas y URIs. LoaderManager antiguo; hoy preferir Repository + Room dentro de tu app sin provider salvo interoperabilidad.
-
-En entrevistas: diferencia ContentProvider vs Repository interno; FileProvider paths en xml; por qué ContactsContract usa providers.
-
-En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
-
-En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
-
-Cuándo usarlo:
-Compartir archivos con otras apps de forma segura (FileProvider casi obligatorio), SDK que expone datos a terceros, integración con buscadores. No crees provider para cada tabla interna si no hay consumidor externo.
+Dentro de la propia app rara vez se usa directamente: para datos internos suele bastar con Room o DataStore. Se sigue usando como cliente vía ContentResolver para acceder a MediaStore, ContactsContract, etc.
 
 Ejemplo:
-// AndroidManifest
-// <provider android:name="androidx.core.content.FileProvider"
-//     android:authorities="${applicationId}.fileprovider"
-//     android:exported="false"
-//     android:grantUriPermissions="true">
-
-fun shareImage(context: Context, file: File) {
-    val uri = FileProvider.getUriForFile(
-        context,
-        "${context.packageName}.fileprovider",
-        file
-    )
-    val intent = Intent(Intent.ACTION_SEND).apply {
-        type = "image/*"
-        putExtra(Intent.EXTRA_STREAM, uri)
-        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+val cursor = contentResolver.query(
+    ContactsContract.Contacts.CONTENT_URI,
+    arrayOf(ContactsContract.Contacts.DISPLAY_NAME),
+    null, null, null
+)
+cursor?.use {
+    while (it.moveToNext()) {
+        Log.d(TAG, it.getString(0))
     }
-    context.startActivity(Intent.createChooser(intent, null))
 }
 
-Consejo para entrevista:
-FileProvider es pregunta muy frecuente aunque no sea provider SQL. URI permissions. Contrasta con almacenamiento interno privado.
+Consejo:
+"Para compartir datos entre apps; dentro de la app, Room". Necesario para integrarse con APIs del sistema como MediaStore y SAF.

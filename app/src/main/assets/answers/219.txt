@@ -1,41 +1,10 @@
 Concepto:
-La ruta de aprendizaje Android (p. ej. roadmap.sh/android) organiza competencias en fases progresivas: fundamentos del lenguaje y plataforma, UI, arquitectura, datos, async, calidad y publicación hasta nivel senior.
+Un roadmap Android (por ejemplo roadmap.sh) ordena el aprendizaje en bloques: lenguaje (Kotlin), componentes y ciclo de vida, UI (Views o Compose), arquitectura (MVVM, Repository, DI), datos (Room, Retrofit, DataStore), concurrencia (corrutinas, Flow), calidad (tests, Lint, CI) y publicación (AAB, Play Console, R8).
 
-Explicación detallada:
-Fases típicas de un roadmap moderno:
-
-1) Prerrequisitos: Git, Kotlin básico (null safety, colecciones, OOP), Gradle intro, estructuras de datos.
-
-2) Fundamentos Android: Activity, Fragment, ciclo de vida, Intent, permisos, Context, manifest, layouts XML o introducción Compose.
-
-3) UI: Views (RecyclerView, ConstraintLayout) o Jetpack Compose (estado, recomposición, navegación); Material Design; adaptabilidad tablet.
-
-4) Arquitectura: MVVM, capa Repository, inyección (Hilt), principios SOLID, Clean Architecture ligera, UDF/MVI opcional.
-
-5) Datos: Room, DataStore, Retrofit/OkHttp, caching, offline-first, Paging 3.
-
-6) Concurrencia: coroutines, Flow, StateFlow, dispatchers, testing con Turbine.
-
-7) Calidad: JUnit, MockK, Espresso, CI, Lint, Profiler, Crashlytics.
-
-8) Sistema y APIs: notificaciones, WorkManager, background limits, seguridad (Keystore, permisos).
-
-9) Publicación: AAB, Play Console, firma, R8, vitals.
-
-10) Senior: modularización, performance (Baseline Profiles), KMP opcional, liderazgo técnico.
-
-El roadmap no es checklist lineal: se iteran temas con proyectos (app notas, clima, ecommerce mini).
-
-Cuándo usarlo:
-- Planificar estudios 6-12 meses para junior→mid.
-- Entrevistas: demostrar conocimiento del ecosistema completo, no solo tutorial aislado.
+Sirve como mapa, no como lista cerrada: se consolida con proyectos reales por fases.
 
 Ejemplo:
-// Proyecto por fase (portfolio)
-// Fase UI: app lista tareas Compose + Room
-// Fase red: mismo + Retrofit + Repository + Hilt
-// Fase calidad: tests ViewModel + Espresso login
-// Fase release: AAB en Play internal track
+Plan trimestral: (1) lista con Compose+Room → (2) capa red+Hilt → (3) tests de ViewModel+UI → (4) release en pista interna.
 
-Consejo para entrevista:
-Menciona roadmap.sh como guía, no como biblia. Relaciona tu experiencia con fases concretas (“domino MVVM y coroutines, profundizando en modularización”). Muestra proyecto end-to-end en portfolio.
+Consejo:
+En entrevista enlaza cada tema con algo que hayas construido o medido (Profiler, Vitals). Profundiza donde el puesto lo exija (performance, modularización, seguridad).

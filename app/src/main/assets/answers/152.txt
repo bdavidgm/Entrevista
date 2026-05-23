@@ -1,39 +1,15 @@
 Concepto:
-El patrón Singleton garantiza que una clase tenga una única instancia global en el proceso y proporciona un punto de acceso centralizado a ella.
+Singleton garantiza una única instancia de una clase en todo el proceso. En Kotlin suele implementarse con object; en Android, dependencias globales se registran en Hilt/Koin con scope @Singleton o equivalente.
 
-Explicación detallada:
-En Kotlin:
-object NetworkClient { ... } // singleton declarativo del lenguaje, thread-safe en carga de clase.
-
-En Java/Android clásico:
-- private constructor + getInstance() sincronizado o holder idiom.
-- Riesgo en tests: estado global compartido entre tests.
-
-En Android moderno con Hilt:
-- @Singleton @Provides fun provideClient(): OkHttpClient — una instancia por componente Application de Hilt, preferible a object manual.
-- Evita object singletons que ocultan dependencias y dificultan tests.
-
-Problemas en Android:
-- Retener Context de Activity en singleton -> memory leak.
-- Estado mutable global -> condiciones de carrera.
-- Acoplamiento alto.
-
-Cuándo usarlo:
-Clientes de red, BD, configuración costosa de crear una vez por proceso. Preferir DI scoped @Singleton sobre object suelto.
+Evita singletons con estado mutable compartido sin disciplina: complica tests y concurrencia.
 
 Ejemplo:
-// Kotlin object (simple)
-object DateFormatter {
-    fun format(epoch: Long): String = ...
+object Analytics {
+    fun track(event: String) { /* ... */ }
 }
 
-// Hilt (recomendado en apps grandes)
-@Module
-@InstallIn(SingletonComponent::class)
-object NetworkModule {
-    @Provides @Singleton
-    fun provideOkHttp(): OkHttpClient = OkHttpClient.Builder().build()
-}
+@Singleton
+class AppGraph @Inject constructor() { /* ... */ }
 
-Consejo para entrevista:
-Menciona object en Kotlin vs @Singleton en Hilt. Habla de testabilidad y no guardar Activity en singleton. No defiendas singleton para todo.
+Consejo:
+Prefiere DI con scope de aplicación antes de object con estado. Los singletons ocultan dependencias: el constructor inyectado es más claro.

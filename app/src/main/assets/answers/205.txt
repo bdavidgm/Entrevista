@@ -1,44 +1,20 @@
 Concepto:
-Retrofit es una biblioteca de Square que genera implementaciones de interfaces HTTP a partir de anotaciones (@GET, @POST, @Path, @Query, @Body), integrándose con convertidores (Moshi/Gson) y OkHttp.
+Retrofit convierte una interfaz HTTP en cliente tipado mediante anotaciones @GET, @POST, @Body, @Query. Se apoya en OkHttp para conexión, interceptores y timeouts, y en un converter (Moshi/Gson) para JSON.
 
-Explicación detallada:
-Defines ApiService como interfaz Kotlin/Java. Retrofit.Builder configura baseUrl, call adapters (CoroutineCallAdapter, RxJava), converter factories.
-
-Ventajas: código declarativo, tipado, fácil mockear en tests, interceptors OkHttp para auth/logging, soporte suspend para coroutines sin Callback.
-
-Componentes típicos:
-- Retrofit.create(ApiService::class.java)
-- OkHttpClient con timeouts, certificate pinning, logging HttpLoggingInterceptor (solo debug)
-- MoshiConverterFactory para JSON Kotlin-friendly
-
-Manejo errores: HttpException en códigos 4xx/5xx; IOException red; envolver en Result o sealed class en repositorio.
-
-Cuándo usarlo:
-- Casi todo cliente REST en Android profesional.
-- Alternativas: Ktor client (Kotlin puro), Apollo para GraphQL.
+Suspend functions o Call/Flow integran bien con corrutinas.
 
 Ejemplo:
-interface ApiService {
+interface Api {
     @GET("users/{id}")
-    suspend fun getUser(@Path("id") id: Long): UserDto
-
-    @POST("users")
-    suspend fun createUser(@Body body: CreateUserRequest): UserDto
+    suspend fun user(@Path("id") id: String): UserDto
 }
-
-val okHttp = OkHttpClient.Builder()
-    .addInterceptor(HttpLoggingInterceptor().apply {
-        level = HttpLoggingInterceptor.Level.BODY
-    })
-    .build()
 
 val retrofit = Retrofit.Builder()
     .baseUrl("https://api.example.com/")
-    .client(okHttp)
     .addConverterFactory(MoshiConverterFactory.create())
+    .client(okHttp)
     .build()
+    .create(Api::class.java)
 
-val api = retrofit.create(ApiService::class.java)
-
-Consejo para entrevista:
-Menciona OkHttp debajo, suspend, interceptors para token refresh, y capa Repository que no expone Retrofit a UI. Habla de manejo de errores y timeouts. Si preguntan GraphQL, cita Apollo.
+Consejo:
+Centraliza auth, logging y reintentos en interceptores OkHttp. Usa Response<T> si necesitas leer códigos HTTP sin excepción.

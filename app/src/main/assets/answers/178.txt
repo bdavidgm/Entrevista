@@ -1,42 +1,14 @@
 Concepto:
-Storage Access Framework (SAF) es el mecanismo mediante el cual el usuario elige archivos o carpetas mediante intents (ACTION_OPEN_DOCUMENT, CREATE_DOCUMENT, OPEN_DOCUMENT_TREE) y la app obtiene URIs persistentes con permisos, sin permisos de almacenamiento amplio.
+SAF (Storage Access Framework) permite al usuario conceder acceso a documentos o árboles mediante ACTION_OPEN_DOCUMENT, ACTION_CREATE_DOCUMENT o ACTION_OPEN_DOCUMENT_TREE; obtienes URIs persistentes con takePersistableUriPermission. Es la forma correcta de leer carpetas arbitrarias sin MANAGE_EXTERNAL_STORAGE.
 
-Explicación detallada:
-SAF separa “dueño del archivo” (provider de documentos: Downloads, Drive, archivos locales) de “consumidor” (tu app). Tras el picker, recibes content:// Uri con flags persistibles (FLAG_GRANT_READ_URI_PERMISSION, takePersistableUriPermission).
-
-Ventajas:
-- Privacidad: acceso solo a lo elegido.
-- Compatible con scoped storage y políticas de Play Store.
-- Soporta nubes y proveedores terceros que implementen DocumentsProvider.
-
-APIs clave:
-- ActivityResultContracts.OpenDocument() / CreateDocument() / OpenDocumentTree()
-- contentResolver.openInputStream(uri), openFileDescriptor
-- DocumentFile.fromTreeUri para navegar carpetas autorizadas
-- Persistencia: contentResolver.takePersistableUriPermission(uri, flags)
-
-Limitaciones: no es un sistema de archivos POSIX completo; operaciones dependen del provider; rendimiento variable en URIs remotos.
-
-Contraste: MediaStore para media conocido que tu app añade a colecciones estándar; SAF para “abrir PDF cualquiera” o exportar CSV a ubicación elegida por el usuario.
-
-Cuándo usarlo:
-- Importar/exportar documentos (JSON, ZIP, PDF).
-- Elegir carpeta de sincronización (document tree).
-- Evitar MANAGE_EXTERNAL_STORAGE salvo casos excepcionales justificados.
+Funciona con proveedores de documentos del sistema y de terceros.
 
 Ejemplo:
-val openDoc = registerForActivityResult(
-    ActivityResultContracts.OpenDocument()
-) { uri: Uri? ->
-    uri ?: return@registerForActivityResult
-    contentResolver.takePersistableUriPermission(
-        uri, Intent.FLAG_GRANT_READ_URI_PERMISSION
-    )
-    contentResolver.openInputStream(uri)?.use { stream ->
-        val text = stream.bufferedReader().readText()
-    }
+val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+    addCategory(Intent.CATEGORY_OPENABLE)
+    type = "application/pdf"
 }
-// Lanzar: openDoc.launch(arrayOf("application/pdf", "text/*"))
+startActivityForResult(intent, REQ_CODE)
 
-Consejo para entrevista:
-“El usuario es el dueño del archivo.” Menciona persistable URI, contraste con READ_EXTERNAL_STORAGE masivo, y que WRITE_EXTERNAL_STORAGE ya no es el patrón en apps target 33+. Ejemplo de OpenDocument vs MediaStore.insert.
+Consejo:
+Persiste permisos con takePersistableUriPermission tras FLAG_GRANT_PERSISTABLE_URI_PERMISSION. No asumas rutas de archivo absolutas.

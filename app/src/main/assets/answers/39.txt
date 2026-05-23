@@ -1,32 +1,22 @@
 Concepto:
-View es la clase base de todos los elementos de UI en el framework clásico de Android (XML/Views): dibuja en pantalla, recibe eventos táctiles y puede medirse y posicionarse. ViewGroup extiende View y contiene otros hijos, organizándolos con LayoutParams (LinearLayout, ConstraintLayout, FrameLayout, etc.).
+En el sistema de Views clásico, View es la unidad básica de la UI (TextView, Button, ImageView), y ViewGroup es una View especial que puede contener otras Views y organizarlas en un layout (LinearLayout, FrameLayout, ConstraintLayout). El árbol de Views se mide, se hace layout y se dibuja en cada frame.
 
-Explicación detallada:
-Medida en dos fases: onMeasure determina tamaño según MODE (EXACTLY, AT_MOST, UNSPECIFIED); onLayout posiciona hijos en ViewGroup. invalidate() redibuja; requestLayout() remide. Jerarquía profunda penaliza rendimiento; preferir ConstraintLayout plano o Compose.
-
-Eventos touch dispatch de padre a hijo. ViewBinding/DataBinding enlazan XML a código type-safe. En migración, Compose convive con AndroidView o ComposeView en Fragment.
-
-En entrevistas: diferencia View vs ViewGroup; wrap_content vs match_parent; overdraw y hierarquía; custom View cuándo. Comparación con Composable: View es imperativo/mutable; Composable es función declarativa.
-
-En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
-
-En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
-
-Cuándo usarlo:
-Pantallas legacy XML, widgets del sistema, integración SDK que solo ofrece Views. Nuevas pantallas suelen ser Compose.
+En Jetpack Compose el concepto desaparece: la UI se describe con funciones Composable y se renderiza directamente, sin árbol de Views.
 
 Ejemplo:
-class BadgeView @JvmOverloads constructor(
-    context: Context,
-    attrs: AttributeSet? = null
-) : View(context, attrs) {
-    override fun onDraw(canvas: Canvas) {
-        super.onDraw(canvas)
-        // dibujar badge
-    }
-}
+<LinearLayout
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <TextView
+        android:text="Hola"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+    <Button
+        android:text="OK"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+</LinearLayout>
 
-// XML ConstraintLayout contiene TextView hijo — View dentro de ViewGroup
-
-Consejo para entrevista:
-Ciclo measure/layout. Por qué anidar muchos LinearLayout anidados es malo. Custom View onMeasure básico.
+Consejo:
+ViewGroup = contenedor; View = nodo hoja. Menciona que árboles muy profundos perjudican el rendimiento (ConstraintLayout para aplanar).

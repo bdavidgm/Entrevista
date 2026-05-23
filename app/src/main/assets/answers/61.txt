@@ -1,57 +1,23 @@
 Concepto:
-El patrón ViewModel en Compose separa la lógica de presentación y el estado observable de la UI declarativa: el Composable solo lee estado y envía eventos; el ViewModel sobrevive cambios de configuración y expone StateFlow o uiState para recomposición vía collectAsStateWithLifecycle.
+En Compose, el patrón ViewModel mantiene el estado y la lógica fuera de las funciones Composable. El ViewModel expone un StateFlow<UiState> y métodos para procesar intents; la pantalla colecta el estado con collectAsStateWithLifecycle y delega los eventos en métodos del ViewModel.
 
-Explicación detallada:
-En Compose no hay vínculo automático oculto: conectas el ViewModel con viewModel() o hiltViewModel() dentro del Composable o lo recibes desde Activity o NavBackStackEntry. El ViewModel expone un UiState inmutable (data class) o StateFlow; la UI hace val state by viewModel.uiState.collectAsStateWithLifecycle().
-
-Eventos de una sola vez (snackbar, navegación) no deben modelarse como State permanente: usa Channel, SharedFlow con replay 0, o patrones de evento consumido para evitar repetición tras rotación. La entrada del usuario llega con funciones onEvent(UserAction) que actualizan estado con copy() inmutable.
-
-hiltViewModel() requiere @HiltViewModel y Activity o destino con @AndroidEntryPoint. El scope del ViewModel es el NavBackStackEntry o la Activity según dónde se solicite; dos pantallas del mismo grafo pueden compartir ViewModel con navGraphViewModels.
-
-Testing: el ViewModel se prueba con TestDispatcher sin Compose; la UI con ComposeTestRule y ViewModel fake. Nunca guardes Context ni referencias Composable en el ViewModel: provoca memory leaks y código no testeable.
-
-State hoisting frente a ViewModel: hoisting para componentes reutilizables sin lógica de negocio; ViewModel cuando hay coroutines, repository o supervivencia de configuración. derivedStateOf en la UI para derivar filtros del state expuesto sin duplicar lógica en el ViewModel si es puramente presentacional.
-
-Unidirectional Data Flow (UDF) encaja naturalmente: eventos suben al ViewModel, estado baja como uiState. Compose solo renderiza state; no llama repository directamente. Esto simplifica previews con datos fake pasando parámetros al Composable sin ViewModel.
-
-Preview y testing: extrae Screen(state, onEvent) stateless y mantén ProductListScreen como wrapper con hiltViewModel. Los @Preview en Android Studio aceleran iteración UI.
-
-Errores comunes en entrevista: exponer MutableStateFlow público, olvidar collectAsStateWithLifecycle (collect sin lifecycle recomponer en background), y poner lógica de Android (Toast, navegación) dentro del ViewModel sin abstracción de efectos.
-
-Preguntas de seguimiento frecuentes en entrevistas para este tema incluyen comparación con alternativas del ecosistema, implicaciones en testing y en el ciclo de vida de Android, y cómo lo aplicarías en una app modular con varios flavors. Si el entrevistador pide profundidad, menciona herramientas de diagnóstico (Profiler, Lint, StrictMode, Layout Inspector) y cómo validarías en CI que no hay regresiones.
-
-En proyectos reales, documenta decisiones en ADR breves o en README del módulo para que el equipo no revierta el patrón por desconocimiento. La mejor respuesta de entrevista combina definición precisa, ejemplo Kotlin o Compose concreto y honestidad sobre límites: ninguna solución es gratis en complejidad o tamaño de APK.
-
-Relaciona este concepto con los demás bloques del manifiesto Entrevista (arquitectura, corrutinas, seguridad, build) para demostrar visión de sistema completo, no conocimiento aislado de una API.
-
-Cuándo usarlo:
-Siempre que la pantalla tenga lógica, IO o estado que sobreviva rotación. Componentes puros sin red ni persistencia pueden usar solo remember y callbacks con state hoisting.
+Esto permite que la UI sea declarativa y pura (UI = f(state)), mientras el ViewModel sobrevive a la rotación y centraliza el side effect / coroutine management.
 
 Ejemplo:
 @HiltViewModel
-class ProductListViewModel @Inject constructor(
-    private val repo: ProductRepository
+class HomeViewModel @Inject constructor(
+    private val repo: HomeRepository
 ) : ViewModel() {
-    private val _uiState = MutableStateFlow(ProductListUiState())
-    val uiState: StateFlow<ProductListUiState> = _uiState.asStateFlow()
-
-    fun load() = viewModelScope.launch {
-        _uiState.update { it.copy(loading = true) }
-        runCatching { repo.getProducts() }
-            .onSuccess { list -> _uiState.update { it.copy(loading = false, items = list) } }
-            .onFailure { e -> _uiState.update { it.copy(loading = false, error = e.message) } }
-    }
+    val state: StateFlow<HomeUiState> = repo.observe()
+        .map(HomeUiState::Success)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeUiState.Loading)
 }
 
 @Composable
-fun ProductListScreen(vm: ProductListViewModel = hiltViewModel()) {
-    val state by vm.uiState.collectAsStateWithLifecycle()
-    LaunchedEffect(Unit) { vm.load() }
-    when {
-        state.loading -> CircularProgressIndicator()
-        else -> LazyColumn { items(state.items) { Text(it.name) } }
-    }
+fun HomeScreen(vm: HomeViewModel = hiltViewModel()) {
+    val state by vm.state.collectAsStateWithLifecycle()
+    HomeContent(state)
 }
 
-Consejo para entrevista:
-Enfatiza UiState inmutable, eventos one-shot, scope de hiltViewModel, y que el ViewModel no conoce Composable. La comparación con MVP o MVI suele ser pregunta de seguimiento natural.
+Consejo:
+"State down, events up". Usa collectAsStateWithLifecycle para colectar con conciencia del ciclo de vida; evita lógica en el Composable.

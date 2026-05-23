@@ -1,40 +1,15 @@
 Concepto:
-derivedStateOf crea un State cuyo valor se recalcula solo cuando cambian las dependencias de estado leídas durante el cálculo, evitando recomposiciones innecesarias cuando un estado intermedio cambia pero el resultado derivado no. Optimiza cálculos costosos o condiciones booleanas compuestas en Compose.
+derivedStateOf crea un State cuyo valor se calcula a partir de otros States y se "memoriza": el Composable lector solo se recompone si el resultado derivado realmente cambia, aunque las fuentes cambien con frecuencia. Es la receta para evitar recomposiciones excesivas en valores derivados.
 
-Explicación detallada:
-Ejemplo: lista con scroll; firstVisibleIndex cambia a menudo pero boolean "showButton = index > 0" solo cambia en 0→1. derivedStateOf { listState.firstVisibleItemIndex > 0 } evita recomponer hijos que solo dependen del boolean cuando el índice sigue >0.
-
-Debe usarse dentro de remember { derivedStateOf { } } para persistir el cálculo entre recomposiciones. Lee estados snapshot durante la lambda; si el resultado es igual (equals), no notifica lectores.
-
-No confundir con map de Flow ni transform en ViewModel: derivedStateOf es optimización de capa UI local. Para lógica de negocio derivada, ViewModel + StateFlow.distinctUntilChanged puede ser más testeable.
-
-En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
-
-En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
-
-Cuándo usarlo:
-Filtros derivados de estado que cambia frecuentemente, flags UI calculados, formatos derivados costosos. No uses para todo: añade complejidad; perfilar primero.
+Caso típico: mostrar un botón solo cuando el scroll ha pasado un umbral, sin recomponer en cada píxel.
 
 Ejemplo:
-@Composable
-fun ChatList(messages: List<Message>) {
-    val listState = rememberLazyListState()
-    val showScrollToBottom by remember {
-        derivedStateOf {
-            listState.firstVisibleItemIndex > 0
-        }
-    }
-  Column {
-        LazyColumn(Modifier.weight(1f), state = listState) {
-            items(messages, key = { it.id }) { MessageBubble(it) }
-        }
-        if (showScrollToBottom) {
-            FloatingActionButton(onClick = {
-                // scroll to bottom
-            }) { Icon(Icons.Default.ArrowDownward, null) }
-        }
-    }
+val listState = rememberLazyListState()
+val showFab by remember {
+    derivedStateOf { listState.firstVisibleItemIndex > 0 }
 }
 
-Consejo para entrevista:
-Cuándo derivedStateOf vs calcular directo en Composable. Ejemplo firstVisibleItemIndex. remember { derivedStateOf }. distinctUntilChanged en Flow como análogo en ViewModel.
+if (showFab) ScrollToTopFab { /* ... */ }
+
+Consejo:
+"derivedStateOf cuando la fuente cambia mucho pero el resultado pocas veces". Sin él, leer firstVisibleItemIndex causaría recomposiciones por cada frame de scroll.

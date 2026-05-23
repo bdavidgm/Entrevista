@@ -1,44 +1,14 @@
 Concepto:
-App Shortcuts son accesos directos en el icono de la app (long-press en launcher) que lanzan intents concretos: estáticos (manifest), dinámicos (ShortcutManager) o pinned (usuario añade a home).
+Los App Shortcuts son accesos directos a acciones o pantallas de tu app desde el launcher (long press en el icono). Hay estáticos (xml en res/xml/shortcuts.xml) y dinámicos (ShortcutManager.addDynamicShortcuts).
 
-Explicación detallada:
-Tipos:
-1) Static shortcuts: definidos en res/xml/shortcuts.xml referenciados en activity con meta-data android.app.shortcuts. Máximo ~5 visibles según launcher.
-2) Dynamic shortcuts: ShortcutManager.addDynamicShortcuts() en runtime según contexto (ej. “Último pedido”, contacto reciente). Límite total combinado (cuota, típicamente 5 activos destacados).
-3) Pinned shortcuts: requestPinShortcut() si el launcher soporta PIN_SHORTCUT_SUPPORTED; usuario confirma icono en escritorio.
-
-Cada shortcut tiene id, shortLabel, longLabel, icon, intents (o activity target). Para deep link interno, usa Intent con action VIEW y NavDeepLink o rutas explícitas.
-
-Android 7.1+ (API 25). Actualiza dynamic shortcuts cuando cambian datos; removeDynamicShortcuts si ya no aplican.
-
-Integración con notifications: Bubble shortcuts y conversaciones usan Person y categorías relacionadas.
-
-Cuándo usarlo:
-- Acciones frecuentes: “Nueva nota”, “Buscar”, “Escanear QR”.
-- Deep links a sección sin pasar por home.
-- Re-engagement: shortcuts dinámicos a contenido reciente.
+Cada atajo apunta a un Intent con action explícita y categorías adecuadas.
 
 Ejemplo:
-// shortcuts.xml
-<shortcuts>
-  <shortcut android:shortcutId="compose"
-      android:shortcutShortLabel="@string/compose"
-      android:icon="@drawable/ic_compose"
-      android:targetPackage="com.example"
-      android:targetClass="com.example.MainActivity">
-    <intent android:action="android.intent.action.VIEW"
-        android:data="myapp://compose" />
-  </shortcut>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut android:shortcutId="new_note" android:shortcutShortLabel="@string/new_note">
+        <intent android:action="com.app.ACTION_NEW_NOTE" android:targetPackage="com.app" android:targetClass="com.app.MainActivity"/>
+    </shortcut>
 </shortcuts>
 
-// Dinámico
-val shortcut = ShortcutInfo.Builder(context, "order_42")
-    .setShortLabel("Pedido #42")
-    .setIntent(Intent(Intent.ACTION_VIEW, Uri.parse("myapp://order/42")))
-    .setIcon(Icon.createWithResource(context, R.drawable.ic_order))
-    .build()
-context.getSystemService(ShortcutManager::class.java)
-    .addDynamicShortcuts(listOf(shortcut))
-
-Consejo para entrevista:
-Diferencia static vs dynamic vs pinned, menciona límite de shortcuts y que deben reflejar acciones reales (Play policy). Conecta con deep links y Nav Component para manejar el intent en cold start.
+Consejo:
+Limita cantidad (dynamic máx ~4 visibles según OEM). Actualiza shortcuts cuando cambie el estado relevante (usuario deslogueado, etc.).

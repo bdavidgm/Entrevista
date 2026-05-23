@@ -1,24 +1,12 @@
 Concepto:
-Un Composable es una función Kotlin anotada con @Composable que describe parte del árbol de UI de Jetpack Compose. Al invocarse, el runtime de Compose registra qué se dibujó y puede volver a ejecutar la función cuando cambia el estado, de forma declarativa similar a re-renderizar según datos.
+Un Composable es una función Kotlin anotada con @Composable que describe parte de la UI en Jetpack Compose. Solo puede invocarse desde otra Composable o desde setContent { }, y el runtime la vuelve a ejecutar (recomposition) cuando cambia el estado que lee. El modelo es declarativo: UI = f(state).
 
-Explicación detallada:
-Las funciones Composable deben llamarse solo desde otras Composables o desde setContent { }. No devuelven View sino que emiten UI al Composition. Pueden tener parámetros de estado y eventos callback. Recomposition re-ejecuta funciones cuyas entradas cambiaron.
-
-Reglas: evitar side effects directos en el cuerpo (usar LaunchedEffect, rememberCoroutineScope). Estabilidad de parámetros (stable types) ayuda a optimizar skips. Preview en Android Studio con @Preview.
-
-En entrevistas comparan con XML imperativo: UI = f(state). Preguntan pureza y por qué no hacer HTTP en el cuerpo del Composable.
-
-En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
-
-En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
-
-Cuándo usarlo:
-Toda UI nueva en Compose: pantallas, items, temas. Componentes pequeños y reusables con parámetros claros.
+Reglas básicas: no hagas side effects en el cuerpo (usa LaunchedEffect, rememberCoroutineScope); pasa estado como parámetros para facilitar tests; previsualiza con @Preview.
 
 Ejemplo:
 @Composable
 fun GreetingCard(name: String, onDismiss: () -> Unit) {
-    Card(modifier = Modifier.padding(16.dp)) {
+    Card(Modifier.padding(16.dp)) {
         Column(Modifier.padding(16.dp)) {
             Text("Hola, $name", style = MaterialTheme.typography.titleLarge)
             TextButton(onClick = onDismiss) { Text("Cerrar") }
@@ -26,5 +14,5 @@ fun GreetingCard(name: String, onDismiss: () -> Unit) {
     }
 }
 
-Consejo para entrevista:
-@Composable restricciones. Recomposition explicada brevemente. Stateless vs stateful composables. No guardar estado mutable sin remember.
+Consejo:
+Distingue stateless vs stateful composables. Recuerda usar remember para estado interno y nunca hagas IO ni HTTP en el cuerpo del Composable.

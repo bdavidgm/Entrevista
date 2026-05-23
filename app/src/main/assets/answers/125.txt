@@ -1,42 +1,16 @@
 Concepto:
-El modificador out en tipos genéricos de Kotlin declara covarianza: el tipo solo aparece en posiciones de salida (productor); puedes tratar Producer<Cat> como Producer<Animal> si Cat es subtipo de Animal.
+El modificador out marca un parámetro de tipo como covariante: el tipo solo aparece como salida (producer), nunca como entrada. Permite que Producer<Hijo> sea subtipo de Producer<Padre>, igual que List<String> puede tratarse como List<Any>.
 
-Explicación detallada:
-Variance en genéricos responde: si B es subtipo de A, ¿G<B> es subtipo de G<A>?
-
-Covarianza (out):
-- interface Producer<out T> { fun get(): T }
-- Solo T en retornos y posiciones out; no puedes tener fun set(value: T) con T en parámetro de entrada (sería inseguro).
-- List<out E> en Kotlin es interface List<out E> — solo lectura a nivel de API de List (MutableList es invariante).
-
-Analogía: puedes leer un canal que entrega gatos como canal que entrega animales; no puedes escribir un animal genérico en un canal de gatos.
-
-En Android:
-- LiveData y Flow exponen valores producidos (out conceptual).
-- PagingSource y APIs de solo lectura.
-- Definir interfaces de repositorio que solo devuelven T: interface ReadStore<out T>
-
-Sin out, List<Cat> no sería subtipo de List<Animal> porque List es mutable en Java y sería inseguro añadir Animal a List<Cat>.
-
-Cuándo usarlo:
-Al diseñar APIs que solo producen T y nunca lo consumen como parámetro de escritura. Marca out en el tipo del parámetro genérico de la interfaz o clase.
+Es la versión de "? extends T" de Java aplicada en la declaración, no en cada uso. Aporta seguridad de tipos al asignar genéricos relacionados.
 
 Ejemplo:
 interface Producer<out T> {
     fun produce(): T
 }
 
-open class Animal
-class Cat : Animal()
+class StringProducer : Producer<String> { override fun produce() = "hola" }
 
-fun feed(animals: Producer<Animal>) {
-    val a: Animal = animals.produce()
-}
+val producer: Producer<Any> = StringProducer() // OK gracias a out
 
-val catProducer: Producer<Cat> = object : Producer<Cat> {
-    override fun produce() = Cat()
-}
-feed(catProducer) // OK por out
-
-Consejo para entrevista:
-Usa PECS mentalmente: Producer Extends (out). Contrasta con in (contravariante) e invariante sin modificador. Ejemplo List solo lectura vs MutableList.
+Consejo:
+"out = covariante = producer". Si necesitas leer y escribir, no puedes usar out; usa invariante o star projection según el caso.

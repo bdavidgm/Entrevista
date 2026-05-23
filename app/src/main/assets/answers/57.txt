@@ -1,52 +1,23 @@
 Concepto:
-La integración de Jetpack Compose en una aplicación basada en Views permite adoptar UI declarativa de forma incremental, sin reescribir toda la app. Se apoya en ComposeView para incrustar Composables en XML y en AndroidView para insertar Views clásicas dentro del árbol Compose. Es el camino oficial recomendado por Google para migraciones graduales.
+Compose y el sistema de Views pueden convivir en la misma app gracias a dos puentes: ComposeView (incrustar Compose en un layout XML) y AndroidView (incrustar una View dentro de un Composable). Esto permite migrar pantalla por pantalla en lugar de reescribir toda la app.
 
-Explicación detallada:
-En proyectos Android con años de XML, Fragments y ViewBinding, Compose no exige un reemplazo total de un día para otro. Habilitas Compose en el módulo (buildFeatures.compose = true), añades un ComposeView en el layout XML y desde Kotlin llamas setContent { } para definir la UI declarativa de esa zona. ComposeView actúa como host del Composition: gestiona el árbol Composable, el tema MaterialTheme y las recomposiciones cuando cambia el estado observado.
-
-En la dirección opuesta, el Composable AndroidView(factory, update) crea una View tradicional dentro de Compose. El factory recibe Context y devuelve la instancia; el bloque update opcional sincroniza estado de Compose hacia la View en cada recomposición relevante. Es el patrón estándar para MapView, WebView, AdView o cualquier SDK que aún no tenga binding Compose.
-
-Aspectos que debes dominar en entrevista: alineación de temas (MaterialTheme en Compose coherente con Theme.AppCompat en XML, o androidx.compose.material3.MdcTheme), estrategia de composición (ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed evita fugas al destruir la vista), y una única fuente de verdad para el estado (ViewModel compartido entre Fragment XML y Composable vía StateFlow o parámetros).
-
-En Fragment puedes usar ComposeView en onCreateView o el DSL compose { } de androidx.fragment:fragment-compose. En Activity, setContent en ComponentActivity reemplaza setContentView por completo en pantallas ya migradas; en pantallas híbridas, mantén setContentView(R.layout...) y solo el contenedor es ComposeView.
-
-Riesgos: anidar muchos AndroidView degrada rendimiento (cada uno es una isla fuera del árbol de recomposición ligero), duplicar estado entre View y Compose provoca bugs sutiles, y olvidar el tema hace que los colores no coincidan con el resto de la app. La migración por feature (una pantalla, un flujo) reduce riesgo frente al big bang.
-
-Preguntas de seguimiento frecuentes en entrevistas para este tema incluyen comparación con alternativas del ecosistema, implicaciones en testing y en el ciclo de vida de Android, y cómo lo aplicarías en una app modular con varios flavors. Si el entrevistador pide profundidad, menciona herramientas de diagnóstico (Profiler, Lint, StrictMode, Layout Inspector) y cómo validarías en CI que no hay regresiones.
-
-En proyectos reales, documenta decisiones en ADR breves o en README del módulo para que el equipo no revierta el patrón por desconocimiento. La mejor respuesta de entrevista combina definición precisa, ejemplo Kotlin o Compose concreto y honestidad sobre límites: ninguna solución es gratis en complejidad o tamaño de APK.
-
-Relaciona este concepto con los demás bloques del manifiesto Entrevista (arquitectura, corrutinas, seguridad, build) para demostrar visión de sistema completo, no conocimiento aislado de una API.
-
-Cuándo usarlo:
-Úsalo cuando el equipo debe seguir entregando features en Views pero quiere Compose en pantallas nuevas o complejas (formularios, listas animadas). También cuando una librería solo ofrece View. Evita mezclar decenas de AndroidView en una misma pantalla Compose si existe alternativa nativa.
+Para integrar bien hay que sincronizar el ciclo de vida (ViewCompositionStrategy), los temas (Material themes vs MaterialTheme) y el estado.
 
 Ejemplo:
-// res/layout/activity_main.xml
-// <androidx.compose.ui.platform.ComposeView android:id="@+id/compose_host" ... />
+<androidx.compose.ui.platform.ComposeView
+    android:id="@+id/composeView"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"/>
 
-class MainActivity : AppCompatActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
-        findViewById<ComposeView>(R.id.compose_host).apply {
-            setViewCompositionStrategy(
-                ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed
-            )
-            setContent {
-                MaterialTheme { ProductListScreen() }
-            }
-        }
-    }
+binding.composeView.setContent {
+    MyAppTheme { HomeScreen() }
 }
 
-@Composable
-fun EmbeddedWeb(url: String) {
-    AndroidView(
-        factory = { context -> WebView(context) },
-        update = { webView -> webView.loadUrl(url) }
-    )
-}
+// En Compose
+AndroidView(
+    factory = { ctx -> MapView(ctx) },
+    update = { it.onResume() }
+)
 
-Consejo para entrevista:
-Menciona migración incremental, ComposeView, AndroidView, ViewCompositionStrategy y tema compartido. Si preguntan por estado compartido: ViewModel + StateFlow. No digas que hay que reescribir toda la app; Google documenta explícitamente interoperabilidad bidireccional.
+Consejo:
+"ComposeView dentro de XML; AndroidView dentro de Compose". Migra de hojas a raíz (single Activity al final) y comparte ViewModels para no duplicar estado.

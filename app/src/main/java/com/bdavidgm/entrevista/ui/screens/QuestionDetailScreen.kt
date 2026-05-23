@@ -1,7 +1,12 @@
 package com.bdavidgm.entrevista.ui.screens
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,11 +39,14 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.bdavidgm.entrevista.R
 import com.bdavidgm.entrevista.data.QuestionSummary
+import com.bdavidgm.entrevista.ui.components.InterviewAnswerBody
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -55,6 +63,7 @@ fun QuestionDetailScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     BackHandler(onBack = onBack)
     Scaffold(
         topBar = {
@@ -166,7 +175,23 @@ fun QuestionDetailScreen(
                     text = summary.question,
                     style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
-                    modifier = Modifier.padding(20.dp)
+                    modifier = Modifier
+                        .padding(20.dp)
+                        .pointerInput(summary.question) {
+                            detectTapGestures(
+                                onLongPress = {
+                                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                    clipboard.setPrimaryClip(
+                                        ClipData.newPlainText("question", summary.question)
+                                    )
+                                    Toast.makeText(
+                                        context,
+                                        context.getString(R.string.question_copied_to_clipboard),
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                            )
+                        }
                 )
             }
             Spacer(modifier = Modifier.height(16.dp))
@@ -193,10 +218,8 @@ fun QuestionDetailScreen(
                         }
                     }
                     answer != null -> {
-                        Text(
-                            text = answer,
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurface,
+                        InterviewAnswerBody(
+                            answer = answer,
                             modifier = Modifier.padding(16.dp)
                         )
                     }

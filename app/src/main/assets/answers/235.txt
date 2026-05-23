@@ -1,20 +1,11 @@
 Concepto:
-El acceso a archivos evolucionó de almacenamiento amplio (READ/WRITE_EXTERNAL_STORAGE) al modelo de sandbox y MediaStore con permisos granulares por tipo de medio.
+El modelo de almacenamiento evolucionó hacia scoped storage: apps tienen directorio privado sin permisos; medios compartidos vía MediaStore o SAF; MANAGE_EXTERNAL_STORAGE es excepción rara y auditada por Play. READ_EXTERNAL_STORAGE está segmentado en READ_MEDIA_IMAGES/VIDEO/AUDIO en Android 13+.
 
-Explicación detallada:
-Android 10+: scoped storage; apps acceden a su directorio y a URIs compartidos vía SAF (ACTION_OPEN_DOCUMENT, CREATE_DOCUMENT). Android 13+: READ_MEDIA_IMAGES/VIDEO/AUDIO sustituyen lectura amplia de imágenes.
-
-MANAGE_EXTERNAL_STORAGE (All files access): solo para gestores de archivos, backup, antivirus; revisión estricta en Play; pedir en Ajustes, no runtime clásico.
-
-Seguridad: no exponer file:// en Intents (usar FileProvider); validar MIME y tamaño; escanear malware en servidor si suben archivos; no guardar PII en Downloads público.
-
-WRITE_EXTERNAL_STORAGE deprecated en target altos. Para compartir entre apps: content:// con permisos temporales FLAG_GRANT_READ_URI_PERMISSION.
-
-Cuándo usarlo:
-Galería, editor, backup, exportar PDF. Usar SAF para archivos arbitrarios del usuario.
+No uses rutas absolutas /sdcard arbitrarias.
 
 Ejemplo:
-val uri = contentResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
+val uri = MediaStore.Downloads.EXTERNAL_CONTENT_URI
+contentResolver.query(uri, projection, bundle, null)
 
-Consejo para entrevista:
-Scoped storage, SAF, READ_MEDIA_* y por qué MANAGE_EXTERNAL_STORAGE es excepcional.
+Consejo:
+Photo Picker y SAF reducen permisos. Si solo exportas archivo propio, usa FileProvider para compartir URI segura.

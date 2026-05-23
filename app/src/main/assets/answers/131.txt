@@ -1,46 +1,17 @@
 Concepto:
-viewModelScope es el CoroutineScope definido en androidx.lifecycle.ViewModel que cancela todas las corrutinas hijas cuando el ViewModel se limpia (onCleared), típicamente cuando el usuario sale de la pantalla asociada de forma permanente.
+viewModelScope es un CoroutineScope ligado al ViewModel: las coroutines lanzadas en él se cancelan automáticamente cuando se llama a onCleared(), es decir, cuando el componente que lo posee desaparece del todo. Usa Dispatchers.Main.immediate por defecto.
 
-Explicación detallada:
-- Propiedad val viewModelScope: CoroutineScope en ViewModel KTX.
-- Dispatcher Main por defecto; usa withContext(Dispatchers.IO) para red/BD.
-- Sobrevive rotación de configuración: el ViewModel persiste en ViewModelStore, el scope no se cancela al girar.
-
-Uso típico:
-viewModelScope.launch {
-    _uiState.value = UiState.Loading
-    runCatching { repository.load() }
-        .onSuccess { _uiState.value = UiState.Success(it) }
-        .onFailure { _uiState.value = UiState.Error(it.message) }
-}
-
-Cancelación:
-- Si el usuario navega atrás y el ViewModel se elimina del store, onCleared cancela jobs.
-- Jobs hijos cooperativos deben comprobar isActive en bucles largos.
-- SupervisorJob no es el default del scope; excepción no manejada puede cancelar hermanos según configuración.
-
-No confundir con lifecycleScope en la View: el ViewModel no debe referenciar View ni Context de Activity.
-
-Cuándo usarlo:
-Toda operación asíncrona iniciada desde ViewModel: carga de datos, paginación, transformaciones de estado. Nunca GlobalScope desde ViewModel.
+Es el sitio adecuado para orquestar llamadas a repositorios y producir StateFlow para la UI, dejando que el cambio de configuración no cancele el trabajo.
 
 Ejemplo:
-@HiltViewModel
-class ProductsViewModel @Inject constructor(
-    private val repository: ProductRepository
-) : ViewModel() {
+class HomeViewModel(private val repo: Repository) : ViewModel() {
+    private val _state = MutableStateFlow<HomeState>(HomeState.Loading)
+    val state = _state.asStateFlow()
 
-    private val _state = MutableStateFlow<ProductsUiState>(ProductsUiState.Loading)
-    val state: StateFlow<ProductsUiState> = _state.asStateFlow()
-
-    init {
-        viewModelScope.launch {
-            repository.productsFlow()
-                .catch { e -> _state.value = ProductsUiState.Error(e.message) }
-                .collect { list -> _state.value = ProductsUiState.Success(list) }
-        }
+    fun load() = viewModelScope.launch {
+        _state.value = HomeState.Success(repo.fetch())
     }
 }
 
-Consejo para entrevista:
-Enlaza con supervivencia a rotación y cancelación en onCleared. Menciona withContext(IO) y que ViewModel no guarda Activity.
+Consejo:
+"viewModelScope = vida del ViewModel". No uses GlobalScope: pierdes la cancelación y filtras trabajo cuando el usuario sale.

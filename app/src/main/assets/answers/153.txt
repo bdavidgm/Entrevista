@@ -1,42 +1,16 @@
 Concepto:
-El patrón Factory proporciona una interfaz para crear objetos sin especificar la clase concreta, centralizando la lógica de construcción y permitiendo variar el tipo creado según parámetros o configuración.
+Factory encapsula la creación de objetos: en lugar de instanciar con new en muchos sitios, llamas a un método o interfaz (create()) que decide qué implementación devolver según parámetros o configuración.
 
-Explicación detallada:
-Variantes:
-- Simple factory method: fun create(type: Type): Product
-- Abstract Factory: familias de objetos relacionados.
-- Factory registrada en DI: @Provides fun provideParser(format: Format): Parser
-
-En Android:
-- ViewModelFactory (antes manual; Hilt lo genera).
-- FragmentFactory para inyección en fragments.
-- Room: @Database abstract class proporciona DAOs (factory interna generada).
-
-Ventajas:
-- Oculta detalles de construcción (dependencias, API keys).
-- Facilita tests sustituyendo factory por fake.
-- Cumple Open/Closed: nuevos tipos sin cambiar clientes si extiendes factory.
-
-Kotlin:
-- Funciones de extensión o top-level como factories ligeras.
-- sealed class + when para tipos cerrados.
-
-Cuándo usarlo:
-Cuando la creación requiere lógica (permisos, config, múltiples impl) o no quieres que el cliente conozca implementaciones concretas.
+En Android se usa para Fragments, ViewModels con argumentos, parsers o para sustituir implementaciones en tests.
 
 Ejemplo:
-interface PaymentProcessor
-class StripeProcessor : PaymentProcessor
-class PayPalProcessor : PaymentProcessor
-
-object PaymentProcessorFactory {
-    fun create(provider: Provider): PaymentProcessor = when (provider) {
-        Provider.STRIPE -> StripeProcessor()
-        Provider.PAYPAL -> PayPalProcessor()
-    }
+interface LoggerFactory {
+    fun create(tag: String): Logger
 }
 
-// Con Hilt @Binds múltiples @IntoMap o qualifiers es el enfoque escalable
+class TimberLoggerFactory : LoggerFactory {
+    override fun create(tag: String) = TimberLogger(tag)
+}
 
-Consejo para entrevista:
-Relaciona con Hilt @Provides/@Binds como factory centralizada. Contrasta con new directo en Activity. Menciona ViewModelFactory histórico.
+Consejo:
+Distingue Factory de Builder (pasos configurables) y de DI (Hilt ya “fabrica” con @Inject constructor).

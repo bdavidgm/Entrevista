@@ -1,30 +1,14 @@
 Concepto:
-Un Intent explícito nombra directamente el componente destino (paquete + clase) o ComponentName, usado típicamente para navegación interna dentro de tu aplicación. Un Intent implícito declara una acción abstracta (ACTION_SEND, ACTION_VIEW) y deja que el sistema resuelva qué app o componente puede manejarla según intent-filters del Manifest.
+Un Intent explícito indica exactamente qué componente (clase) debe atenderlo; un Intent implícito describe una acción y deja que el sistema elija un componente capaz de ejecutarla mediante intent filters declarados en el AndroidManifest.
 
-Explicación detallada:
-Explícito: Intent(context, TargetActivity::class.java) — predecible, solo tu app si no exportas la activity. Implícito: Intent(Intent.ACTION_SEND).setType("text/plain") — puede mostrar chooser con varias apps. El PackageManager queryIntentActivities verifica handlers.
-
-Intent-filters en Manifest declaran action, category (DEFAULT, BROWSABLE), data scheme/host para deep links. Sin match, ActivityNotFoundException. Chooser Intent.createChooser da control al usuario.
-
-En entrevistas contrastan cuándo usar cada uno: interno = explícito; integración sistema/compartir = implícito. Seguridad: intents implícitos entrantes pueden ser spoofed; valida datos. Android 11+ package visibility requiere queries en manifest para ver otras apps.
-
-En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
-
-En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
-
-Cuándo usarlo:
-Explícito: flujos propios, notificaciones a pantallas internas con PendingIntent explícito. Implícito: compartir, abrir PDF, mailto, mapas, cámara si no usas contracts modernos.
+Los explícitos se usan para navegar dentro de la propia app; los implícitos para acciones genéricas (compartir, abrir un enlace, capturar foto) que pueden ser atendidas por varias apps.
 
 Ejemplo:
 // Explícito
-startActivity(Intent(this, SettingsActivity::class.java))
+startActivity(Intent(this, DetailActivity::class.java))
 
-// Implícito con chooser
-val send = Intent(Intent.ACTION_SEND).apply {
-    type = "text/plain"
-    putExtra(Intent.EXTRA_TEXT, shareMessage)
-}
-startActivity(Intent.createChooser(send, getString(R.string.share_via)))
+// Implícito
+startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://example.com")))
 
-Consejo para entrevista:
-Ejemplo real de ACTION_VIEW con https. Preguntan intent-filter XML. Activity Result vs startActivityForResult.
+Consejo:
+Comprueba siempre resolveActivity antes de lanzar un implícito para evitar ActivityNotFoundException. Recuerda PackageVisibility (queries en manifest a partir de Android 11).

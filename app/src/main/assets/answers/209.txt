@@ -1,38 +1,13 @@
 Concepto:
-Firebase Authentication provee login de usuarios con email/contraseña, teléfono, Google, Apple, anónimo y más, gestionando tokens y sesión integrada con otros productos Firebase.
+Firebase Authentication ofrece login con email/contraseña, teléfono (SMS), Google, Facebook, etc., gestionando tokens y refresco en el SDK. Los datos de perfil viven en Firebase; tu backend puede verificar ID tokens JWT.
 
-Explicación detallada:
-FirebaseAuth es el SDK:
-- createUserWithEmailAndPassword / signInWithEmailAndPassword
-- signInWithCredential (GoogleSignIn, OAuth)
-- signInAnonymously para pruebas o guest checkout
-- currentUser, idToken (JWT para backend propio)
-- addAuthStateListener para UI reactiva al login/logout
-
-Backend propio: envía ID token al servidor y verifica con Firebase Admin SDK.
-
-Integración UI: Google One Tap, Credential Manager; Phone Auth con verificación SMS.
-
-Seguridad: reglas en Firestore/Storage deben usar request.auth.uid; no confiar solo en cliente.
-
-Cuándo usarlo:
-- MVPs y startups que quieren auth rápido sin servidor propio de identidad.
-- Apps que ya usan Firestore, Functions, FCM con mismo proyecto Firebase.
-
-Alternativas: Auth0, AWS Cognito, backend custom OAuth2/OIDC.
+Se integra con UI de login y reglas de seguridad en otras piezas de Firebase.
 
 Ejemplo:
-val auth = Firebase.auth
-auth.signInWithEmailAndPassword(email, password)
+Firebase.auth.signInWithEmailAndPassword(email, pass)
     .addOnCompleteListener { task ->
-        if (task.isSuccessful) {
-            val user = auth.currentUser
-        } else {
-            // task.exception
-        }
+        if (task.isSuccessful) navigateHome()
     }
-// Coroutines KTX:
-// auth.signInWithEmailAndPassword(email, pass).await()
 
-Consejo para entrevista:
-Menciona AuthStateListener, ID token para API propia, y reglas de seguridad en Firestore. Di que auth en cliente no basta; backend debe validar token. Conoce límites (proveedores, coste según escala).
+Consejo:
+Nunca confíes solo en el cliente: valida tokens en servidor con las claves públicas de Google. Habilita verificación de email y rate limits donde aplique.

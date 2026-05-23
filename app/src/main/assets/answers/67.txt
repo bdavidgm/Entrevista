@@ -1,41 +1,18 @@
 Concepto:
-Inyectar dependencias en el constructor significa que una clase recibe sus colaboradores (repositorios, use cases, dispatchers) como parámetros del constructor en lugar de instanciarlos internamente o usar singletons estáticos. Es la forma recomendada con Hilt, Dagger y Koin para lograr inversión de control y testabilidad.
+Inyectar dependencias por constructor (constructor injection) hace explícitas las colaboraciones de una clase y las convierte en parte de su API. Frente a singletons globales o service locators, mejora la testabilidad (puedes pasar fakes en tests) y evita acoplamientos ocultos.
 
-Explicación detallada:
-Sin inyección, ViewModel haría val repo = ProductRepositoryImpl() y acoplaría implementación concreta, imposibilitando tests con fake y violando Open/Closed. Con @Inject constructor(private val repo: ProductRepository) Hilt resuelve el grafo en tiempo de compilación (o Koin en runtime).
-
-Ventajas en entrevista: (1) Testabilidad — pasas mock en test sin framework de DI. (2) Transparencia — las dependencias son explícitas en la firma. (3) Ciclo de vida — Hilt enlaza scopes (@Singleton, @ViewModelScoped). (4) Sustitución — módulos @Test reemplazan bindings.
-
-Field injection (@Inject lateinit var) se desaconseja: oculta dependencias, dificulta tests y requiere inicialización post-construct. Constructor injection es el estándar en Kotlin por inmutabilidad con val.
-
-Para interfaces, @Binds en módulo abstracto o @Provides en módulo object. Qualifiers resuelven ambigüedad (dos Retrofit). No abuses @Singleton en todo: solo dependencias costosas o verdaderamente globales.
-
-En Compose, hiltViewModel() usa el factory que ya conoce el grafo; no uses ServiceLocator manual salvo legacy.
-
-En el contexto de proyectos Android reales, combina esta idea con las guías oficiales de Android Developers y con métricas de calidad (crashes, ANR, Vitals) cuando aplique. En code review, pregunta siempre por ciclo de vida, testabilidad y si la solución escala cuando el equipo crece.
-
-Durante la entrevista, estructura la respuesta en definición, ejemplo concreto de tu experiencia o proyecto demo, y trade-offs frente a alternativas. Mencionar versiones recientes de API o biblioteca (Material3, Paging 3, Hilt 2.x) demuestra que sigues el ecosistema, sin necesidad de memorizar números de versión exactos.
-
-Para profundizar tras la entrevista, revisa documentación oficial, codelabs y el código fuente de tu propio proyecto Entrevista aplicando el concepto en un flujo mínimo reproducible. La práctica deliberada con tests unitarios refuerza la confianza al explicar el tema en viva voz.
-
-Cuándo usarlo:
-Toda clase de lógica (ViewModel, use case, repository impl) en proyectos con Hilt/Koin. Evita new en capas de negocio. Context solo vía @ApplicationContext o interfaces, nunca Activity context en singleton.
+Frameworks como Hilt o Koin generan o resuelven esos constructores, pero el patrón funciona incluso sin DI: si tu clase compila sin tocar nada estático, ya es inyectable.
 
 Ejemplo:
-@HiltViewModel
-class ProfileViewModel @Inject constructor(
-    private val getUser: GetUserUseCase,
-    @IoDispatcher private val io: CoroutineDispatcher
-) : ViewModel() { /* ... */ }
-
-// Test sin Hilt
-class ProfileViewModelTest {
-    @Test
-    fun loadsUser() = runTest {
-        val vm = ProfileViewModel(FakeGetUserUseCase(), StandardTestDispatcher())
-        // assert
+class GetUser @Inject constructor(
+    private val repo: UserRepository,
+    private val analytics: Analytics
+) {
+    suspend operator fun invoke(id: String): User {
+        analytics.track("get_user")
+        return repo.get(id)
     }
 }
 
-Consejo para entrevista:
-Di "constructor injection over field injection". Menciona interfaces en dominio e implementación en data. Trampa: ¿Por qué no object singleton Kotlin? Difícil de testear y oculta dependencias.
+Consejo:
+"Constructor sobre setter, setter sobre Service Locator". Si tienes muchos parámetros, repiensa la responsabilidad de la clase (SRP).

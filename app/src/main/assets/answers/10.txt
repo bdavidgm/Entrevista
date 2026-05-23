@@ -1,36 +1,15 @@
 Concepto:
-Las extension properties son propiedades declaradas fuera del cuerpo de una clase pero asociadas a un tipo receptor, con sintaxis val/var Tipo.nombre. No añaden un campo de instancia real: solo definen getter y, opcionalmente, setter que calculan o delegan un valor cada vez que se accede.
+Las extension properties son propiedades asociadas a un tipo receptor (val Tipo.nombre) declaradas fuera de la clase. Al igual que las extension functions, se compilan como getters/setters estáticos, por lo que no tienen backing field: solo definen cómo calcular o asignar el valor.
 
-Explicación detallada:
-Al igual que las extension functions, se compilan como getters/setters estáticos en JVM. Por eso no existe backing field en una extension property pura: no puedes almacenar estado dentro de la propiedad salvo que el setter escriba en otro sitio (mapa global, WeakHashMap), patrón que se desaconseja en producción por fugas y complejidad.
-
-Casos habituales en Android: val View.isVisible que lee visibility; val Context.inflater; propiedades de conveniencia para leer argumentos de Fragment (mejor con delegate tipado y validación); adaptadores sobre tipos del SDK que no controlas. En Jetpack Compose muchas APIs son funciones de extensión en Modifier más que properties, pero el concepto es el mismo a nivel de API ergonómica.
-
-En entrevistas suelen preguntar si una extension property puede reemplazar un campo real (no para estado), y cómo interactúan con propiedades miembro si hay mismo nombre (la miembro tiene prioridad en acceso directo). También comparan con delegated properties (by lazy, by viewModels) que sí viven dentro de la clase y pueden tener backing field o delegado.
-
-En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
-
-Cuándo usarlo:
-Para propiedades derivadas de solo lectura que mejoran legibilidad: isVisible, isGone, dimensiones en px desde dp con Context. Para var extension, solo si el setter tiene un efecto claro y local (por ejemplo asignar visibility). No uses extension var para cachés por instancia sin un delegado robusto.
+Sirven para exponer valores derivados con sintaxis de propiedad. No deben usarse para almacenar estado por instancia (no hay campo); para eso conviene un delegate dentro de la clase.
 
 Ejemplo:
-val View.isVisible: Boolean
+val View.isVisibleNow: Boolean
     get() = visibility == View.VISIBLE
 
-var View.isVisible: Boolean
+var View.isVisibleNow: Boolean
     get() = visibility == View.VISIBLE
-    set(value) {
-        visibility = if (value) View.VISIBLE else View.GONE
-    }
+    set(value) { visibility = if (value) View.VISIBLE else View.GONE }
 
-val Fragment.requireUserId: String
-    get() = requireArguments().getString(ARG_USER_ID)
-        ?: throw IllegalArgumentException("userId requerido")
-
-// En Compose o XML-driven code
-if (!binding.emptyView.isVisible) {
-    binding.emptyView.isVisible = true
-}
-
-Consejo para entrevista:
-Respuesta clave: "no hay campo, solo get/set". Relaciona con extension functions y con ViewBinding delegates (by viewBinding) que sí gestionan lifecycle. Pregunta trampa: intentar lateinit en extension property para View — mejor delegate en la clase.
+Consejo:
+Respuesta clave: "no tienen campo, solo get/set". Si necesitas estado por instancia, usa un delegated property dentro de la clase, no una extension.

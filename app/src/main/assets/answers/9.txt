@@ -1,37 +1,16 @@
 Concepto:
-Las extension functions (funciones de extensión) permiten añadir funciones a un tipo existente sin modificar su código fuente ni heredar de él. Se declaran con la sintaxis fun TipoReceptor.nombreFuncion() y en la llamada parecen métodos del receptor, aunque en realidad se resuelven de forma estática según el tipo declarado en compilación.
+Las extension functions permiten añadir nuevos métodos a clases existentes sin modificarlas ni heredarlas, declarándolos con la sintaxis fun Tipo.nombre(...). Bajo el capó se compilan como funciones estáticas que reciben el receptor como primer parámetro.
 
-Explicación detallada:
-En bytecode JVM se traducen a funciones estáticas que reciben el receptor como primer parámetro oculto. Pueden invocar solo miembros públicos del receptor. La biblioteca estándar de Kotlin está construida en gran medida con extensiones: filter en colecciones, isNullOrEmpty en String, y en el ecosistema Android aparecen utilidades para View, Context, Fragment, etc.
-
-La resolución es estática, no dinámica: si tienes una variable tipada como interfaz o clase base, se elige la extensión declarada para ese tipo estático, no la del objeto real en runtime. Esto es una pregunta clásica de entrevista. Las extensiones no pueden sobrescribir métodos virtuales existentes en la jerarquía de clases; si la clase añade un método miembro con el mismo nombre, el miembro gana en la mayoría de contextos de llamada.
-
-Puedes definir extensiones en tipos anulables (fun String?.orEmpty()) y usar @JvmName para evitar colisiones al exponer APIs a Java. Organiza extensiones por feature en archivos *Extensions.kt para mantener Activities y ViewModels limpios. Detekt y convenciones de equipo suelen limitar extensiones demasiado genéricas que "ensucian" el autocompletado.
-
-En arquitectura limpia, las extensiones son excelentes para mapeos DTO→dominio y formateo de presentación, pero la lógica de negocio crítica debe vivir en use cases o entidades, no dispersa en extensiones mágicas.
-
-Cuándo usarlo:
-Cuando una operación es conceptualmente "algo que haces con un X" pero no puedes o no debes subclasificar X (tipos finales de SDK, String, interfaces de librerías). Para DSLs ligeros, formateo, visibilidad de vistas y helpers de Context. Evítalas para estado mutable global asociado al receptor o para "parchear" mal diseño de APIs internas.
+Como son estáticas, no son polimórficas: se resuelven por el tipo declarado, no por el tipo en runtime. Si hay un método miembro con la misma firma, el miembro gana.
 
 Ejemplo:
-fun View.visible() {
-    visibility = View.VISIBLE
-}
+fun String.toSlug(): String =
+    trim().lowercase().replace(" ", "-")
 
-fun View.gone() {
-    visibility = View.GONE
-}
+fun Int.dpToPx(context: Context): Int =
+    (this * context.resources.displayMetrics.density).toInt()
 
-fun Long.toRelativeTime(context: Context): String {
-    val now = System.currentTimeMillis()
-    return DateUtils.getRelativeTimeSpanString(
-        this, now, DateUtils.MINUTE_IN_MILLIS
-    ).toString()
-}
+"Hola Mundo".toSlug() // "hola-mundo"
 
-// Uso en Activity o Fragment
-binding.progressBar.gone()
-binding.subtitle.text = message.createdAt.toRelativeTime(requireContext())
-
-Consejo para entrevista:
-Prepárate el ejemplo de resolución estática con open class A, class B : A(), fun A.foo() y fun B.foo() con variable tipada como A. Preguntan diferencia con métodos de utilidad Java static y si acceden a private (no, salvo mismo archivo con reglas especiales). Menciona @JvmName y conflictos de nombres en APIs públicas.
+Consejo:
+Resalta que no son polimórficas y que ayudan a construir DSLs y APIs idiomáticas. Útiles para extender SDK/Android (View.show(), Context.toast()).

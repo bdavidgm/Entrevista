@@ -1,39 +1,15 @@
 Concepto:
-DiffUtil calcula la diferencia mínima entre dos listas y emite actualizaciones granulares (insert/remove/move/change) para RecyclerView, evitando notifyDataSetChanged() y animaciones incorrectas.
+DiffUtil compara dos listas y calcula un conjunto mínimo de insert/remove/move para actualizar RecyclerView sin recargar todo. ListAdapter en Kotlin delega en AsyncListDiffer para aplicar el resultado en el hilo principal.
 
-Explicación detallada:
-Algoritmo de Eugene Myers: encuentra el patch más pequeño entre lista antigua y nueva. Requiere implementar:
-- areItemsTheSame(old, new): identidad estable (id).
-- areContentsTheSame(old, new): igualdad de contenido visible.
-- Opcional getChangePayload: actualización parcial en bind.
-
-Uso manual:
-val diff = DiffUtil.calculateDiff(object : DiffUtil.Callback() {
-    override fun getOldListSize() = old.size
-    override fun getNewListSize() = new.size
-    override fun areItemsTheSame(o, n) = old[o].id == new[n].id
-    override fun areContentsTheSame(o, n) = old[o] == new[n]
-})
-diff.dispatchUpdatesTo(adapter)
-
-ListAdapter (RecyclerView) ejecuta DiffUtil en background thread automáticamente al llamar submitList(newList).
-
-Beneficios: mejor rendimiento en listas grandes, animaciones por item, preservación de scroll si aplica, menos parpadeo.
-
-Cuándo usarlo:
-- Siempre que la lista cambie por datos de red o base de datos.
-- Chat, feeds, catálogos con actualizaciones parciales.
-
-Evitar: comparaciones costosas en areContentsTheSame (usar campos relevantes).
+Mejora rendimiento y animaciones de cambio.
 
 Ejemplo:
-val callback = object : DiffUtil.ItemCallback<Message>() {
-    override fun areItemsTheSame(a: Message, b: Message) = a.id == b.id
-    override fun areContentsTheSame(a: Message, b: Message) =
-        a.text == b.text && a.timestamp == b.timestamp
+private object UserDiff : DiffUtil.ItemCallback<User>() {
+    override fun areItemsTheSame(a: User, b: User) = a.id == b.id
+    override fun areContentsTheSame(a: User, b: User) = a == b
 }
-val adapter = object : ListAdapter<Message, MsgVH>(callback) { ... }
-adapter.submitList(newMessages)
 
-Consejo para entrevista:
-Explica los dos métodos areItems/areContents y por qué notifyDataSetChanged es mala idea (pierde animación, rebind total). Menciona ListAdapter y AsyncListDiffer. En Compose, animaciones con LazyColumn key + AnimatedContent es el paralelo conceptual.
+class UserAdapter : ListAdapter<User, VH>(UserDiff)
+
+Consejo:
+Si solo cambia un campo, implementa getChangePayload para actualizar parcialmente el ViewHolder y evitar rebind completo.

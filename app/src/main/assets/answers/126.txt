@@ -1,40 +1,18 @@
 Concepto:
-El modificador in en tipos genéricos de Kotlin declara contravarianza: el tipo solo aparece en posiciones de entrada (consumidor); puedes tratar Consumer<Animal> como Consumer<Cat> si Cat es subtipo de Animal.
+El modificador in marca un parámetro de tipo como contravariante: el tipo solo aparece como entrada (consumer), nunca como salida. Permite que Consumer<Padre> sea subtipo de Consumer<Hijo>, lo opuesto a covarianza.
 
-Explicación detallada:
-Contravarianza (in):
-- interface Consumer<in T> { fun accept(item: T) }
-- T solo en parámetros y posiciones in; no puedes devolver T (salvo en posiciones donde no expone T al llamador de forma covariante problemática — el compilador restringe).
-
-Intuición: un consumidor de animales puede aceptar gatos; un Consumer<Animal> puede usarse donde se espera Consumer<Cat>.
-
-Comparación:
-- out T: productor, covariante (List como solo lectura de E).
-- in T: consumidor, contravariante.
-- Sin modificador: invariante (T en in y out), necesario para estructuras mutables como MutableList<T>.
-
-En Android y Kotlin estándar:
-- Comparable<in T> en la biblioteca (simplificado conceptualmente).
-- Observers y listeners que reciben eventos de tipo T.
-- Handlers que procesan mensajes de un tipo base.
-
-Cuándo usarlo:
-Interfaces que solo reciben T y no lo producen como tipo principal de retorno. Menos frecuente que out en APIs de lectura, pero aparece en diseño de frameworks y comparadores.
+Equivale a "? super T" en Java aplicado en la declaración. Útil en interfaces consumidoras como Comparator<in T>.
 
 Ejemplo:
 interface Consumer<in T> {
-    fun consume(item: T)
+    fun consume(value: T)
 }
 
-open class Animal
-class Cat : Animal()
-
-fun registerCatHandler(handler: Consumer<Cat>) { ... }
-
-val animalConsumer: Consumer<Animal> = object : Consumer<Animal> {
-    override fun consume(item: Animal) { println(item) }
+val anyConsumer: Consumer<Any> = object : Consumer<Any> {
+    override fun consume(value: Any) = println(value)
 }
-registerCatHandler(animalConsumer) // OK: Consumer<Animal> es Consumer<Cat>
 
-Consejo para entrevista:
-Empareja out (productor) con in (consumidor). PECS en Java: Consumer super (in). Si mezclas in y out en la misma interfaz mutable, suele ser invariante.
+val stringConsumer: Consumer<String> = anyConsumer // OK gracias a in
+
+Consejo:
+"in = contravariante = consumer". Regla mnemotécnica PECS: producer-extends, consumer-super (out / in en Kotlin).

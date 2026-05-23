@@ -1,50 +1,20 @@
 Concepto:
-Animatable es una clase de Compose Animation que mantiene un valor animado de tipo arbitrario (Float, Offset, Color, etc.) con APIs suspend para animar hacia un target con especificación de animación.
-
-Explicación detallada:
-A diferencia de animate*AsState (declarativo: cambias target y Compose anima), Animatable es imperativo y programable:
-- val offset = remember { Animatable(Offset.Zero) }
-- offset.animateTo(targetValue, animationSpec)
-- Soporte para snapTo, stop, updateBounds.
-
-Ventajas:
-- Secuencias encadenadas en corrutinas (rebote, luego fade).
-- Control fino de interrupciones y gestos (drag que pelea con animación spring).
-- animateDecay para inercia tras fling.
-
-Se usa con remember en Composable; las animaciones son suspend y se lanzan desde LaunchedEffect o gesture coroutines.
-
-Especificaciones: spring(), tween(), keyframes; AnimationVector para tipos custom.
-
-Cuándo usarlo:
-Gestos complejos, animaciones multi-paso, drag-to-dismiss, contadores animados donde animateFloatAsState no basta.
+Animatable es una API de Compose para animar un valor de forma imperativa dentro de una coroutine, ofreciendo control sobre el ciclo de la animación (animateTo, snapTo, stop). Es complemento de las APIs declarativas como animate*AsState y útil cuando necesitas combinar gestos con animaciones.
 
 Ejemplo:
 @Composable
-fun DraggableBox() {
+fun BouncyBox() {
     val offsetX = remember { Animatable(0f) }
+    LaunchedEffect(Unit) {
+        offsetX.animateTo(200f, animationSpec = spring())
+    }
     Box(
         Modifier
-            .offset { IntOffset(offsetX.value.roundToInt(), 0) }
-            .pointerInput(Unit) {
-                detectDragGestures(
-                    onDrag = { change, drag ->
-                        change.consume()
-                        coroutineScope {
-                            launch { offsetX.snapTo(offsetX.value + drag.x) }
-                        }
-                    },
-                    onDragEnd = {
-                        coroutineScope {
-                            launch { offsetX.animateTo(0f, spring()) }
-                        }
-                    }
-                )
-            }
-            .size(80.dp)
-            .background(Color.Blue)
+            .offset { IntOffset(offsetX.value.toInt(), 0) }
+            .size(48.dp)
+            .background(Color.Red)
     )
 }
 
-Consejo para entrevista:
-Contrasta Animatable (imperativo, gestos) vs animate*AsState (declarativo, state-driven). Menciona spring y consumo de eventos en drag.
+Consejo:
+"Animatable = animación imperativa controlable". Para casos declarativos simples, prefiere animate*AsState; usa Animatable cuando necesitas pausar, reiniciar o combinar con gestos.

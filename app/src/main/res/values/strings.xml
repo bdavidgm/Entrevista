@@ -16,4 +16,5 @@
     <string name="previous">Anterior</string>
     <string name="view_later">Guardar</string>
     <string name="next">Siguiente</string>
+    <string name="question_copied_to_clipboard">Pregunta copiada al portapapeles</string>
 </resources>

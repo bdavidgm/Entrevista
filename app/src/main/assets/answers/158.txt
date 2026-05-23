@@ -1,42 +1,18 @@
 Concepto:
-Destructuring (desestructuración) en Kotlin permite extraer componentes de un objeto en variables individuales en una sola declaración, usando la convención componentN() de data class o operator componentN definido.
+La destructuring declaration permite descomponer un objeto en varias variables en una sola línea usando paréntesis: val (a, b) = pair. Funciona con cualquier tipo que defina las funciones componentN (operator fun componentN()), como las data class, Pair, Triple, Map.Entry.
 
-Explicación detallada:
-Data class genera component1(), component2(), ... automáticamente.
-
-Sintaxis:
-val (name, age) = person
-for ((index, value) in list.withIndex()) { }
-
-En parámetros:
-fun printUser((name, id): Pair<String, String>) — menos común.
-
-Map:
-for ((key, value) in map) { }
-
-Cuándo no funciona:
-- Clases normales sin componentN.
-- Tipos con muchos campos: desestructurar todo reduce legibilidad; usar propiedades nombradas.
-
-En Android:
-- Pair/Triple de resultados locales.
-- Entidades data class en loops.
-- Entries de mapa de configuración.
-
-Cuándo usarlo:
-when, loops y asignaciones donde los nombres de componentes son claros y el tipo es data class o tiene componentN.
+Es útil para iterar mapas, devolver múltiples valores y simplificar la lectura de tuplas.
 
 Ejemplo:
-data class LatLng(val lat: Double, val lng: Double)
+data class User(val id: String, val name: String)
+val user = User("1", "Ana")
+val (id, name) = user
 
-fun distance(a: LatLng, b: LatLng): Double {
-    val (lat1, lng1) = a
-    val (lat2, lng2) = b
-    return haversine(lat1, lng1, lat2, lng2)
+for ((key, value) in mapOf("a" to 1, "b" to 2)) {
+    println("$key=$value")
 }
 
-val response = api.fetch() // data class UserResponse(val user: User, val meta: Meta)
-val (user, meta) = response
+val (success, error) = repository.load()
 
-Consejo para entrevista:
-Menciona que requiere data class o componentN. Ejemplo con for en map. No abuses en funciones públicas con muchos valores anónimos.
+Consejo:
+Las variables se asignan por posición, no por nombre. Si solo necesitas algunas, usa _ para ignorar: val (_, name) = user.

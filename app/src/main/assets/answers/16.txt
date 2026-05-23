@@ -1,38 +1,19 @@
 Concepto:
-lateinit y by lazy son dos mecanismos para diferir la inicialización de propiedades, pero con semánticas distintas. lateinit pospone la asignación de una var no anulable hasta un momento posterior (típicamente tras onCreate o inyección manual), mientras que by lazy calcula un val de forma perezosa en el primer acceso y lo cachea.
+lateinit y by lazy son dos formas de retrasar la inicialización de una propiedad. lateinit se aplica a var de tipo no anulable y se inicializa manualmente antes de usarse; lanza UninitializedPropertyAccessException si no fue inicializada. by lazy se aplica a val y delega en una función que se ejecuta de forma thread-safe la primera vez que se accede.
 
-Explicación detallada:
-lateinit solo aplica a var de tipos no primitivos (no Int, Boolean, etc.) en contextos donde el compilador permita la anotación. Debes asignar antes del primer uso o lanzará UninitializedPropertyAccessException. isInitialized permite comprobar en lateinit var si ya fue asignado (útil en tests o teardown). Es común en Activities para referencias a Views antes de ViewBinding estricto, o en Android para campos inyectados en demos sin Hilt.
-
-by lazy usa delegación: el lambda se ejecuta una vez, thread-safe por defecto (LazyThreadSafetyMode.SYNCHRONIZED) y el resultado se guarda. Ideal para dependencias costosas que quizá no se usen, parsers, o lectura de configuración. lazy puede recibir modo NONE en contextos single-thread (UI thread tras creación) para evitar sincronización.
-
-Comparación clave: lateinit es mutable y no cachea automáticamente más allá de tu asignación; lazy es inmutable (val) y garantiza inicialización única. En ViewModel y repositorios modernos, la inyección de constructor reduce lateinit; lazy sigue útil para propiedades derivadas costosas dentro de una clase.
-
-En entrevistas preguntan por qué no lateinit en val (no existe), primitivos (no), y fugas si guardas Activity en lateinit sin limpiar en onDestroy.
-
-En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
-
-Cuándo usarlo:
-lateinit: inyección tardía, Views en patrones legacy, tests. by lazy: cálculo costoso de solo lectura, delegados de solo lectura en objetos de dominio. Prefiere constructor injection + val en código nuevo Android.
+Usa lateinit cuando el valor se inyecta desde fuera (DI, onCreate); usa by lazy cuando el valor depende solo de la propia clase y se calcula una vez.
 
 Ejemplo:
-class LegacyActivity : AppCompatActivity() {
-    private lateinit var adapter: ItemAdapter
+class MyActivity : AppCompatActivity() {
+    private lateinit var binding: ActivityMainBinding
+    private val viewModel: MainViewModel by viewModels()
+    private val analytics by lazy { Analytics.create(this) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        adapter = ItemAdapter { onItemClick(it) }
-        recyclerView.adapter = adapter
+        binding = ActivityMainBinding.inflate(layoutInflater)
     }
 }
 
-class ReportGenerator(context: Context) {
-    private val formatter by lazy {
-        DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.getDefault())
-    }
-
-    fun format(instant: Instant) = formatter.format(instant)
-}
-
-Consejo para entrevista:
-Tabla mental: lateinit → var, asignación explícita, puede no inicializarse; lazy → val, thread-safe, primer get. Preguntan isInitialized y LazyThreadSafetyMode. Menciona que en Compose/ViewModel inyección reduce ambos.
+Consejo:
+"lateinit = var asignada por fuera; lazy = val calculada al primer uso". Para tipos primitivos usa lazy o Delegates.notNull, no lateinit.

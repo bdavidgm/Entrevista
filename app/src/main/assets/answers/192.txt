@@ -1,34 +1,10 @@
 Concepto:
-Android Studio es el IDE oficial basado en IntelliJ IDEA, mantenido por Google, optimizado para desarrollo Android con SDK integrado, emulador, Layout Inspector, Profiler y soporte first-class de Kotlin y Jetpack Compose.
+Android Studio es el IDE oficial: integra el Android Gradle Plugin, emulador, Layout Inspector, Profiler (CPU/memoria/red/energía), Database Inspector, Logcat y asistentes para Jetpack/Compose. Está optimizado para el ciclo completo compile-deploy-debug de apps Android.
 
-Explicación detallada:
-Razones por las que es el estándar de la industria:
-
-1) Integración con el ecosistema Android: SDK Manager para plataformas y herramientas build; AVD Manager para emuladores con Google Play; Device Manager para dispositivos físicos; Logcat filtrado por app; APK Analyzer y App Bundle tools.
-
-2) Herramientas de UI: Layout Editor para XML (aunque Compose predomina), Compose Preview con @Preview multiparamétrico, Animation Preview, tema en tiempo real.
-
-3) Build y dependencias: Gradle integrado, asistente de dependencias, variantes build (debug/release), product flavors visualizados, sincronización con version catalog (libs.versions.toml).
-
-4) Calidad y rendimiento: Android Profiler (CPU, memoria, energía, red); Lint con reglas Android; Baseline Profile generator; emulador con snapshots y sensores simulados.
-
-5) Productividad Kotlin: refactorings, nullability, coroutines debugger limitado, plantillas Activity/Compose, Navigation safe args plugin.
-
-6) Testing: ejecutar unit/instrumented tests, emulador headless en CI (aunque CI suele usar línea de comandos ./gradlew).
-
-Alternativas (VS Code, Fleet) carecen de integración profunda con emulador, layout tools y asistentes oficiales. Para entrevistas, reconoce que el build es Gradle y puede automatizarse sin IDE, pero el desarrollo diario Android casi siempre es Android Studio.
-
-Cuándo usarlo:
-- Desarrollo Android nativo profesional.
-- Depuración visual, perfiles de rendimiento, diseño Compose/XML.
-- Publicación: Generate Signed Bundle, Play App Signing asistente.
+Alternativas existen, pero pierdes tooling de primera parte y actualización al día con cada API.
 
 Ejemplo:
-// No hay “código” obligatorio; flujo típico en proyecto:
-// File → New → Activity → Empty Compose Activity
-// Build → Make Project (Ctrl+F9)
-// Run → app en emulador API 34
-// View → Tool Windows → App Inspection (DB, DataStore en versiones recientes)
+./gradlew assembleDebug desde la terminal integrada; Breakpoints en código Kotlin/Java y en layouts híbridos.
 
-Consejo para entrevista:
-Menciona herramientas concretas que usas: Logcat, Profiler, Layout/Compose Preview, Device File Explorer, AGP Upgrade Assistant. Di que conoces Gradle por línea de comandos para CI. No critiques otros IDEs sin motivo; centra “oficial + integración + soporte Compose/Kotlin”.
+Consejo:
+Menciona Baseline Profile, Lint y version catalog como parte del flujo profesional. El emulador con snapshots acelera iteraciones.

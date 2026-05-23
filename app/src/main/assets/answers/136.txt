@@ -1,42 +1,20 @@
 Concepto:
-recomposeScope (ámbito de recomposición) es el límite del compilador de Compose dentro del cual un cambio de estado provoca recomposición de los Composables hijos afectados, sin invalidar todo el árbol de la app.
+Un recompose scope es la unidad mínima que el runtime de Compose puede invalidar y volver a ejecutar de forma independiente. Cada vez que un Composable lee un State, el runtime asocia esa lectura al scope actual; cuando el State cambia, solo se reejecutan los scopes que lo leían.
 
-Explicación detallada:
-Cada función @Composable se compila en una función que recibe Composer y slot table. El compiler inserta grupos (groups) y keys para rastrear qué leer en cada pasada.
-
-Cuando cambia un State observado:
-- Compose marca scopes inválidos desde el punto de lectura hacia arriba hasta el root del subtree afectado.
-- Solo esos Composables se re-ejecutan (recomposition), no necesariamente padres que no leyeron ese state.
-
-Optimizaciones:
-- Skip: si parámetros son estables e iguales, el hijo puede saltarse.
-- strong skipping mode (Kotlin 2 + compiler plugin): más agilidad para evitar trabajo.
-- Mover lectura de state lo más abajo posible en el árbol (principle of state locality) reduce trabajo.
-
-Herramientas:
-- Layout Inspector recomposition counts.
-- Log recompositions en debug con Modifier o tooling.
-
-No confundir con CoroutineScope ni ViewModelScope: es concepto de UI declarativa.
-
-Cuándo usarlo:
-Al optimizar pantallas con listas, contadores o animaciones que recomponen de más. Entender scopes ayuda a diseñar state hoisting correcto.
+Conocer la noción ayuda a entender por qué dividir un Composable grande en varios pequeños puede ayudar al skipping y reducir recomposiciones.
 
 Ejemplo:
 @Composable
-fun Parent() {
-    var count by remember { mutableIntStateOf(0) }
-  // Solo Counter lee count; si Title no lee count, idealmente no recompondría
-  // (depende de estabilidad y estructura)
-    Title()           // sin state
-    Counter(count)    // lee count -> su scope se invalida
-    Button(onClick = { count++ }) { Text("+") }
+fun Screen() {
+    var count by remember { mutableStateOf(0) }
+    Button(onClick = { count++ }) { Text("Sumar") }
+    Counter(count) // este es el único scope que se invalida cuando count cambia
 }
 
 @Composable
-fun Counter(value: Int) {
-    Text("Count: $value") // lectura de state aquí acota invalidación
+fun Counter(count: Int) {
+    Text("Clicks: $count")
 }
 
-Consejo para entrevista:
-Explica que recomposition no es layout ni draw completos siempre. Menciona estabilidad, keys en LazyColumn y leer state en el nivel más bajo posible.
+Consejo:
+"Cada función @Composable es (idealmente) un scope". Aislar lecturas frecuentes en pequeños Composables ayuda al runtime a recomponer menos.

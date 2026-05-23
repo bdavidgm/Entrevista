@@ -1,20 +1,12 @@
 Concepto:
-Además de los dangerous clásicos existen permisos especiales que se conceden desde Ajustes del sistema o mediante AppOps, por su alto poder sobre el dispositivo.
+Además de los “peligrosos” clásicos, existen permisos especiales concedidos solo desde Ajustes: SYSTEM_ALERT_WINDOW (overlay), WRITE_SETTINGS, PACKAGE_USAGE_STATS, REQUEST_INSTALL_PACKAGES, MANAGE_EXTERNAL_STORAGE, ACCESS_NOTIFICATION_POLICY, SCHEDULE_EXACT_ALARM / USE_EXACT_ALARM, QUERY_ALL_PACKAGES (muy restringido en Play), etc.
 
-Explicación detallada:
-SYSTEM_ALERT_WINDOW (dibujar sobre otras apps): overlays; riesgo de phishing; solicitar con Settings.canDrawOverlays y ACTION_MANAGE_OVERLAY_PERMISSION. PACKAGE_USAGE_STATS: estadísticas de uso. REQUEST_IGNORE_BATTERY_OPTIMIZATIONS: exención Doze (justificar en Play). SCHEDULE_EXACT_ALARM (Android 12+): alarmas exactas. NEARBY_WIFI_DEVICES (Android 13+): sin ubicación para WiFi scan en algunos casos.
-
-WRITE_SETTINGS: modificar ajustes globales. MANAGE_EXTERNAL_STORAGE: todos los archivos. BIND_ACCESSIBILITY_SERVICE: automatización potente, vector de malware si el usuario activa servicios maliciosos.
-
-Seguridad: explicar al usuario por qué abre Ajustes; nunca engañar para obtener permisos; auditar que solo servicios de accesibilidad necesarios estén en el manifest. Play Console declara usos sensibles.
-
-AppOps puede revocar permisos en runtime aunque el usuario aceptó antes (modo “permitir solo esta vez”).
-
-Cuándo usarlo:
-Funciones avanzadas (burbujas, VPN propia, automatización). Evitar pedir overlay si no es esencial.
+Suelen abrir Settings.ACTION_* con startActivityForResult.
 
 Ejemplo:
-if (!Settings.canDrawOverlays(ctx)) startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, uri))
+if (!Settings.canDrawOverlays(this)) {
+    startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName")))
+}
 
-Consejo para entrevista:
-Lista 3-4 especiales con riesgo (overlay, accessibility, all files). Mencionar AppOps.
+Consejo:
+Play Console pide video y justificación para permisos sensibles. Muchos especiales son señal de malware si se abusan: documenta el caso de uso real del producto.

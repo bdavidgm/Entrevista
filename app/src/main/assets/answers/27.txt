@@ -1,40 +1,15 @@
 Concepto:
-tailrec (recursión de cola) es un modificador de Kotlin que indica al compilador que una función recursiva puede optimizarse a un bucle iterativo si la llamada recursiva es la última operación de la función (tail call). Evita StackOverflowError en recursión profunda y es idiomático para algoritmos lineales.
+tailrec es un modificador que indica al compilador que una función recursiva debe optimizarse a un bucle iterativo si su última operación es la llamada recursiva. Evita el StackOverflowError en recursiones profundas.
 
-Explicación detallada:
-El compilador reescribe la recursión en un while bajo el capó en JVM. Debe ser exactamente tail call: no puedes hacer return n * factorial(n-1) con tailrec sin acumulador. Patrón: llevar estado en parámetros por defecto o función interna.
-
-Ejemplo clásico: factorial y fibonacci educativos; en Android real, recorrer árboles de categorías, paginación recursiva de APIs con acumulador, o parsers. Muchas veces en producción Android prefieres while/for explícito por legibilidad del equipo.
-
-Si la recursión no es en cola, el compilador error en compile time al marcar tailrec. Kotlin no garantiza tail call optimization en lambdas o funciones no tailrec.
-
-Comparación con bucle while: mismo rendimiento; tailrec expresa intento recursivo claro. En entrevistas piden reescribir factorial con acumulador tailrec.
-
-En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
-
-Cuándo usarlo:
-Algoritmos naturalmente recursivos con profundidad potencial grande y tail call clara. Si la lógica no es tail, no fuerces tailrec.
+Requiere que la recursión sea estrictamente en cola: nada de operaciones tras el return de la llamada recursiva, ni try/catch alrededor de ella.
 
 Ejemplo:
-tailrec fun factorial(n: Long, acc: Long = 1): Long {
-    return when {
-        n <= 1 -> acc
-        else -> factorial(n - 1, acc * n)
-    }
-}
+tailrec fun factorial(n: Long, acc: Long = 1): Long =
+    if (n <= 1) acc else factorial(n - 1, acc * n)
 
-tailrec fun findCategoryPath(
-    node: Category,
-    targetId: String,
-    path: List<Category> = emptyList()
-): List<Category>? {
-  if (node.id == targetId) return path + node
-  for (child in node.children) {
-    val found = findCategoryPath(child, targetId, path + node)
-    if (found != null) return found
-  }
-  return null
-}
+tailrec fun findRoot(view: View): View =
+    if (view.parent !is View) view
+    else findRoot(view.parent as View)
 
-Consejo para entrevista:
-Define tail call. Preguntan por qué factorial naive no es tailrec. Menciona que Kotlin no optimiza tail calls generales sin modificador.
+Consejo:
+Si el compilador no puede optimizar avisa con warning. Útil para recorridos lineales sin riesgo de stack overflow; en lógica de negocio compleja, valora un loop explícito.

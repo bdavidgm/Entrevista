@@ -1,42 +1,18 @@
 Concepto:
-Channel es una primitiva de comunicación hot entre corrutinas: transmite elementos de forma similar a una cola bloqueante, con capacidad configurable y soporte para múltiples productores y consumidores.
+Channel es una primitiva de comunicación entre corrutinas: send pone valores en una cola y receive los consume de forma suspendida. Útil para handoff explícito (actor, pipeline) o colas acotadas con backpressure (Channel.BUFFERED, CONFLATED, etc.).
 
-Explicación detallada:
-Tipos de capacidad:
-- Channel.RENDEZVOUS: sin buffer, emisor espera receptor.
-- BUFFERED, CONFLATED (solo último valor), UNLIMITED.
-
-Operaciones:
-- send(element) / receive()
-- trySend, close, cancel.
-
-Channel vs Flow:
-- Channel: hot, típicamente 1:1 o N:M con API imperativa; puede perder backpressure si mal usado.
-- Flow: cold por defecto, declarativo, operadores (map, filter), mejor para streams de UI y datos.
-
-En arquitectura moderna Android se prefiere SharedFlow/StateFlow para eventos y estado; Channel para pipelines internos o integración con APIs callback.
-
-Patrón actor: una corrutina consume channel y serializa mutaciones de estado.
-
-Cuándo usarlo:
-Comunicación puntual entre corrutinas, colas de trabajo internas, puente desde callback a corrutinas (channel.trySend). Para UI state expuesto, StateFlow suele ser más idiomático.
+En UI moderna muchos casos se resuelven con Flow/StateFlow; Channel brilla cuando quieres un consumidor único y orden estricto.
 
 Ejemplo:
-val channel = Channel<Command>(Channel.BUFFERED)
+val channel = Channel<String>(Channel.BUFFERED)
 
-// Productor
-scope.launch {
-    channel.send(Command.Refresh)
+launch {
+    channel.send("ping")
 }
 
-// Consumidor
-scope.launch {
-    for (cmd in channel) {
-        when (cmd) {
-            Command.Refresh -> loadData()
-        }
-    }
+launch {
+    println(channel.receive())
 }
 
-Consejo para entrevista:
-Contrasta Channel (hot, cola) vs Flow (cold, reactivo). Menciona que SharedFlow reemplaza muchos usos de Channel en MVVM. Habla de cerrar channel y cancelación.
+Consejo:
+Evita Channel infinito sin estrategia: puede crecer la memoria. Para eventos one-shot desde ViewModel, Channel + receiveAsFlow es un patrón habitual.

@@ -1,36 +1,13 @@
 Concepto:
-Process Lifecycle (ProcessLifecycleOwner) expone el ciclo de vida del proceso completo de la aplicación en primer plano o background, no solo de una Activity. Permite observar cuando el usuario está interactuando con cualquier pantalla de tu app versus cuando la app está en segundo plano.
+El ProcessLifecycleOwner expone un Lifecycle a nivel de proceso que refleja cuándo la app entra y sale de primer plano, agregando los eventos de todas las activities. Pasa a ON_STOP cuando ninguna está visible y a ON_START cuando alguna lo está.
 
-Explicación detallada:
-ProcessLifecycleOwner.get().lifecycle dispara ON_START cuando la primera activity pasa a visible y ON_STOP cuando la última deja de serlo (con pequeño delay para cambios rápidos entre activities). Útil para analytics de sesión, pausar polling global, flush de logs, o iniciar/detener servicios ligeros conscientes de foreground.
-
-No sustituye el lifecycle de cada Activity: cosas específicas de pantalla siguen en activity/fragment lifecycle. Librería androidx.lifecycle.ProcessLifecycleOwner.
-
-En entrevistas contrastan con Activity lifecycle y preguntan casos: "app en background" global. Cuidado: ON_STOP del proceso no significa que el proceso fue matado.
-
-En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
-
-En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
-
-Cuándo usarlo:
-Métricas de sesión, SDK que necesita saber foreground, coordinar trabajo que debe pausarse cuando toda la app está background. No para lógica de UI de una pantalla concreta.
+Es útil para inicializar/desligar recursos globales como WebSocket, sincronización o analytics de sesión sin atarse a una Activity concreta.
 
 Ejemplo:
-class MyApp : Application() {
-    override fun onCreate() {
-        super.onCreate()
-        ProcessLifecycleOwner.get().lifecycle.addObserver(
-            object : DefaultLifecycleObserver {
-                override fun onStart(owner: LifecycleOwner) {
-                    analytics.appForeground()
-                }
-                override fun onStop(owner: LifecycleOwner) {
-                    analytics.appBackground()
-                }
-            }
-        )
-    }
-}
+ProcessLifecycleOwner.get().lifecycle.addObserver(object : DefaultLifecycleObserver {
+    override fun onStart(owner: LifecycleOwner) { wsClient.connect() }
+    override fun onStop(owner: LifecycleOwner)  { wsClient.disconnect() }
+})
 
-Consejo para entrevista:
-Primera activity visible vs última oculta. No confundir con onDestroy de activity. Alternativa: ActivityLifecycleCallbacks manual (más verboso).
+Consejo:
+"Foreground/background a nivel de proceso", no de Activity. Útil para sesiones, analytics y conexiones persistentes.

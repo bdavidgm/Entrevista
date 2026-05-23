@@ -1,34 +1,10 @@
 Concepto:
-Android App Bundle (AAB) es el formato de publicación obligatorio en Play que contiene módulos divididos; Google Play genera APKs optimizados por dispositivo (ABI, densidad, idioma) reduciendo descarga del usuario.
+AAB (Android App Bundle) es el formato de publicación: Google Play genera APKs optimizados por configuración de dispositivo (ABI, densidad, idioma) reduciendo descarga. Ya no se sube APK monolítico a producción salvo casos especiales.
 
-Explicación detallada:
-Ventajas vs APK universal:
-- Dynamic delivery: feature modules on-demand (si usas Play Feature Delivery).
-- Split APKs por arquitectura (arm64-v8a vs armeabi) — usuario no descarga todas.
-- Asset packs para recursos grandes.
-- Play signing y optimizaciones automáticas.
-
-Build: bundleRelease produce .aab; no instalable directamente en dispositivo sin bundletool o Play.
-
-APK local debug sigue siendo .apk para desarrollo.
-
-Play Console requiere AAB para apps nuevas; excepciones muy limitadas.
-
-Relacionado con versionCode por módulo en dynamic features.
-
-Cuándo usarlo:
-- Siempre al subir a Play Store producción y tracks de prueba oficiales.
-- Cuando quieres reducir tamaño percibido y usar dynamic features.
+Bundletool genera splits localmente para pruebas.
 
 Ejemplo:
-android {
-    defaultConfig {
-        versionCode = 42
-        versionName = "2.1.0"
-    }
-}
-// ./gradlew bundleRelease
-// Subir app-release.aab a Play Console
+./gradlew bundleRelease → app-release.aab → Play Console.
 
-Consejo para entrevista:
-Explica que AAB no es el archivo que compartes fuera de Play salvo testers con bundletool. Menciona splits por ABI y que el APK de debug local no invalida usar AAB en release. Conecta con pregunta 119/213.
+Consejo:
+Dynamic feature modules y asset packs solo funcionan con AAB. Guarda el keystore y usa Play App Signing para recuperación de claves.

@@ -1,47 +1,15 @@
 Concepto:
-MediaStore es el ContentProvider del sistema que indexa archivos multimedia (imágenes, vídeo, audio) y metadatos en almacenamiento compartido, ofreciendo URIs y columnas estándar para consultar y crear contenido con scoped storage.
+MediaStore es el ContentProvider del sistema para imágenes, vídeo y audio en almacenamiento compartido. Expone URIs y columnas estándar; accedes vía ContentResolver. En Android 10+ con scoped storage es la vía principal para bibliotecas multimedia sin permisos de almacenamiento amplio.
 
-Explicación detallada:
-Desde Android 10 (scoped storage), las apps no deberían usar rutas absolutas en tarjeta SD para media compartido. MediaStore expone colecciones:
-- Images.Media, Video.Media, Audio.Media
-- Downloads (Android 10+)
-- MediaStore.Files para archivos genéricos en volúmenes
-
-Columnas útiles: _ID, DISPLAY_NAME, MIME_TYPE, DATE_ADDED, RELATIVE_PATH, IS_PENDING (subidas en progreso), OWNER_PACKAGE_NAME (Android 11+ para saber quién creó el archivo).
-
-Flujo de escritura moderno:
-1) ContentValues con DISPLAY_NAME, MIME_TYPE, RELATIVE_PATH (Pictures/MyApp).
-2) contentResolver.insert(collection, values) → Uri
-3) openOutputStream(uri) y escribir bytes
-4) values.clear(); put(IS_PENDING, 0); update(uri) para publicar
-
-Lectura: query con ContentResolver; mostrar con Coil/Glide usando Uri; permisos READ_MEDIA_* o READ_EXTERNAL_STORAGE según API.
-
-Volume: MediaStore.VOLUME_EXTERNAL_PRIMARY vs getContentUri(volumeName) en Android 10+.
-
-Cuándo usarlo:
-- Galerías, editores de foto, apps que guardan capturas en álbum del usuario.
-- Listar música o podcasts en almacenamiento compartido.
-- Sustituir File(Environment.DIRECTORY_PICTURES) directo en APIs modernas.
+Scoped access: lee/escribe con URIs y permisos granulares (READ_MEDIA_* / pick visual media).
 
 Ejemplo:
-fun saveImage(context: Context, displayName: String, bytes: ByteArray): Uri? {
-    val values = ContentValues().apply {
-        put(MediaStore.Images.Media.DISPLAY_NAME, displayName)
-        put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
-        put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/Entrevista")
-        put(MediaStore.Images.Media.IS_PENDING, 1)
-    }
-    val resolver = context.contentResolver
-    val uri = resolver.insert(
-        MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values
-    ) ?: return null
-    resolver.openOutputStream(uri)?.use { it.write(bytes) }
-    values.clear()
-    values.put(MediaStore.Images.Media.IS_PENDING, 0)
-    resolver.update(uri, values, null, null)
-    return uri
+val values = ContentValues().apply {
+    put(MediaStore.Images.Media.DISPLAY_NAME, "foto_${System.currentTimeMillis()}.jpg")
+    put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
 }
+val uri = contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+contentResolver.openOutputStream(uri!!)?.use { /* escribir JPEG */ }
 
-Consejo para entrevista:
-Domina scoped storage, IS_PENDING, RELATIVE_PATH y permisos granulares Android 13. Di que MediaStore es la forma correcta de media compartido; SAF para documentos arbitrarios que el usuario elige.
+Consejo:
+Usa Photo Picker cuando baste con selección de medios sin permisos amplios. Relaciona con SAF para carpetas arbitrarias.

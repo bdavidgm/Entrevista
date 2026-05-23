@@ -1,44 +1,13 @@
 Concepto:
-SupervisorJob es un Job que no cancela a sus hijos cuando uno de ellos falla con excepción; solo el hijo fallido se cancela, permitiendo que hermanos sigan ejecutándose.
+SupervisorJob es un Job cuyos hijos fallan de forma aislada: si un hijo lanza excepción y no se captura, los demás siguen ejecutándose. Un Job normal cancela a todos los hermanos ante un fallo no controlado.
 
-Explicación detallada:
-Job normal (estructura de corrutinas):
-- Si un hijo falla sin manejar la excepción, el padre cancela a todos los hijos (structured concurrency).
-
-SupervisorJob:
-- Fallo aislado: útil cuando tareas paralelas son independientes (varias peticiones de red, workers).
-
-Uso:
-val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
-scope.launch { taskA() }
-scope.launch { taskB() } // si A falla, B continúa
-
-viewModelScope internamente puede combinar elementos; para patrones custom en ViewModel a veces se usa supervisorScope { } de la librería.
-
-supervisorScope builder:
-supervisorScope {
-    launch { fetchUsers() }
-    launch { fetchSettings() }
-}
-
-Cuándo usarlo:
-Múltiples flujos independientes en una pantalla; logging/analytics paralelos; evitar que un error secundario tumbe la carga principal si está bien manejado.
-
-Precaución: no es excusa para ignorar errores; captura excepciones en cada hijo si la UI debe reaccionar.
+Se usa en el contexto raíz de scopes de larga vida (Application, ViewModel con varias tareas independientes).
 
 Ejemplo:
-viewModelScope.launch {
-    supervisorScope {
-        launch {
-            runCatching { repo.syncCatalog() }
-                .onFailure { _events.emit(UiEvent.CatalogError) }
-        }
-        launch {
-            runCatching { repo.syncCart() }
-                .onFailure { _events.emit(UiEvent.CartError) }
-        }
-    }
-}
+val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
-Consejo para entrevista:
-Contrasta Job vs SupervisorJob. Relaciona con structured concurrency y por qué no usar GlobalScope. Menciona supervisorScope.
+scope.launch { throw RuntimeException("A") } // no cancela B
+scope.launch { delay(100); println("B sigue") }
+
+Consejo:
+Combínalo con CoroutineExceptionHandler en el contexto raíz para loguear errores sin tumbar el resto. viewModelScope ya usa SupervisorJob internamente.

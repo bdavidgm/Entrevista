@@ -1,40 +1,13 @@
 Concepto:
-RelativeLayout posiciona vistas hijas relativas entre sí o al padre (alignParentTop, below, toRightOf), permitiendo solapamientos sin anidar tantos contenedores lineales.
+RelativeLayout posiciona vistas respecto al padre o a otras vistas (layout_below, layout_toStartOf). Con una sola pasada de medición resolvía casos que en LinearLayout requerían anidación, pero hoy ConstraintLayout lo sustituye casi por completo.
 
-Explicación detallada:
-Reglas clásicas (API antigua):
-- layout_alignParentStart/End, centerInParent
-- layout_below="@id/title", layout_toEndOf="@id/icon"
-- layout_centerVertical junto a otras reglas
-
-Ventaja histórica: pantallas con icono a la izquierda y texto a la derecha sin linear anidados. Problemas: dos pasadas de medida en algunos casos, reglas conflictivas, mantenimiento difícil cuando hay muchos ids cruzados.
-
-RelativeLayout está deprecado en favor de ConstraintLayout, que expresa las mismas relaciones con constraints y chains, mejor rendimiento y herramientas visuales en Android Studio.
-
-En entrevistas junior aún preguntan RelativeLayout para ver si conoces la evolución hacia ConstraintLayout.
-
-Cuándo usarlo:
-- Solo en código legacy; no en proyectos nuevos XML.
-- Entender equivalencia: below → constraintTop_toBottomOf en ConstraintLayout.
+Sigue en código legacy; nuevas pantallas rara vez lo eligen.
 
 Ejemplo:
-<!-- Legacy RelativeLayout -->
-<RelativeLayout
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content">
-    <ImageView
-        android:id="@+id/icon"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:layout_alignParentStart="true" />
-    <TextView
-        android:id="@+id/title"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_toEndOf="@id/icon"
-        android:layout_centerVertical="true"
-        android:text="Título" />
+<RelativeLayout android:layout_width="match_parent" android:layout_height="match_parent">
+    <TextView android:id="@+id/title" android:layout_alignParentTop="true" android:layout_centerHorizontal="true"/>
+    <Button android:layout_below="@id/title" android:layout_centerHorizontal="true" android:text="OK"/>
 </RelativeLayout>
 
-Consejo para entrevista:
-Di que está deprecado y usarías ConstraintLayout o Compose. Si te piden reglas, menciona below/toEndOf y cómo las mapearías a constraints. No defiendas RelativeLayout en proyecto nuevo.
+Consejo:
+"Legacy: preferir ConstraintLayout". RelativeLayout anidado vuelve ilegible; ConstraintLayout expresa restricciones con mejor tooling.

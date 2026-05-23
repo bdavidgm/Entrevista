@@ -1,49 +1,22 @@
 Concepto:
-Scaffold es un Composable de Material Design que proporciona la estructura esqueleto de una pantalla: slots para topBar, bottomBar, floatingActionButton, drawer y el contenido principal con padding y snackbarHost integrado. Unifica el layout típico de app Android en un solo componente declarativo.
+Scaffold es un Composable de Material que ofrece el esqueleto de una pantalla con slots predefinidos: topBar, bottomBar, floatingActionButton, snackbarHost y contenido principal. Gestiona automáticamente los insets y el espaciado para que el contenido no quede tapado por las barras.
 
-Explicación detallada:
-Antes de Compose, CoordinatorLayout más AppBarLayout más FAB más BottomNavigation requerían XML anidado y comportamiento manual de insets del sistema. Scaffold de Material3 encapsula las convenciones: el contenido recibe PaddingValues de innerPadding para respetar barras y notch; snackbarHost gestiona la cola de Snackbar con coroutineScope.
-
-Cada slot es opcional y es una lambda Composable: topBar con TopAppBar, bottomBar con NavigationBar, floatingActionButton con ExtendedFloatingActionButton. Los parámetros containerColor y contentColor alinean con el tema. Para navigation drawer, el slot drawerContent envuelve ModalNavigationDrawer o usa Scaffold junto con drawer state externo.
-
-Scaffold no sustituye la lógica de navegación ni el ViewModel; solo organiza UI. Debes aplicar el padding al contenido hijo con Modifier.padding(innerPadding) o muchos diseños quedarán debajo de la status bar incorrectamente. Con edge-to-edge en versiones recientes, combina Scaffold con WindowInsets y consumeInsets en hijos si necesitas control fino.
-
-En entrevistas comparan Scaffold con Column más TopAppBar manual: Scaffold aplica semantics, consistencia Material y reduce boilerplate. Variantes relacionadas incluyen BottomSheetScaffold y patrones de drawer permanente en tablets.
-
-Material2 usaba Scaffold de androidx.compose.material; en Material3 muchos equipos migran a androidx.compose.material3.Scaffold con API ligeramente distinta (TopAppBar renombrado, colores del tema). En entrevista menciona la versión que conoces y que consultarías la documentación de migración M2 a M3.
-
-El slot content recibe innerPadding pero también puedes usar Scaffold junto con ModalBottomSheetLayout o NavigationSuiteScaffold en tablets (navigation rail). Para pantallas con collapsing toolbar, NestedScrollConnection y LargeTopAppBar se combinan con Scaffold en patrones documentados.
-
-Accesibilidad: las barras deben exponer títulos y navigationIcon con contentDescription. El FAB debe tener descripción clara si solo muestra icono. Snackbar debe anunciar mensajes a TalkBack cuando aparece.
-
-Preguntas de seguimiento frecuentes en entrevistas para este tema incluyen comparación con alternativas del ecosistema, implicaciones en testing y en el ciclo de vida de Android, y cómo lo aplicarías en una app modular con varios flavors. Si el entrevistador pide profundidad, menciona herramientas de diagnóstico (Profiler, Lint, StrictMode, Layout Inspector) y cómo validarías en CI que no hay regresiones.
-
-En proyectos reales, documenta decisiones en ADR breves o en README del módulo para que el equipo no revierta el patrón por desconocimiento. La mejor respuesta de entrevista combina definición precisa, ejemplo Kotlin o Compose concreto y honestidad sobre límites: ninguna solución es gratis en complejidad o tamaño de APK.
-
-Relaciona este concepto con los demás bloques del manifiesto Entrevista (arquitectura, corrutinas, seguridad, build) para demostrar visión de sistema completo, no conocimiento aislado de una API.
-
-Cuándo usarlo:
-En casi toda pantalla principal Material3 con barra superior, navegación inferior o FAB. Evita forzar Scaffold en diálogos simples o pantallas fullscreen inmersivas (video, cámara) donde el esqueleto sobra.
+Es el punto de partida estándar para pantallas con TopAppBar, FAB o snackbars.
 
 Ejemplo:
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(onNavigate: (String) -> Unit) {
+fun HomeScreen() {
     val snackbarHostState = remember { SnackbarHostState() }
     Scaffold(
         topBar = { TopAppBar(title = { Text("Inicio") }) },
-        floatingActionButton = {
-            FloatingActionButton(onClick = { onNavigate("create") }) {
-                Icon(Icons.Default.Add, contentDescription = "Crear")
-            }
-        },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { innerPadding ->
-        LazyColumn(Modifier.padding(innerPadding)) {
-            items(20) { Text("Item $it", Modifier.padding(16.dp)) }
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        floatingActionButton = { FloatingActionButton(onClick = { }) { } }
+    ) { padding ->
+        LazyColumn(contentPadding = padding) {
+            items(users) { UserRow(it) }
         }
     }
 }
 
-Consejo para entrevista:
-Menciona innerPadding obligatorio, slots composables y snackbarHost. Si preguntan edge-to-edge: WindowInsets más Scaffold. No confundas Scaffold con el host de navegación: NavHost va dentro del contenido.
+Consejo:
+"Aplica siempre el paddingValues del Scaffold al contenido", si no, queda tapado por la TopAppBar.

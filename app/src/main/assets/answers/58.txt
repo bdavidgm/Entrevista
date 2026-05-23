@@ -1,45 +1,20 @@
 Concepto:
-rememberSaveable es un Composable que conserva estado a través de recomposiciones y también de cambios de configuración (rotación) y muerte de proceso, usando el mecanismo de Bundle de Android. Extiende remember con persistencia automática mediante Saver o tipos ya soportados.
+rememberSaveable es como remember pero, además de sobrevivir a recomposiciones, guarda automáticamente su valor en el savedInstanceState del componente. Así el estado sobrevive a cambios de configuración y a process death de la UI cuando el sistema mata el proceso.
 
-Explicación detallada:
-remember solo sobrevive mientras el Composable permanece en el árbol de composición; si la Activity se recrea por rotación, el estado en remember se pierde a menos que lo restaures manualmente. rememberSaveable delega en rememberSaveableStateSaver y en SavedStateRegistry: serializa el valor en un Bundle asociado al mismo mecanismo que onSaveInstanceState.
-
-Los tipos soportados por defecto incluyen primitivos, String, Parcelable, Serializable (con matices), y listas o mapas de tipos compatibles. Para tipos personalizados defines un Saver con save y restore, o usas mapSaver y listSaver. Es el equivalente Compose de guardar estado de UI en el Bundle sin escribir código boilerplate en la Activity.
-
-Diferencia con ViewModel: rememberSaveable es para estado de UI efímero de pantalla (texto de búsqueda, scroll, expansión de acordeón); ViewModel es para estado de negocio que debe sobrevivir rotación con semántica más rica y tests. Pueden coexistir: el ViewModel expone datos de dominio y rememberSaveable guarda posición de lista o pestaña seleccionada.
-
-Con process death (el sistema mata la app en segundo plano), rememberSaveable puede restaurar si el usuario vuelve por recents; no sustituye persistencia en disco (Room, DataStore). Para listas grandes no serialices todo en Bundle: guarda solo IDs o índices, porque el Bundle tiene límites de tamaño y rendimiento.
-
-En formularios multi-paso, combinar rememberSaveable con navegación evita perder borradores en rotación sin inflar el ViewModel con datos que no son lógica de negocio.
-
-Preguntas de seguimiento frecuentes en entrevistas para este tema incluyen comparación con alternativas del ecosistema, implicaciones en testing y en el ciclo de vida de Android, y cómo lo aplicarías en una app modular con varios flavors. Si el entrevistador pide profundidad, menciona herramientas de diagnóstico (Profiler, Lint, StrictMode, Layout Inspector) y cómo validarías en CI que no hay regresiones.
-
-En proyectos reales, documenta decisiones en ADR breves o en README del módulo para que el equipo no revierta el patrón por desconocimiento. La mejor respuesta de entrevista combina definición precisa, ejemplo Kotlin o Compose concreto y honestidad sobre límites: ninguna solución es gratis en complejidad o tamaño de APK.
-
-Relaciona este concepto con los demás bloques del manifiesto Entrevista (arquitectura, corrutinas, seguridad, build) para demostrar visión de sistema completo, no conocimiento aislado de una API.
-
-Cuándo usarlo:
-Úsalo para estado de UI local que debe sobrevivir rotación: texto de TextField, índice de pager, filtros temporales. No lo uses para datos sensibles, listas enormes ni como fuente única de verdad de negocio (ViewModel más repositorio).
+Funciona out-of-the-box con tipos serializables (primitivos, String, Parcelable). Para tipos personalizados se puede proporcionar un Saver custom.
 
 Ejemplo:
 @Composable
-fun SearchBar() {
-    var query by rememberSaveable { mutableStateOf("") }
-    TextField(
-        value = query,
-        onValueChange = { query = it },
-        label = { Text("Buscar") }
-    )
+fun Counter() {
+    var count by rememberSaveable { mutableStateOf(0) }
+    Button(onClick = { count++ }) { Text("Clicks: $count") }
 }
 
-@Parcelize
-data class Filter(val category: String) : Parcelable
+// Tipo custom con Saver
+val saver = listSaver<MyState, Any>(
+    save = { listOf(it.id, it.name) },
+    restore = { MyState(it[0] as String, it[1] as String) }
+)
 
-@Composable
-fun FilterSection() {
-    var filter by rememberSaveable { mutableStateOf(Filter("all")) }
-    // UI que modifica filter
-}
-
-Consejo para entrevista:
-Compara con remember y ViewModel; menciona Saver para tipos custom y límite de tamaño del Bundle. Pregunta trampa: ¿Guarda en disco? No, solo Bundle y estado restaurable; persistencia real es DataStore o Room.
+Consejo:
+Limita rememberSaveable a UI pequeña y serializable. Para estado grande o de dominio, mejor el ViewModel con StateFlow.

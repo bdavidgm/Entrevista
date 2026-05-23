@@ -1,20 +1,10 @@
 Concepto:
-Rootear consiste en obtener acceso de superusuario (uid 0) en Android, tradicionalmente con su o Magisk, permitiendo modificar /system o interceptar el arranque con módulos.
+Rootear es obtener acceso de superusuario (uid 0) en Android, típicamente parcheando boot image con Magisk o instalando su binario. Permite modificar sistema, bloquear anuncios a nivel sistema o usar apps que requieren root.
 
-Explicación detallada:
-Magisk (actual estándar) parchea la imagen boot e instala un manager que concede root por app. Permite módulos sin tocar system (systemless), ocultar root de algunas apps (Zygisk, denylist) aunque bancos y juegos con Play Integrity pueden detectarlo.
-
-Ventajas: backups completos, bloqueadores sistema, automatización avanzada, temas profundos. Riesgos: malware con root, brick si se borran particiones críticas, violación de políticas bancarias/empresa, actualizaciones OTA fallidas.
-
-Root no es lo mismo que bootloader unlock: normalmente se requiere unlock primero. No confundir con jailbreak de iOS.
-
-Desarrollador de apps: debe asumir que en dispositivos rooteados las protecciones locales fallan; usar servidor para datos críticos y Play Integrity donde aplique.
-
-Cuándo usarlo:
-Modding personal, investigación, herramientas de backup (Titanium-style). Evitar en dispositivos de trabajo con datos sensibles.
+Conlleva riesgo de seguridad, actualizaciones OTA complicadas y posible bloqueo de apps sensibles.
 
 Ejemplo:
-Magisk Manager > Instalar > Parchear boot.img > Flashear vía fastboot
+adb sideload magisk_patched_boot.img tras desbloquear bootloader y parchear imagen oficial.
 
-Consejo para entrevista:
-Menciona Magisk vs su antiguo, Play Integrity, y riesgos de seguridad.
+Consejo:
+Para desarrollo, el emulador con adb root basta. En dispositivo real, root rompe supuestos de sandbox de muchas apps de productividad/pago.

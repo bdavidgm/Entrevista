@@ -1,40 +1,11 @@
 Concepto:
-SharedPreferences es un almacenamiento clave-valor ligero y privado por app para preferencias pequeñas (booleanos, strings, enteros) persistidos en XML en el almacenamiento interno.
+SharedPreferences es un almacén clave-valor persistente basado en archivos XML, síncrono en su API antigua y típicamente envuelto en apply() para escritura asíncrona. Hoy Google recomienda migrar a DataStore (Preferences o Proto) por seguridad de hilos y API moderna con Flow.
 
-Explicación detallada:
-API clásica: getSharedPreferences(name, MODE_PRIVATE) devuelve SharedPreferences; edición con edit { putX; apply() o commit() }. apply() es asíncrono; commit() bloquea y devuelve boolean (tests o necesidad síncrona).
-
-Limitaciones conocidas:
-- No es seguro para datos sensibles (tokens, contraseñas): archivo XML sin cifrado fuerte; usa EncryptedSharedPreferences o DataStore con cifrado.
-- No tipado; errores de clave silenciosos.
-- Operaciones no atómicas entre claves sin sincronización.
-- Puede causar ANR si abusas de commit() en main thread con archivos grandes.
-- No hay Flow reactivo nativo (registerOnSharedPreferenceChangeListener es callback antiguo).
-
-Reemplazo recomendado: Preferences DataStore (Jetpack), API asíncrona con coroutines/Flow, migración desde SharedPreferences, mejor manejo de concurrencia.
-
-Sigue apareciendo en entrevistas y código legacy. Migración típica: wrapper que lee DataStore en ViewModel y expone StateFlow.
-
-Cuándo usarlo:
-- Flags simples: onboarding visto, tema, última pestaña.
-- Prototipos y apps muy pequeñas.
-- Mantenimiento de código existente hasta migrar a DataStore.
-
-Evitar: listas grandes, JSON enormes, PII, configuración multiusuario compleja (usa Room).
+Sigue apareciendo en código legado y en preferencias simples de SDK.
 
 Ejemplo:
-// SharedPreferences clásico
-val prefs = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
-prefs.edit {
-    putString("token", null) // no guardar tokens así
-    putBoolean("dark_mode", true)
-}
+val prefs = getSharedPreferences("settings", MODE_PRIVATE)
+prefs.edit { putBoolean("dark", true) }
 
-// DataStore (preferido hoy)
-val Context.dataStore by preferencesDataStore("settings")
-suspend fun saveDarkMode(enabled: Boolean) {
-    context.dataStore.edit { it[booleanPreferencesKey("dark_mode")] = enabled }
-}
-
-Consejo para entrevista:
-Di que lo conoces por legacy pero recomiendas DataStore; menciona apply vs commit, MODE_PRIVATE obsoleto (solo private), y nunca tokens en claro. Ofrece EncryptedSharedPreferences si insisten en “preferencias seguras”.
+Consejo:
+Evita leer prefs en hot paths del main thread con get* síncronos masivos. Para datos estructurados o observables, DataStore.

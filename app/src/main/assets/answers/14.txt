@@ -1,33 +1,21 @@
 Concepto:
-Las raw strings (cadenas crudas) en Kotlin se escriben entre delimitadores de triple comilla y permiten incluir saltos de línea, comillas dobles y barras invertidas sin escaparlas como en un string normal. Son especialmente útiles para expresiones regulares, JSON de prueba, consultas multilínea y documentación embebida en tests.
+Las raw strings se delimitan con triples comillas (""") y permiten escribir cadenas multilínea sin necesidad de escapar caracteres como \n o \", preservando saltos de línea y comillas tal cual aparecen.
 
-Explicación detallada:
-Al alinear el bloque con la indentación del código fuente, las líneas suelen llevar espacios extra heredados. Por eso existen trimIndent(), que elimina la sangría mínima común, y trimMargin("|"), que recorta hasta un prefijo marcador en cada línea. La interpolación $ y ${} sigue activa dentro de raw strings, salvo que escapes el símbolo de dólar.
-
-En Android las usarás en tests instrumentados o unitarios (fixtures JSON para MockWebServer), prototipos de GraphQL, plantillas de mensajes largos en debug y patrones regex para validación de entrada. En producción, payloads JSON grandes deberían vivir en assets/ o venir de red, no hardcodeados en código fuente.
-
-Comparación con strings normales: "\n" y "\\" desaparecen como ruido visual en regex y SQL. Java 15 introdujo text blocks similares; en equipos mixtos Kotlin/Android, raw strings + trimIndent son el estándar idiomático. No confundas raw string con "no procesar": el compilador sigue procesando interpolación.
-
-En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
-
-Cuándo usarlo:
-Regex, SQL o JSON multilínea en tests y herramientas; mensajes de consola largos; cualquier texto donde los escapes dificulten lectura. Para strings de UI traducibles, mantén strings.xml. Para secretos, nunca en código: usa BuildConfig, remoto o Keystore.
+Combinadas con trimIndent() o trimMargin() se eliminan los espacios de la indentación común, manteniendo el código legible.
 
 Ejemplo:
-val emailPattern = """^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$""".toRegex()
-
-val mockResponse = """
+val json = """
     {
       "id": 1,
-      "title": "Entrevista Android"
+      "name": "Ana"
     }
 """.trimIndent()
 
-val sqlDebug = """
-    |SELECT id, name
+val query = """
+    |SELECT *
     |FROM users
     |WHERE active = 1
 """.trimMargin()
 
-Consejo para entrevista:
-Explica trimIndent y trimMargin con ejemplo en pizarra. Preguntan si puedes incluir comillas triples dentro (sí con estrategias de delimitación o concatenación). Contrasta con string escapada para regex: menos errores de doble escape.
+Consejo:
+Útiles para JSON, SQL y textos largos. Menciona trimIndent / trimMargin para limpiar la sangría sin afectar al contenido.

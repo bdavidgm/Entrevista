@@ -1,50 +1,14 @@
 Concepto:
-Leer sensores en Android consiste en obtener una instancia de SensorManager, registrar un SensorEventListener sobre sensores como TYPE_ACCELEROMETER o TYPE_GYROSCOPE, y consumir valores en el callback onSensorChanged con la frecuencia adecuada.
+Los sensores hardware se acceden con SensorManager.getDefaultSensor(TYPE_ACCELEROMETER) etc. y se registran con registerListener, recibiendo onSensorChanged en el hilo del listener (Looper opcional). Recuerda unregisterListener al pausar para ahorrar batería.
 
-Explicación detallada:
-SensorManager es un system service que expone hardware del dispositivo: acelerómetro (m/s² en ejes X,Y,Z), giroscopio (rad/s), magnetómetro, barómetro, sensor de luz, proximidad, etc. Cada Sensor tiene nombre, vendor, resolución, rango y power.
-
-Flujo:
-1) sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
-2) sensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
-3) registerListener(listener, sensor, samplingPeriodUs, maxReportLatencyUs)
-
-Constantes de frecuencia: SENSOR_DELAY_FASTEST, GAME, UI, NORMAL (trade-off batería vs latencia). Desde API 19 puedes usar SensorManager.registerListener con Handler para recibir eventos en un hilo concreto.
-
-onSensorChanged(SensorEvent): event.values[0..2] según tipo; event.timestamp en nanosegundos; event.accuracy puede degradarse (calibración). onAccuracyChanged avisa cambios de precisión.
-
-Buenas prácticas:
-- Registrar en onResume y unregister en onPause para no drenar batería.
-- Filtrar ruido (low-pass, umbral) si usas datos para UI.
-- Para orientación de pantalla el framework ya usa sensores; no reinventes salvo AR/juegos.
-- TYPE_LINEAR_ACCELERATION y TYPE_GRAVITY separan gravedad del movimiento.
-- Sensor fusion (Rotation Vector) combina giro + acelerómetro + magnetómetro.
-
-Sensores “software” o limitados en emulador; prueba en dispositivo real.
-
-Cuándo usarlo:
-- Juegos, fitness (contar pasos con TYPE_STEP_DETECTOR), brújula, estabilización de imagen.
-- Detección de sacudida (shake to refresh).
-- ARKit/ARCore complementan con sensores de movimiento.
+Los valores vienen en coordenadas del dispositivo; el giroscopio mide velocidad angular.
 
 Ejemplo:
-class MotionController(context: Context) : SensorEventListener {
-    private val sm = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
-    private val accel = sm.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+val sm = getSystemService(SensorManager::class.java)
+val accel = sm.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+sm.registerListener({ e, _ ->
+    val (x, y, z) = e.values
+}, accel, SensorManager.SENSOR_DELAY_GAME)
 
-    fun start() {
-        sm.registerListener(this, accel, SensorManager.SENSOR_DELAY_UI)
-    }
-    fun stop() = sm.unregisterListener(this)
-
-    override fun onSensorChanged(event: SensorEvent) {
-        val x = event.values[0]
-        val y = event.values[1]
-        val z = event.values[2]
-        val magnitude = kotlin.math.sqrt(x*x + y*y + z*z)
-    }
-    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
-}
-
-Consejo para entrevista:
-Insiste en register/unregister con lifecycle, impacto en batería, y diferencia entre acelerómetro (incluye gravedad) y linear acceleration. Si hablan de pasos, menciona Sensor.TYPE_STEP_COUNTER vs STEP_DETECTOR y que Google Fit/Health Connect pueden ser alternativas de alto nivel.
+Consejo:
+Usa SENSOR_DELAY_UI o GAME según necesidad; muestreos altos gastan batería. Para fusionar sensores y orientación, SensorManager.getRotationMatrix/getOrientation.

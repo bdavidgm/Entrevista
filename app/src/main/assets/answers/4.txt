@@ -1,35 +1,15 @@
 Concepto:
-val declara una referencia de solo lectura: no puedes reasignar la variable a otro objeto, aunque el objeto referenciado pueda ser mutable si es un tipo con estado mutable (por ejemplo, val list = mutableListOf() permite add/remove). var declara una referencia reasignable: puedes asignar otro valor a la variable. En Kotlin idiomático se prefiere val por defecto para favorecer inmutabilidad y razonamiento más simple.
+val declara una referencia de solo lectura (no se puede reasignar tras inicializarla), mientras que var declara una referencia mutable que sí admite reasignación. val no implica inmutabilidad profunda: el objeto referenciado puede seguir cambiando su estado interno.
 
-Explicación detallada:
-val no significa "inmutable profunda": significa que la referencia no cambia. Para colecciones inmutables usa listOf() (solo lectura) frente a mutableListOf(). En propiedades de clase, val genera getter; var genera getter y setter (con visibilidad configurable). En constructores primarios, val/var promueven propiedades automáticamente.
-
-En Android, val domina en ViewModels (estado expuesto), parámetros de Composable, inyección de dependencias y configuración de Activities. var aparece en contadores locales, flags de UI que cambian referencia, o cuando interoperas con APIs que exigen var. En corrutinas y StateFlow, el patrón es val flow + actualización inmutable del valor emitido, no var del estado completo.
-
-Comparación con Java: final en Java es análogo parcial a val en referencias; Kotlin hace val el default cultural. En entrevistas pueden pedir ejemplos donde val "no es constante" para demostrar comprensión profunda.
-
-En capas de presentación, convención habitual: val para StateFlow expuesto y funciones que emiten copias inmutables del estado (copy en data class). var queda para contadores locales, flags de bucle o integración con APIs Java que exigen setter. En Compose, el estado reactivo vive en remember { mutableStateOf } asignado a val holding State, no en var del valor mostrado. Detekt y linters Kotlin promueven val por defecto. En entrevistas de arquitectura, relacionan val con thread-safety de referencias inmutables: aunque el objeto mutable interno no lo sea, la referencia estable facilita razonar en concurrencia.
-
-Cuándo usarlo:
-Usa val siempre que no necesites reasignar la variable. Usa var para acumuladores en bucles imperativos, referencias que se reasignan (lateinit no es var de referencia reasignable tras init en propiedades), o APIs legacy. En Compose, preferir remember { mutableStateOf } con val que guarda el State, no var del valor de UI directamente.
+Por defecto se prefiere val en Kotlin para favorecer la inmutabilidad y reducir errores de concurrencia y de razonamiento.
 
 Ejemplo:
-class ProfileViewModel : ViewModel() {
-  private val _uiState = MutableStateFlow(ProfileUiState())
-  val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()
+val list = mutableListOf(1, 2)
+list.add(3)        // permitido: el objeto cambia
+// list = mutableListOf() // error: no se puede reasignar
 
-  fun onNameChanged(name: String) {
-    _uiState.value = _uiState.value.copy(displayName = name)
-  }
-}
+var counter = 0
+counter += 1       // permitido
 
-// val con objeto mutable (válido pero cuidado)
-val buffer = StringBuilder()
-buffer.append("Hola") // OK: mutas el objeto, no la referencia
-
-// var solo si reasignas
-var retryCount = 0
-fun onError() { retryCount++ }
-
-Consejo para entrevista:
-"No confundir val con inmutabilidad del objeto". Pregunta típica: ¿puedo cambiar propiedades de un data class con val en constructor? Sí si son var en constructor; si son val en constructor, no. Relaciona con inmutabilidad en MVI/UDF.
+Consejo:
+"val == final reference, no deep immutable". Para inmutabilidad real usa val + tipos inmutables (List, data class con val).

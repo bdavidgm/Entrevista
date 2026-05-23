@@ -1,32 +1,10 @@
 Concepto:
-Firebase App Distribution distribuye builds de prueba (APK/AAB) a testers internos o QA vía enlace o email, integrado con Firebase Console y Gradle plugin, antes de publicar en Play.
+Firebase App Distribution sube APK/AAB a testers sin pasar por revisión pública de Play: invitaciones por email, notas de release y métricas de instalación. Se integra con Gradle y CI.
 
-Explicación detallada:
-Flujo:
-1) Registrar app en Firebase proyecto vinculado.
-2) Plugin appdistribution en Gradle; configurar groups/testers en console.
-3) Tras assembleRelease o bundle, task appDistributionUploadRelease sube binario.
-4) Testers reciben invitación, instalan App Distribution helper o descargan directo (según versión).
-5) Feedback y notas de release por build.
-
-Ventajas vs Play internal testing: rápido para equipo pequeño, sin esperar revisión Play para cada build diario; útil para stakeholders no en lista Play.
-
-Limitaciones: no sustituye Play Console para producción; testers deben confiar en fuente Firebase; gestión de versiones manual.
-
-Cuándo usarlo:
-- CI sube nightly a QA.
-- Demos a cliente antes de beta cerrada en Play.
-- Combinar con Crashlytics mismo proyecto para ver crashes de builds internos.
+Útil para QA interno, stakeholders y pruebas rápidas.
 
 Ejemplo:
-// app/build.gradle.kts
-plugins { id("com.google.firebase.appdistribution") }
-firebaseAppDistribution {
-    releaseNotes = "Fix login crash"
-    groups = "qa-team"
-    testers = "dev@company.com"
-}
-// ./gradlew assembleDebug appDistributionUploadDebug
+./gradlew appDistributionUploadRelease
 
-Consejo para entrevista:
-Contrasta App Distribution con Play internal/open testing (revisión, vitals, staged rollout). Menciona grupos de testers y automatización CI. No confundas con Firebase Hosting.
+Consejo:
+No sustituye tracks de Play interno/closed testing si necesitas las mismas reglas de firma y integridad que producción. Combina con Crashlytics para feedback.

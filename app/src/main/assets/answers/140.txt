@@ -1,46 +1,16 @@
 Concepto:
-SavedStateHandle es un contenedor de Bundle-like que sobrevive a muerte de proceso y rotación de configuración, inyectado en ViewModel para guardar y restaurar estado de navegación o argumentos procesados.
+SavedStateHandle es un mapa clave-valor que un ViewModel recibe automáticamente y cuyo contenido se persiste en el savedInstanceState del componente. Combina así dos garantías: sobrevivir a la rotación (porque está dentro del ViewModel) y a la muerte del proceso (porque va al Bundle del sistema).
 
-Explicación detallada:
-Proporcionado por lifecycle-viewmodel-savedstate.
-- viewModels() y hiltViewModel() pueden recibir SavedStateHandle.
-- get/set con claves String; soporte LiveData y StateFlow helpers.
-
-Persistencia:
-- Sobrevive rotación (ViewModel en store).
-- Sobrevive process death si el sistema mató el proceso y restauró la Activity con saved state (no garantiza todos los casos; datos críticos también en BD).
-
-Uso típico:
-- Restaurar scroll position, texto de búsqueda, tab seleccionado.
-- Leer argumentos de Navigation: savedStateHandle.get<String>("userId") con navArgs.
-
-API:
-savedStateHandle["query"] = "kotlin"
-val query = savedStateHandle.get<String>("query") ?: ""
-
-getStateFlow("key", initial) para exponer a UI reactiva.
-
-Límites de tamaño: como Bundle, no guardar objetos enormes; usar IDs y cargar desde repo.
-
-Cuándo usarlo:
-Estado de UI que debe sobrevivir rotación/process death pero no justifica tabla en Room. Complementa UiState en memoria del ViewModel.
+Sirve para guardar el estado mínimo de UI que debe restaurarse: query de búsqueda, filtros activos, scroll position semántico. También recibe los argumentos de navegación.
 
 Ejemplo:
 @HiltViewModel
 class SearchViewModel @Inject constructor(
-    private val savedStateHandle: SavedStateHandle,
-    private val repository: SearchRepository
+    private val savedState: SavedStateHandle
 ) : ViewModel() {
-
-    private val queryFlow = savedStateHandle.getStateFlow("query", "")
-    val results = queryFlow.flatMapLatest { q ->
-        repository.search(q)
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
-
-    fun onQueryChange(q: String) {
-        savedStateHandle["query"] = q
-    }
+    val query: StateFlow<String> = savedState.getStateFlow("query", "")
+    fun onQueryChange(value: String) { savedState["query"] = value }
 }
 
-Consejo para entrevista:
-Diferencia SavedStateHandle vs Room vs rememberSaveable en Compose. Menciona process death y getStateFlow.
+Consejo:
+Solo guarda valores pequeños y serializables. Para datos grandes (lista cargada de red), recárgalos en onCreate; SavedState no es un cache.

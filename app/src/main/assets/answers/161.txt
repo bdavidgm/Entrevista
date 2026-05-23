@@ -1,54 +1,17 @@
 Concepto:
-Repository con caché combina una fuente remota y una local (memoria o BD) para exponer una única API de datos: sirve cache rápido offline y sincroniza con red cuando hay conectividad.
+Repository con caché expone una sola API que lee primero de fuente rápida/local (Room, memoria) y refresca con red cuando toca. Patrón típico “single source of truth”: la UI observa Flow desde Room; el repo escribe en Room tras fetch.
 
-Explicación detallada:
-Flujo típico (single source of truth):
-- UI observa Flow desde Room.
-- Repository fetch remoto -> guarda en Room -> Room emite actualización.
-- Lectura inicial desde BD sin esperar red (stale-while-revalidate).
-
-Estrategias:
-- Cache-aside: lee cache; si miss o expirado, fetch red y actualiza cache.
-- Network-bound resource (patrón Google): emit Loading, lee BD, fetch, persiste, emite Success/Error.
-- TTL en memoria para datos poco críticos.
-
-Capas:
-interface UserRepository { fun observeUser(id: String): Flow<User> }
-class UserRepositoryImpl(api, dao, connectivity) : UserRepository
-
-Invalidación:
-- Pull-to-refresh fuerza sync.
-- WorkManager periódico.
-- Eventos push (FCM) invalidan keys.
-
-Consistencia:
-- onConflict REPLACE en Room.
-- Versionado de entidades.
-- Manejo offline: mostrar datos cacheados con banner "sin conexión".
-
-Cuándo usarlo:
-Casi toda app con API REST y listas que deben funcionar offline o con mala red.
+Mejora offline, latencia y consistencia si defines bien invalidación y conflictos.
 
 Ejemplo:
-class ArticleRepository @Inject constructor(
-    private val api: ArticleApi,
-    private val dao: ArticleDao
-) {
-    fun observeArticles(): Flow<List<Article>> = dao.observeAll()
+class UserRepository(private val api: UserApi, private val dao: UserDao) {
+    fun users(): Flow<List<User>> = dao.observeAll()
 
     suspend fun refresh() {
-        val remote = api.getArticles()
-        dao.insertAll(remote.map { it.toEntity() })
+        val remote = api.fetchUsers().map { it.toEntity() }
+        dao.replaceAll(remote)
     }
 }
 
-// ViewModel
-init {
-    viewModelScope.launch {
-        launch { repository.observeArticles().collect { _state.value = it } }
-        launch { repository.refresh() }
-    }
-}
-
-Consejo para entrevista:
-Explica single source of truth (Room + Flow). Menciona NetworkBoundResource conceptualmente. Contrasta cache en memoria vs BD.
+Consejo:
+Combina con WorkManager para sync periódico y muestra banner “sin conexión” cuando sirves datos viejos. Evita dos fuentes de verdad sin estrategia.

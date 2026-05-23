@@ -1,47 +1,15 @@
 Concepto:
-PendingIntent es un token que delega en el sistema la ejecución futura de un Intent (o acciones de notificación) con los permisos de tu app, de forma segura y sin exponer tu Context a otras apps.
+PendingIntent es un token que permite a otra app o al sistema ejecutar un Intent con los permisos de tu app en un momento futuro (notificación, alarmas, widgets). Incluye flags como FLAG_IMMUTABLE (obligatorio en muchos casos recientes), FLAG_UPDATE_CURRENT y define explícito vs implícito según el caso.
 
-Explicación detallada:
-Casos de uso:
-- Usuario toca notificación -> abre Activity.
-- Botones de acción en notificación (responder, archivar).
-- AlarmManager y WorkManager disparan BroadcastReceiver o Service.
-- Widgets de home screen.
-
-Tipos:
-- getActivity, getBroadcast, getService, getForegroundService (según API).
-
-Flags críticos (API 31+):
-- FLAG_IMMUTABLE: obligatorio en la mayoría de casos; el receptor no puede modificar el Intent interno.
-- FLAG_MUTABLE: solo si necesitas que el sistema rellene extras (ej. inline reply); usar con cuidado.
-
-requestCode:
-- Distingue PendingIntents iguales (mismo componente e intent data); usa requestCode único por acción.
-
-Cancelación:
-- PendingIntent.cancel() o cancelAll() al invalidar acción (mensaje leído).
-
-Seguridad:
-- Evita crear PendingIntent con Intents explícitos a componentes exportados innecesariamente.
-
-Cuándo usarlo:
-Siempre que el sistema o el usuario ejecute una acción de tu app fuera del proceso actual inmediato (notificaciones, alarmas, widgets).
+Mal usado, es vector de redirección de intents; usa componentes explícitos cuando sea posible.
 
 Ejemplo:
-val dismissIntent = Intent(context, NotificationActionReceiver::class.java).apply {
-    action = ACTION_DISMISS
-    putExtra("id", messageId)
-}
-val dismissPi = PendingIntent.getBroadcast(
-    context,
-    messageId.hashCode(),
-    dismissIntent,
+val intent = Intent(this, DetailActivity::class.java)
+val pi = PendingIntent.getActivity(
+    this, 0, intent,
     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
 )
+builder.setContentIntent(pi)
 
-val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-    .addAction(R.drawable.ic_close, "Descartar", dismissPi)
-    .build()
-
-Consejo para entrevista:
-Explica por qué no pasas Intent directo en notificación. FLAG_IMMUTABLE es pregunta frecuente desde Android 12. Diferencia Activity vs Broadcast PendingIntent.
+Consejo:
+Android 12+: FLAG_IMMUTABLE por defecto salvo que realmente necesites mutabilidad. Revisa exported y URI permissions al compartir datos.

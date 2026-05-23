@@ -1,36 +1,16 @@
 Concepto:
-apply y also son scope functions que devuelven el objeto receptor tras ejecutar el lambda, pero difieren en el nombre del receptor (this vs it) y en la intención idiomática: apply para configurar el objeto; also para efectos secundarios adicionales manteniendo el objeto en la cadena.
+apply y also devuelven ambos el receptor (útiles en cadenas builder), pero se diferencian en cómo lo exponen: apply usa this implícito (accedes a propiedades y métodos directamente), mientras que also lo expone como it (queda explícito que estás trabajando con el objeto).
 
-Explicación detallada:
-apply usa this implícito dentro del bloque, lo que favorece asignaciones directas a propiedades sin prefijo: name = "x", flags = .... also usa it, forzando referencia explícita al objeto si lo necesitas en el bloque, lo que a veces mejora claridad cuando el objeto no es "self-evident".
-
-Ambas devuelven el receptor, permitiendo encadenamiento: crear().apply { }.also { log(it) }. En Android, apply domina en builders del framework (Intent, Bundle, View, AlertDialog). also domina para logs, métricas, o añadir a colección mientras devuelves el elemento.
-
-Si solo quieres ejecutar código sin devolver el receptor, usa run o let según necesites valor de retorno. apply/also no deben contener lógica de negocio pesada: son azúcar sintáctico de organización.
-
-En entrevistas piden elegir entre apply y also en snippet: si configuras propiedades del mismo objeto → apply; si "haces algo más" y sigues pasando el objeto → also.
-
-En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
-
-En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
-
-Cuándo usarlo:
-apply: inicialización y configuración de objetos recién creados. also: depuración, side effects no relacionados con configuración estructural, pipelines donde el siguiente paso necesita el mismo objeto.
+Regla práctica: apply para configurar el objeto desde dentro (mutar campos, llamar setters); also para side effects laterales (loggear, validar, registrar) sin contaminar this.
 
 Ejemplo:
-val channel = NotificationChannel(ID, NAME, IMPORTANCE_DEFAULT).apply {
-    description = "Pedidos"
-    enableVibration(true)
+val user = User().apply {
+    name = "Ana"
+    age = 30
+}.also {
+    Log.d(TAG, "Usuario creado: ${it.id}")
+    analytics.track(it)
 }
 
-val order = Order(id = "1")
-    .also { cache.put(it.id, it) }
-    .also { analytics.track("order_created", it.id) }
-
-val view = TextView(context).apply {
-    text = "Total"
-    textSize = 16f
-}
-
-Consejo para entrevista:
-apply = configurar (this); also = además (it). Preguntan retorno: ambos el objeto. Contrasta con let que retorna resultado del lambda.
+Consejo:
+"apply = configure, also = side effect". Si dentro del bloque vas a referirte mucho al objeto, también ayuda a evitar conflictos de nombre.

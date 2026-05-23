@@ -1,44 +1,14 @@
 Concepto:
-runBlocking es una función de corrutinas que bloquea el hilo actual hasta que el bloque suspendido termine, creando un event loop temporal para ejecutar corrutinas en ese hilo.
+runBlocking bloquea el hilo actual hasta que termina el bloque suspendido y crea ahí un event loop de corrutinas. Útil en tests JVM o en main() de herramientas, pero no en la UI de Android: en el hilo principal puede provocar ANR.
 
-Explicación detallada:
-Firma conceptual:
-fun <T> runBlocking(context, block): T
-
-Bloquea el caller — en Main thread causa ANR si el bloque tarda.
-
-Usos legítimos:
-- Tests unitarios JVM: runBlocking { repository.load() }
-- main() en herramientas CLI Kotlin.
-- Puente temporal desde código Java callback-based (evitar en producción UI).
-
-NO usar en:
-- Activity, Fragment, Composable, onCreate, onClick — usa lifecycleScope o viewModelScope.
-
-Alternativas en Android:
-- viewModelScope.launch { }
-- withContext en suspend function desde repo.
-
-runBlocking vs runBlocking<Unit>:
-- Puede especificar dispatcher; por defecto usa el del hilo bloqueado con event loop.
-
-Cuándo usarlo:
-Tests, scripts, integración en código no-Android. En producción Android UI casi nunca.
+En producción prefiere viewModelScope, lifecycleScope o withContext desde código suspendido.
 
 Ejemplo:
-// Test
 @Test
-fun `loads users`() = runBlocking {
-    val repo = FakeUserRepository()
-    val users = repo.getUsers()
-    assertEquals(2, users.size)
+fun `repo devuelve usuario`() = runBlocking {
+    val user = repository.getUser("1")
+    assertEquals("Ana", user.name)
 }
 
-// Mal en Activity
-override fun onCreate(savedInstanceState: Bundle?) {
-    super.onCreate(savedInstanceState)
-    // NO: runBlocking { api.fetch() }
-}
-
-Consejo para entrevista:
-Enfatiza ANR en Main y que en tests está bien. Contrasta con suspend y launch. Si preguntan tests, menciona runTest de kotlinx-coroutines-test como alternativa moderna.
+Consejo:
+"Tests y CLI sí; Activities/Composables no". Si ves runBlocking en onCreate o en un click, es señal de refactor a launch.

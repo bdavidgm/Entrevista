@@ -1,22 +1,12 @@
 Concepto:
-Cámara, micrófono y contactos son permisos dangerous de alto impacto en privacidad; requieren justificación clara y manejo de denegación.
+Cámara, micrófono y contactos son permisos peligrosos con alto impacto en privacidad: pídelos en contexto (just-in-time), ofrece degradación si el usuario niega (funcionalidad limitada) y evita escuchar en segundo plano sin indicador claro (mic/cámara foreground service + notificación desde Android 9/12 según caso).
 
-Explicación detallada:
-CAMERA / RECORD_AUDIO: solicitar just-in-time cuando el usuario pulsa grabar o escanear QR. Indicador verde/naranja en barra de estado (Android 12+) muestra uso activo. No grabar en background sin consentimiento explícito (ilegal en muchas regiones).
-
-READ_CONTACTS / WRITE_CONTACTS: minimizar campos leídos; no subir libreta completa al servidor sin necesidad. GET_ACCOUNTS restringido.
-
-READ_SMS / SEND_SMS / CALL_PHONE: muy sensibles; Play limita casos de uso (apps por defecto SMS/teléfono). Riesgo de fraude si se abusa.
-
-Buenas prácticas: rationale antes del segundo request, degradar funcionalidad si deniegan, enlace a Ajustes si denegación permanente. Revisar que librerías de terceros no declaren permisos extra.
-
-POST_NOTIFICATIONS (Android 13+): dangerous; pedir al activar notificaciones, no al instalar.
-
-Cuándo usarlo:
-Apps de mensajería, banca con KYC, escáneres, VoIP. Auditar manifest de SDKs de ads y analytics.
+Los indicadores de punto verde/naranja muestran acceso activo a cámara/mic.
 
 Ejemplo:
-ActivityResultContracts.RequestMultiplePermissions() para CAMERA + RECORD_AUDIO
+registerForActivityResult(RequestPermission()) { granted ->
+    if (granted) startPreview() else showRationale()
+}
 
-Consejo para entrevista:
-Just-in-time, indicadores de privacidad OS, POST_NOTIFICATIONS separado.
+Consejo:
+shouldShowRequestPermissionRationale guía el copy. Para contactos, pide la mínima proyección de columnas y no subas libretas enteras al servidor sin consentimiento explícito.

@@ -1,22 +1,10 @@
 Concepto:
-Un técnico Android en taller combina diagnóstico de hardware/software, restauración de firmware, gestión de cuenta (FRP), limpieza de almacenamiento y orientación al usuario.
+Un técnico Android en taller combina diagnóstico por software (modo seguro, wipe cache, ADB logcat, reinstalar ROM stock) y hardware (pantalla, batería, puerto USB-C, micrófonos). También gestiona cuentas Google/FRP, transferencias de datos y políticas de garantía del OEM.
 
-Explicación detallada:
-Tareas habituales: comprobar puerto USB y modo (MTP, PTP, solo carga), activar depuración si es posible, extraer logs con adb bugreport, reinstalar ROM oficial, reset de fábrica, sustitución de batería/pantalla, test de sensores en menú secreto (*#*#4636#*#* en algunos), verificar IMEI y bandas.
-
-FRP (Factory Reset Protection): tras reset, pide cuenta Google previa; no se “salta” legalmente sin credenciales del dueño; técnico debe explicar al cliente.
-
-Herramientas por fabricante: Odin (Samsung), Mi Flash (Xiaomi), MSM Download Tool (OnePlus/OPPO), SP Flash Tool (MediaTek), HiSuite/Honor, EDL cables en Qualcomm.
-
-Modo download/EDL: arranque de emergencia cuando no enciende Android; requiere autorización y firmware firmado. Distinto de fastboot visible.
-
-Ética: solo operar en dispositivos de propiedad demostrada; respetar privacidad de datos.
-
-Cuándo usarlo:
-Centros de servicio, reparación de móviles, soporte IT corporativo con dispositivos Android.
+No confundir con desarrollo de apps: se solapan ADB y conocimiento del sistema.
 
 Ejemplo:
-Diagnóstico: adb devices, cargador original, recovery wipe cache, flash ROM oficial del sitio del OEM
+Bucle de boot: intentar recovery wipe cache → flashear firmware oficial con herramienta OEM → revisar eMMC UFS en casos graves.
 
-Consejo para entrevista:
-Menciona FRP, Odin/Mi Flash, y límites legales/éticos.
+Consejo:
+FRP (Factory Reset Protection) requiere credenciales legítimas; explicar bypass no ético no es objetivo de entrevista dev, pero conocer FRP evita “reparaciones” ilegales.

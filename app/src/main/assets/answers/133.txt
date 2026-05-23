@@ -1,42 +1,16 @@
 Concepto:
-rememberUpdatedState envuelve un valor en un State que siempre refleja la última versión pasada al composable, útil cuando una lambda o efecto capturó un valor antiguo en un closure de larga duración.
-
-Explicación detallada:
-Problema:
-- LaunchedEffect(Unit) { while(true) { onEvent(currentCount) } } captura onEvent y currentCount del primer composition.
-- Si el padre pasa nueva lambda o count, el efecto no se reinicia pero debería ver el valor actualizado.
-
-Solución:
-val updatedOnEvent by rememberUpdatedState(newValue = onEvent)
-LaunchedEffect(Unit) {
-    while (true) {
-        updatedOnEvent()
-    }
-}
-
-rememberUpdatedState vs remember:
-- remember guarda estado entre recomposiciones del mismo composable.
-- rememberUpdatedState no reinicia efectos; solo actualiza la referencia leída dentro del efecto.
-
-Casos típicos:
-- Callbacks en LaunchedEffect, DisposableEffect, animaciones largas.
-- Polling o listeners donde reiniciar el efecto sería costoso.
-- Snackbar o navegación one-shot desde efecto con callback del padre.
-
-Cuándo usarlo:
-Cuando un efecto con clave fija o larga duración debe leer valores o callbacks actualizados sin relanzar el efecto completo.
+rememberUpdatedState envuelve un valor para que un side effect de larga vida (LaunchedEffect, DisposableEffect, callback registrado) siempre vea su versión más reciente sin reiniciarse cuando el valor cambia. Resuelve el caso de "tengo una lambda/valor capturado en un efecto y necesito que use el último valor sin recrear el efecto".
 
 Ejemplo:
 @Composable
-fun TimerTick(onTick: () -> Unit) {
-    val currentOnTick by rememberUpdatedState(onTick)
+fun AutoCloseSheet(onTimeout: () -> Unit) {
+    val currentOnTimeout by rememberUpdatedState(onTimeout)
+
     LaunchedEffect(Unit) {
-        while (true) {
-            delay(1_000)
-            currentOnTick()
-        }
+        delay(3_000)
+        currentOnTimeout() // siempre el último valor
     }
 }
 
-Consejo para entrevista:
-Contrasta con incluir la dependencia en LaunchedEffect(key) que reinicia el efecto. Usa rememberUpdatedState cuando reiniciar es incorrecto o caro.
+Consejo:
+"Captura el valor actual sin reiniciar el efecto". Si pones onTimeout como key, el delay se reiniciaría cada vez que cambie la lambda.

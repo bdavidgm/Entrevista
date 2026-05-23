@@ -1,38 +1,19 @@
 Concepto:
-State hoisting (elevación de estado) es el patrón de mover el estado y la lógica de mutación hacia un ancestro común, dejando composables hijos sin estado (stateless) que reciben el valor y un callback para cambios. Mejora reutilización, testabilidad y fuente única de verdad.
+State hoisting es el patrón de "subir" el estado a un ancestro común, dejando los hijos sin estado propio (stateless) que reciben el valor y un callback para cambiarlo. Mejora la testabilidad, la reutilización y mantiene una única fuente de verdad.
 
-Explicación detallada:
-Un composable stateless recibe value: String y onValueChange: (String) -> Unit. El padre hace remember { mutableStateOf("") } o lee del ViewModel. Facilita previews y tests sin emulador completo.
-
-Variantes: stateness parcial (hoist solo lo compartido). En formularios, el ViewModel puede ser el hoist ultimate para sobrevivir rotación. Regla: hoist al nivel más bajo que necesita leer/escribir ese estado compartido.
-
-En entrevistas piden refactorizar TextField con estado interno a hoisted. Relacionan con unidirectional data flow (UDF): Event up, State down.
-
-En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
-
-En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
-
-Cuándo usarlo:
-Componentes de diseño reutilizables (botones, campos, cards). Pantallas donde varios hijos leen el mismo estado. Siempre que un mismo estado controle múltiples partes del layout.
+Forma canónica de un componente hoisted: value: T y onValueChange: (T) -> Unit. El padre puede tener el estado en remember o, mejor, en un ViewModel.
 
 Ejemplo:
 @Composable
 fun SearchScreen(viewModel: SearchViewModel = hiltViewModel()) {
     val query by viewModel.query.collectAsStateWithLifecycle()
-    SearchField(
-        value = query,
-        onQueryChange = viewModel::onQueryChange
-    )
+    SearchField(value = query, onChange = viewModel::onQueryChange)
 }
 
 @Composable
-fun SearchField(value: String, onQueryChange: (String) -> Unit) {
-    TextField(
-        value = value,
-        onValueChange = onQueryChange,
-        label = { Text("Buscar") }
-    )
+fun SearchField(value: String, onChange: (String) -> Unit) {
+    TextField(value = value, onValueChange = onChange)
 }
 
-Consejo para entrevista:
-Dibuja árbol padre/hijo. Diferencia stateful wrapper vs stateless core. ViewModel como punto de hoist para datos de negocio.
+Consejo:
+"State down, events up": flujo unidireccional. Hoist al nivel más bajo que necesite compartirlo. El ViewModel suele ser el hoist final.

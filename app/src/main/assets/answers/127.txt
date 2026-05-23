@@ -1,43 +1,17 @@
 Concepto:
-Context en Android es el handle que proporciona acceso a recursos, sistema de archivos, servicios, temas y componentes de la plataforma; representa información sobre el entorno de ejecución de la app.
+Un Context es un objeto que representa el "entorno" actual de la app: da acceso a recursos, system services, assets, base de datos, SharedPreferences y permite lanzar activities, services o broadcasts. Casi todo en Android necesita un Context para funcionar.
 
-Explicación detallada:
-Jerarquía:
-- Context abstracto: operaciones base (getString, getResources, startActivity, getSystemService, openFileOutput).
-- ContextWrapper: delega en base (Activity, Service, Application son wrappers).
-- Application: contexto global de la app, vive todo el proceso.
-- Activity: contexto con tema de Activity, lanzamiento de intents desde UI, permisos ligados a ventana.
-
-Regla crítica: no retener referencia a Activity Context en objetos de larga vida (singleton, ViewModel no debe guardar Activity). Usar applicationContext para cosas que vivan más que la Activity (singleton de DB a veces, pero preferir inyección con @ApplicationContext).
-
-Usos comunes:
-- Inflar layouts: LayoutInflater.from(context)
-- Acceder a strings y dimensiones: context.getString(R.string.app_name)
-- startActivity, registerReceiver (con cuidado en versiones nuevas)
-- getSystemService(Context.CONNECTIVITY_SERVICE) etc.
-
-En Compose: LocalContext.current como CompositionLocal.
-
-Hilt inyecta @ApplicationContext Context para capas que necesitan contexto sin acoplar a Activity.
-
-Cuándo usarlo:
-Siempre que interactúes con recursos Android, servicios del sistema o arranques de componentes. Elige el Context de menor alcance necesario (Activity para diálogos con tema de Activity, Application para caches de app).
+Existen distintas variantes: ApplicationContext (vive toda la app), Activity Context (vive con la Activity), Service Context. Guardar un Activity Context fuera de su ciclo de vida es la causa más común de memory leaks.
 
 Ejemplo:
-class TokenStorage @Inject constructor(
-    @ApplicationContext private val context: Context
-) {
-    private val prefs = context.getSharedPreferences("auth", Context.MODE_PRIVATE)
-    fun saveToken(token: String) = prefs.edit().putString("token", token).apply()
+class Analytics(private val context: Context) {
+    fun log(event: String) {
+        context.applicationContext // seguro de guardar
+    }
 }
 
-@Composable
-fun MyScreen() {
-    val context = LocalContext.current
-    Button(onClick = {
-        context.startActivity(Intent(context, SettingsActivity::class.java))
-    }) { Text("Ajustes") }
-}
+val service = context.getSystemService(Context.CONNECTIVITY_SERVICE)
+        as ConnectivityManager
 
-Consejo para entrevista:
-Explica jerarquía y fugas por retener Activity. Menciona applicationContext vs Activity context y @ApplicationContext en Hilt.
+Consejo:
+"Usa applicationContext para singletons; Activity context solo para UI/diálogos". Memory leak clásico: guardar this de una Activity en un objeto estático.

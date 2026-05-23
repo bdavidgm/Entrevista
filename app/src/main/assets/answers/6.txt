@@ -1,41 +1,18 @@
 Concepto:
-En Kotlin, object declara una instancia única (singleton) de una clase o un objeto anónimo sin nombre de clase explícito. El patrón singleton es nativo: el compilador crea una única instancia thread-safe (inicialización lazy por defecto al acceder) sin boilerplate de Java (enum singleton, holder idiom, etc.).
+La palabra clave object en Kotlin declara un singleton: una clase con una única instancia que el compilador crea de forma thread-safe y lazy al primer uso. Combina declaración de clase e instancia en una sola sentencia.
 
-Explicación detallada:
-Tres usos principales: (1) object Nombre { } como singleton de verdad, con propiedades y métodos; (2) companion object dentro de una clase, vinculado al companion de la clase JVM; (3) object : Interface { } como expresión de objeto anónimo que implementa interfaces, similar a object Java anónimo pero más conciso.
-
-En Android, object aparece para Repositorios simples en demos, registries, constantes agrupadas (a veces mejor const val en companion), listeners únicos, y Dependency Injection manual (object Module). Hilt/Dagger suelen preferir @Singleton con clases normales en apps grandes; object sigue siendo válido para utilidades sin estado.
-
-Thread-safety: la instancia object se inicializa en primer acceso, con bloqueo del class loader en JVM. No confundir con "singleton global mutable": si guardas Context de Activity en un object, tendrás memory leaks. object debe ser stateless o usar Application context.
-
-Comparación con patrón singleton Java: enum INSTANCE, double-checked locking, o holder idiom. object en Kotlin es conciso y thread-safe por class loader. Limitación: object con estado mutable global dificulta tests unitarios; preferir inyección de dependencias (Hilt) con @Singleton en clases normales. object sigue válido para constantes de módulo y utilidades puras. En SDK Android, muchas APIs usan object companion en Kotlin para factories. Cuidado con object que retiene Activity context: fuga de memoria.
-
-Cuándo usarlo:
-Utilidades sin estado, fábricas simples, implementaciones únicas de estrategia, constantes y helpers. Evita object como contenedor de estado de UI o Context de Activity. Para DI en producción, preferir constructores inyectables testeables.
+Existen tres formas: object declaration (singleton de módulo), object expression (instancia anónima al estilo "anonymous inner class") y companion object (singleton ligado a una clase, equivalente a estáticos).
 
 Ejemplo:
-object NetworkConfig {
-    const val BASE_URL = "https://api.ejemplo.com/"
-    val timeoutMs = 30_000
+object Analytics {
+    fun log(event: String) = println("EVENT: $event")
 }
 
-// Object anónimo (listener)
-button.setOnClickListener(object : View.OnClickListener {
-    override fun onClick(v: View?) { submit() }
-})
-// Equivalente idiomático: button.setOnClickListener { submit() }
+Analytics.log("open_screen")
 
-// Singleton con estado (usar Application context)
-class App : Application() {
-    companion object {
-        lateinit var instance: App
-            private set
-    }
-    override fun onCreate() {
-        super.onCreate()
-        instance = this
-    }
+val listener = object : View.OnClickListener {
+    override fun onClick(v: View?) { /* ... */ }
 }
 
-Consejo para entrevista:
-Diferencia object vs companion object vs class con constructor privado + getInstance(). Preguntan testabilidad: object es difícil de mockear sin interfaces. Menciona que en Kotlin no necesitas synchronized manual para el singleton object.
+Consejo:
+Diferencia object declaration vs companion object. Menciona que es thread-safe sin doble check manual y compárate con el patrón Singleton clásico de Java.

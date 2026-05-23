@@ -1,45 +1,15 @@
 Concepto:
-Koin es un framework de inyección de dependencias para Kotlin ligero, basado en DSL y funciones, sin procesamiento de anotaciones en compile-time; Hilt usa Dagger con codegen y es el estándar recomendado por Google para Android.
+Koin es un framework de DI en Kotlin puro: módulos declaran single/factory/viewModel y se arranca con startKoin { modules(...) }. Resuelve dependencias en runtime (sin anotaciones ni procesador de código como Dagger/Hilt).
 
-Explicación detallada:
-Koin:
-- module { single { Repo(get()) }; viewModel { HomeViewModel(get()) } }
-- startKoin { androidContext(app); modules(appModule) }
-- Inyección: by inject(), getViewModel() o koinViewModel() en Compose
-- Ventajas: curva baja, puro Kotlin, rápido en prototipos.
-- Desventajas: errores en runtime si falta binding; menos validación en compilación; escala grande puede perder garantías de grafo.
+Ventaja: simplicidad y multiplataforma. Desventaja: errores de grafo en runtime y algo menos de optimización que Dagger.
 
-Hilt:
-- Anotaciones @HiltAndroidApp, @AndroidEntryPoint, @Inject, @Module @InstallIn
-- Codegen Dagger: dependencias verificadas en compile time
-- Integración ViewModel (@HiltViewModel), WorkManager, Navigation, testing con @TestInstallIn
-- Estándar documentación Android oficial
-
-Comparación entrevista:
-| | Koin | Hilt |
-| Compile-time safety | Débil | Fuerte |
-| Boilerplate | Bajo | Medio |
-| Curva | Baja | Media-alta |
-| Google endorsement | No oficial | Sí |
-
-Cuándo usarlo:
-- Koin: KMP compartido, prototipos, equipos pequeños que rechazan Dagger.
-- Hilt: apps Android profesionales nuevas, equipos que quieren errores en build.
-
-Ejemplo Koin:
+Ejemplo:
 val appModule = module {
-    single<ApiService> { retrofit.create(ApiService::class.java) }
-    single { UserRepository(get()) }
-    viewModel { UserViewModel(get()) }
+    single { Retrofit.Builder()...build().create(Api::class.java) }
+    viewModel { HomeViewModel(get()) }
 }
 
-Ejemplo Hilt:
-@Module @InstallIn(SingletonComponent::class)
-object NetworkModule {
-    @Provides @Singleton
-    fun provideApi(retrofit: Retrofit): ApiService =
-        retrofit.create(ApiService::class.java)
-}
+startKoin { androidContext(this@App); modules(appModule) }
 
-Consejo para entrevista:
-No fanatismo: explica trade-off compile-time vs DSL. Di que usarías Hilt en proyecto Android serio salvo requisito Koin/KMP. Menciona que ambos evitan new() en Activities.
+Consejo:
+"Hilt = compile-time + Android integrado; Koin = runtime + ligero". Para apps grandes muchos equipos prefieren Hilt por seguridad de grafo.

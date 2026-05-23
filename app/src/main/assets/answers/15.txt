@@ -1,45 +1,17 @@
 Concepto:
-Un bloque init en Kotlin es un fragmento de código que se ejecuta durante la construcción de una instancia, en coordinación con el constructor primario y antes o junto a constructores secundarios según las reglas de delegación. Puede haber varios bloques init en una misma clase, ejecutados en el orden en que aparecen en el fuente.
+El bloque init es un inicializador de la clase que se ejecuta cada vez que se crea una instancia, justo después de asignar las propiedades del constructor primario. Puede haber varios; se ejecutan en el orden de declaración intercalados con las propiedades de la clase.
 
-Explicación detallada:
-El flujo típico al instanciar una clase con constructor primario es: asignación de parámetros del primario a propiedades val/var; ejecución secuencial de todos los bloques init; si se invoca un constructor secundario, este debe delegar con : this(...) y luego ejecutar su propio cuerpo. En herencia, primero se completa la inicialización de la superclase (incluyendo sus init) antes de los init de la subclase.
-
-Los init son el lugar idiomático para require() y check(), registro de dependencias internas y configuración que comparten todos los caminos de construcción. En ViewModel de Android, init { viewModelScope.launch { ... } } es muy común para disparar la carga inicial. En Activity y Fragment, evita trabajo pesado o que requiera Context temprano en init de la clase; el ciclo de vida aún no está listo: prefiere onCreate, onViewCreated o viewLifecycleScope.
-
-init no puede ser suspend; para operaciones asíncronas usa corrutinas desde ViewModel o lifecycleScope. Comparación: lateinit retrasa la asignación de una propiedad mutable no-null; by lazy retrasa el cálculo hasta el primer acceso; init corre siempre al construir.
-
-En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
-
-Cuándo usarlo:
-Validación de invariantes al crear objetos, factorización de setup común entre constructores sobrecargados, arranque de flujos en ViewModel. No sustituye callbacks de lifecycle en componentes Android con Context, permisos o UI.
+Sirve para validar parámetros, calcular valores derivados o registrar callbacks que requieren más lógica de la que cabe en la declaración de la propiedad.
 
 Ejemplo:
-class TokenStore(private val prefs: SharedPreferences) {
-    val token: String
+class User(val email: String) {
+    val domain: String
 
     init {
-        token = prefs.getString(KEY_TOKEN, null)
-            ?: throw IllegalStateException("Token no inicializado")
-        require(token.length >= 32) { "Token inválido" }
-    }
-
-    companion object {
-        private const val KEY_TOKEN = "token"
+        require(email.contains("@")) { "Email inválido" }
+        domain = email.substringAfter("@")
     }
 }
 
-class ProductListViewModel(
-    private val repository: ProductRepository
-) : ViewModel() {
-    private val _products = MutableStateFlow<List<Product>>(emptyList())
-    val products: StateFlow<List<Product>> = _products.asStateFlow()
-
-    init {
-        viewModelScope.launch {
-            _products.value = repository.observeProducts().first()
-        }
-    }
-}
-
-Consejo para entrevista:
-Preguntan orden de ejecución con herencia y constructores secundarios. Dibuja timeline: super init → sub init → secondary body. Contrasta init con factory suspend en repositorios.
+Consejo:
+Recuerda que init se ejecuta en cada instancia y que el orden importa: propiedades e inits se mezclan según aparezcan en el código.

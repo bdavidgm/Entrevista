@@ -1,49 +1,15 @@
 Concepto:
-Un fake en testing es una implementación ligera y funcional de una dependencia (interfaz o clase) con comportamiento simplificado pero real, a diferencia del mock que verifica interacciones y del stub que devuelve valores fijos.
+Un fake es una implementación de prueba de una dependencia con comportamiento simplificado pero realista (en memoria), a diferencia de un mock que verifica llamadas con Mockito/MockK. Ejemplo: FakeUserApi que devuelve listas fijas sin red.
 
-Explicación detallada:
-Tipos en la pirámide de dobles:
-- Mock (MockK/Mockito): expectativa de llamadas, verify { repo.load() }.
-- Stub: devuelve datos precargados sin lógica.
-- Fake: lógica mínima real — FakeUserRepository con mapa en memoria, FakeAuthService con tokens válidos falsos.
-
-Ventajas del fake:
-- Tests más legibles y estables.
-- Varias capas pueden usar el mismo fake (integración ligera).
-- Menos acoplamiento a detalles de implementación que verify.
-
-Desventajas:
-- Hay que mantener el fake al evolucionar la interfaz.
-- No sustituye test de contrato con implementación real si hay riesgo alto.
-
-En Android:
-- FakeRepository para ViewModel tests.
-- Room in-memory como fake de persistencia (técnicamente doble de integración).
-
-Cuándo usarlo:
-ViewModel y UseCase tests con flujos CRUD, auth, carrito. Combinar fake de datos con MockK solo para dependencias externas puntuales.
+Los fakes hacen tests más legibles y menos frágiles que mocks excesivos.
 
 Ejemplo:
-class FakeUserRepository : UserRepository {
-    private val users = mutableMapOf<String, User>()
-
-    override suspend fun getUser(id: String): User =
-        users[id] ?: throw NotFoundException(id)
-
-    override suspend fun save(user: User) {
-        users[user.id] = user
-    }
+class FakeUserApi : UserApi {
+    var users = listOf(UserDto("1", "Ana"))
+    override suspend fun fetchUsers() = users
 }
 
-@Test
-fun `shows user`() = runTest {
-    val fake = FakeUserRepository().apply {
-        save(User("1", "Ana"))
-    }
-    val vm = ProfileViewModel(GetUserUseCase(fake))
-    advanceUntilIdle()
-    assertEquals("Ana", vm.uiState.value.name)
-}
+val repo = UserRepositoryImpl(FakeUserApi(), dao)
 
-Consejo para entrevista:
-Contrasta mock vs fake vs stub con ejemplo. En Android prioriza fakes para repos y mocks para analytics/clock si hace falta verify.
+Consejo:
+"Fake = implementación sustituta; mock = verificación de interacción". Usa fakes para repositorios y APIs; reserva mocks para bordes puntuales.

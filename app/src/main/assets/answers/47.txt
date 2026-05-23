@@ -1,28 +1,15 @@
 Concepto:
-La recomposición es el proceso por el cual el runtime de Compose vuelve a ejecutar funciones Composable afectadas cuando cambia el estado que leen, actualizando la UI de forma incremental y eficiente. Solo se recompone el subárbol necesario, no toda la pantalla completa si puede evitarse.
+La recomposición es el proceso por el que el runtime de Compose vuelve a ejecutar las funciones Composable cuyo estado leído ha cambiado, actualizando la UI de forma incremental. Solo se recompone el subárbol afectado; si los parámetros son estables y no cambiaron, Compose puede saltar la ejecución (skipping).
 
-Explicación detallada:
-Cuando mutableStateOf cambia, Compose marca lecturas asociadas y programa recomposition. El compilador genera grupos y keys para reconciliar el árbol (slot table). Skipping: si parámetros estables no cambiaron, puede saltar ejecutar cuerpo.
-
-Evita crear lambdas o objetos nuevos innecesarios en cada frame si pasan a hijos no estables y fuerzan recomposición amplia. Usa remember, derivedStateOf, keys en LazyColumn.
-
-En entrevistas: diferencia recomposition vs layout vs draw phases; idempotencia del Composable; "recompose often, layout/draw less". Anti-pattern: leer estado global sin snapshot.
-
-En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
-
-En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
-
-Cuándo usarlo:
-Entender recomposición guía dónde poner estado (hoisting), remember, y optimización. No optimices prematuramente sin medir Layout Inspector.
+Para evitar recomposiciones innecesarias: colocar bien el estado (state hoisting), usar remember y derivedStateOf, pasar tipos estables y poner key en listas.
 
 Ejemplo:
 @Composable
 fun Counter() {
     var count by remember { mutableStateOf(0) }
-    // Solo este Text y hermanos dependientes se recompiten al pulsar
-    Button(onClick = { count++ }) { Text("Incrementar") }
-    Text("Clicks: $count")
+    Button(onClick = { count++ }) { Text("Sumar") }
+    Text("Clicks: $count")  // solo este Text se recompone
 }
 
-Consejo para entrevista:
-Tres fases composition/layout/draw. Stable vs unstable. Preguntan por qué count++ dispara recomposition. remember evita reset en recomposition.
+Consejo:
+Distingue las 3 fases (composition / layout / draw). Menciona "tipos estables" y herramientas como Layout Inspector con recomposition counts para diagnosticar problemas.

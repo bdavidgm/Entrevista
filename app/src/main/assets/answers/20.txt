@@ -1,32 +1,17 @@
 Concepto:
-El modificador inline en Kotlin indica al compilador que sustituya el cuerpo de la función en los sitios de llamada en lugar de generar una invocación normal, cuando es posible. Las funciones inline de orden superior (que reciben lambdas) evitan la allocación de objetos Function en JVM y reducen coste en bucles y APIs de colecciones.
+inline indica al compilador que copie el cuerpo de la función en el lugar de la llamada en vez de generar una invocación normal. En funciones de orden superior evita crear un objeto Function por cada lambda, lo que ahorra allocations en bucles y APIs frecuentes.
 
-Explicación detallada:
-Sin inline, pasar un lambda en Kotlin/JVM crea una instancia anónima (salvo optimizaciones del compilador Java). inline copia el bytecode del lambda en el call site, similar a macros C con type safety. Por eso forEach, map y las scope functions estándar son inline.
-
-Restricciones: funciones inline no pueden llamarse desde Java de forma natural en algunos casos; no puedes almacenar fácilmente referencias a funciones inline privadas; el cuerpo no debería ser enorme o inflar el DEX. crossinline y noinline marcan parámetros lambda: crossinline para lambdas que no pueden hacer return no local; noinline para lambdas que se pasan a otras funciones no inline.
-
-En Android, inline es crítico en capas de utilidades de alto tráfico y en DSLs (Compose compiler tiene su propio modelo, pero Kotlin inline sigue en stdlib). reified type parameters solo funcionan en funciones inline porque el tipo T se conserva en runtime en el call site.
-
-En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
-
-Cuándo usarlo:
-Funciones que aceptan lambdas y se llaman frecuentemente; APIs de biblioteca (stdlib). No marques inline funciones grandes o que solo llaman una vez: aumenta tamaño de APK sin beneficio. Para funciones públicas de módulo, documenta si esperas uso desde Java.
+Su uso típico es en utilidades pequeñas con lambdas (forEach, scope functions) y es obligatorio para usar reified, que conserva el tipo genérico en runtime. crossinline y noinline modulan el comportamiento de las lambdas que recibe.
 
 Ejemplo:
-inline fun <T> measureMillis(block: () -> T): Pair<T, Long> {
+inline fun <T> measureMs(block: () -> T): Pair<T, Long> {
     val start = System.currentTimeMillis()
     val result = block()
     return result to (System.currentTimeMillis() - start)
 }
 
-inline fun View.onClick(crossinline action: (View) -> Unit) {
-    setOnClickListener { action(it) }
-}
+inline fun <reified T> Bundle.getOrNull(key: String): T? =
+    get(key) as? T
 
-// Uso
-val (data, ms) = measureMillis { repository.fetchHeavy() }
-Log.d(TAG, "fetch en ${ms}ms")
-
-Consejo para entrevista:
-Por qué inline con lambdas (evitar objeto Function). reified requiere inline. Preguntan crossinline vs noinline. Advertencia: código duplicado y tamaño DEX.
+Consejo:
+No marques inline funciones grandes: aumentan el bytecode. Reified solo funciona en inline. Aprovecha para hablar de crossinline cuando se necesita evitar non-local returns.

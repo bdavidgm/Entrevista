@@ -1,40 +1,15 @@
 Concepto:
-DownloadManager es un servicio del sistema que gestiona descargas HTTP en segundo plano con notificación de progreso, reintentos y persistencia, accesible vía getSystemService(DOWNLOAD_SERVICE).
+DownloadManager encola descargas HTTP grandes en segundo plano, muestra progreso en la barra de notificaciones y guarda el archivo en un destino público o privado según políticas de almacenamiento. Evita mantener tu propio foreground service solo para descargar.
 
-Explicación detallada:
-Encolas descargas con Request(uri):
-- setDestinationUri / setDestinationInExternalPublicDir (legacy) / setDestinationInExternalFilesDir
-- setNotificationVisibility (VISIBLE, HIDDEN si no quieres notificación pública)
-- setAllowedNetworkTypes (WIFI, MOBILE)
-- setRequiresCharging, setRequiresDeviceIdle (API 24+)
-- addRequestHeader para auth tokens (cuidado: no logs sensibles)
-
-Devuelve downloadId (long). Consultas estado con query(Query().setFilterById(id)): COLUMN_STATUS (SUCCESSFUL, FAILED, PENDING), bytes descargados, reason failure.
-
-Ventajas: sobrevive cierre de app, integración con notificaciones del sistema, manejo de red pausada.
-
-Limitaciones: solo HTTP(S) simple; poca flexibilidad (no GraphQL streaming complejo); menos control que OkHttp + WorkManager; políticas de almacenamiento en scoped storage.
-
-Alternativa moderna: WorkManager + OkHttp + ForegroundService para descargas grandes con lógica custom; o DownloadManager para archivos públicos simples (PDF, APK interno).
-
-Cuándo usarlo:
-- Descargar PDF, imagen, actualización OTA sin lógica compleja.
-- Cuando quieres barra de progreso en shade sin implementar notificación propia.
-
-Evitar: APIs autenticadas complejas, parsing en stream, múltiples formatos con transformación.
+Requiere permisos según destino y versión (INTERNET, notificaciones, a veces WRITE en APIs antiguas).
 
 Ejemplo:
-val dm = context.getSystemService(DownloadManager::class.java)
-val request = DownloadManager.Request(Uri.parse(url))
-    .setTitle("Manual")
-    .setDescription("Descargando...")
-    .setNotificationVisibility(
-        DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED
-    )
-    .setDestinationInExternalFilesDir(
-        context, Environment.DIRECTORY_DOWNLOADS, "manual.pdf"
-    )
-val id = dm.enqueue(request)
+val request = DownloadManager.Request(Uri.parse("https://cdn.example.com/app.bin"))
+    .setTitle("Actualización")
+    .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+    .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "app.bin")
 
-Consejo para entrevista:
-Contrasta con WorkManager + Retrofit/OkHttp. Menciona consulta por Cursor y permisos de almacenamiento según destino. Para entrevista senior: “DownloadManager para ficheros grandes simples; cola propia si necesitas cancelación fina o headers dinámicos”.
+val id = downloadManager.enqueue(request)
+
+Consejo:
+Consulta COLUMN_STATUS y COLUMN_REASON con query. Para descargas privadas de la app, a veces OkHttp + archivo en cache es más simple.

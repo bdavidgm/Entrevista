@@ -1,37 +1,19 @@
 Concepto:
-Un BroadcastReceiver es un componente que escucha y reacciona a broadcast intents globales o locales (eventos del sistema o de la app). Puede registrarse en el Manifest (estático, limitado en versiones recientes) o dinámicamente en runtime con registerReceiver.
+Un BroadcastReceiver es un componente que escucha mensajes (intents broadcast) emitidos por el sistema o por otras apps, como cambios de conectividad, batería baja o nuevos SMS. Reacciona ejecutando código corto en onReceive y debe terminar rápido.
 
-Explicación detallada:
-Ejemplos históricos: BOOT_COMPLETED, CONNECTIVITY_CHANGE — muchos implicit broadcasts ya no se entregan a manifest receivers por batería y seguridad. Patrón moderno: LocalBroadcastManager deprecado; usar Flow, SharedFlow, o explicit broadcasts dentro de la app.
-
-ordered broadcasts, sticky (obsoletos en práctica). Para trabajo pesado, onReceive debe delegar rápidamente a goAsync o WorkManager porque el sistema limita tiempo en main thread.
-
-En entrevistas preguntan diferencia manifest vs context-registered, exported receivers y seguridad. Alternativa moderna: observar ConnectivityManager NetworkCallback en lugar de CONNECTIVITY_ACTION.
-
-En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
-
-En el contexto de entrevistas técnicas Android, profundiza siempre con ejemplos de tu experiencia: errores reales (ANR, memory leaks, crashes por null), trade-offs de arquitectura (MVVM, UDF, modularización) y APIs modernas (Jetpack, corrutinas, Compose). Menciona herramientas de validación: Android Lint, pruebas unitarias con JUnit y MockK, pruebas de UI con Compose Test o Espresso, y profiling con Android Studio Profiler. Relaciona el concepto con documentación oficial de Android Developers y Kotlin docs para demostrar aprendizaje continuo. Si el entrevistador pide código en pizarra, escribe primero la firma y el contrato (entrada/salida, nullability) antes del cuerpo. Cierra explicando qué puede salir mal en producción y cómo lo detectarías (logs, métricas, Firebase Crashlytics).
-
-Cuándo usarlo:
-Reaccionar a pocos eventos del sistema donde API moderna no basta, notificaciones internas legacy, plugins SDK. Preferir callbacks específicos y WorkManager cuando sea posible.
+Pueden declararse estáticamente en el manifest o registrarse dinámicamente en runtime. Desde Android 8 hay muchas restricciones a los receivers estáticos para implícitos del sistema.
 
 Ejemplo:
-class DownloadCompleteReceiver : BroadcastReceiver() {
+class ChargeReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        if (intent.action == ACTION_DOWNLOAD_DONE) {
-            val pending = goAsync()
-            CoroutineScope(Dispatchers.IO).launch {
-                try { processDownload() } finally { pending.finish() }
-            }
+        if (intent.action == Intent.ACTION_POWER_CONNECTED) {
+            Log.d(TAG, "Cargando")
         }
     }
 }
 
-// Registro dinámico en Activity
-override fun onStart() {
-    super.onStart()
-    registerReceiver(receiver, IntentFilter(ACTION_DOWNLOAD_DONE), RECEIVER_NOT_EXPORTED)
-}
+val filter = IntentFilter(Intent.ACTION_POWER_CONNECTED)
+ContextCompat.registerReceiver(this, ChargeReceiver(), filter, ContextCompat.RECEIVER_NOT_EXPORTED)
 
-Consejo para entrevista:
-Restricciones Android 8+ manifest receivers. exported=false. goAsync y límites de tiempo. Alternativas modernas.
+Consejo:
+onReceive es corto: no hagas IO ni esperes coroutines. Para reaccionar a eventos del sistema en runtime, usa receivers dinámicos o WorkManager con constraints.

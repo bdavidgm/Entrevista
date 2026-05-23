@@ -1,37 +1,17 @@
 Concepto:
-En Jetpack Compose la UI es una función del estado: un Composable describe qué pintar para unos datos concretos. Cuando cambia un estado que Compose observa, se programa una recomposición y solo se vuelven a ejecutar las funciones Composable afectadas. remember memoriza valores entre recomposiciones; mutableStateOf (y variantes) define estado observable; rememberSaveable conserva ese estado a través de la muerte del proceso (rotación, falta de memoria). Juntos forman el flujo típico de pantalla: estado arriba, eventos abajo.
+En Compose el estado se modela combinando tres piezas: mutableStateOf crea un State<T> observable; remember conserva ese State entre recomposiciones del mismo Composable; rememberSaveable además lo persiste en el Bundle de la pantalla para sobrevivir a cambios de configuración y a process death de la UI.
 
-Explicación detallada:
-Compose no “invalida vistas” como el View system: construye un árbol de UI y lo compara en recomposiciones. El runtime usa un sistema de snapshots: leer un State en composición registra una dependencia; al asignar un nuevo valor (state.value = x o state = x con delegado) se invalidan los lectores y se recomponen.
-
-remember { ... } ejecuta el lambda solo en la primera composición de esa posición en el árbol (identificada por la llamada y la clave de composición). Las siguientes recomposiciones devuelven el valor guardado sin recrear el objeto. Por eso suele envolver mutableStateOf: si crearas un nuevo MutableState en cada recomposición, perderías el valor y no habría observadores estables.
-
-mutableStateOf (o mutableIntStateOf, etc.) devuelve un contenedor cuyo .value es observable. Patrones habituales: var text by remember { mutableStateOf("") } con delegado property, o val state = remember { mutableStateOf(UiState()) }. La UI lee el estado y Compose sabe qué recomponer cuando cambia.
-
-rememberSaveable usa el mecanismo de SavedState (Bundle) para serializar el estado con parcelables o la API saver/custom Saver. Sirve para campos de formulario o flags de UI que deben sobrevivir a activity recreada; no sustituye un ViewModel para lógica de negocio o datos remotos.
-
-Cómo “gobierna” la pantalla: defines un modelo de estado (data class o sealed class) que representa loading/success/error o los campos visibles. Los eventos (clicks, callbacks) llaman a funciones que actualizan ese estado. El Composable raíz de la pantalla solo observa estado y delega en hijos stateless cuando puedes (state hoisting). Para estado compartido entre pantallas o que sobrevive a rotación, el estado vive en un ViewModel expuesto como StateFlow y en Compose collectAsState() o collectAsStateWithLifecycle().
-
-Efectos (LaunchedEffect, SideEffect, DisposableEffect) no son estado: sincronizan Compose con el mundo exterior sin ser la fuente de verdad de la UI. Confundir estado con efectos es un error frecuente.
-
-Cuándo usarlo:
-remember + mutableStateOf para estado local de UI de una sola pantalla (texto de búsqueda, pestaña seleccionada). rememberSaveable cuando el usuario no debe perder el valor si el sistema mata el proceso. ViewModel + StateFlow para estado de negocio, navegación entre destinos y pruebas.
+Para datos de pantalla pequeños y serializables (texto de un campo, índice de tab) basta rememberSaveable. Para datos grandes o lógica de dominio se eleva al ViewModel, que de por sí sobrevive a la rotación.
 
 Ejemplo:
 @Composable
-fun CounterScreen() {
-    var count by remember { mutableStateOf(0) }
-    Column {
-        Text("Cuenta: $count")
-        Button(onClick = { count++ }) { Text("Más") }
-    }
+fun LoginForm() {
+    var email by rememberSaveable { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+
+    TextField(value = email, onValueChange = { email = it })
+    TextField(value = password, onValueChange = { password = it }, visualTransformation = PasswordVisualTransformation())
 }
 
-@Composable
-fun SearchField() {
-    var query by rememberSaveable { mutableStateOf("") }
-    TextField(value = query, onValueChange = { query = it }, label = { Text("Buscar") })
-}
-
-Consejo para entrevista:
-Enlaza en una frase: “recomposición = función del estado”; recuerda que remember no persiste proceso, rememberSaveable sí con Bundle; estado de app en ViewModel; no crear State fuera de remember salvo que la fuente sea estable (p. ej. ViewModel). Menciona snapshot y lectura/escritura en el mismo frame si te preguntan por qué a veces hace falta SideEffect.
+Consejo:
+Regla: efímero local → remember; UI pequeña que debe sobrevivir rotación → rememberSaveable; estado de pantalla/dominio → ViewModel con StateFlow.

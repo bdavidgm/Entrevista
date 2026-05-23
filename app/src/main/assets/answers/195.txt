@@ -1,42 +1,12 @@
 Concepto:
-Git es un sistema de control de versiones distribuido que registra historial de cambios, permite ramas paralelas, fusión y colaboración; en Android es indispensable junto con Gradle para flujos de equipo y CI/CD.
+Git es control de versiones distribuido: ramas, merges, pull requests, bisect y etiquetas de release. En Android permite colaborar en paralelo, revisar cambios en Gradle/manifestes y revertir regresiones con precisión.
 
-Explicación detallada:
-Conceptos clave:
-- Repository: .git con commits, objetos, refs.
-- Commit: snapshot con mensaje, autor, hash SHA.
-- Branch: línea de desarrollo (main, develop, feature/login).
-- Merge vs rebase: integrar historias (rebase reescribe commits; cuidado en ramas públicas).
-- Remote (origin): GitHub/GitLab; push/pull, PRs.
-- .gitignore: build/, .gradle/, local.properties, *.apk, .idea/* personales, keystores.
-
-Flujo Android típico:
-1) Rama feature desde main
-2) Commits atómicos (fix: crash login, feat: add Room entity)
-3) PR con revisión, CI ejecuta ./gradlew test lint assembleDebug
-4) Merge squash o merge commit según política del equipo
-5) Tag/release para versiones en Play (versionCode bump en build.gradle.kts)
-
-Archivos que NO versionar: google-services.json a veces sí en equipos cerrados (debate); keystores nunca; secretos en local.properties o CI secrets.
-
-Comandos útiles: status, diff, log --oneline, stash, cherry-pick, revert (seguro en main), bisect para encontrar regresión.
-
-Integración Android Studio: VCS menu, diff visual, resolve conflicts en merges de recursos (strings.xml, colors).
-
-Cuándo usarlo:
-- Siempre en proyectos profesionales y personales.
-- Trabajo en equipo, code review, releases.
-- Rollback cuando un cambio rompe producción.
+Se integra con CI (GitHub Actions, Bitrise) para lint, tests y builds por commit.
 
 Ejemplo:
-# Flujo diario
-git checkout -b feature/notifications
-# ... editar código ...
-git add app/src/main/java/...
-git commit -m "feat: add notification channel for orders"
-git push -u origin feature/notifications
-# Abrir PR en GitHub; tras review:
-git checkout main && git pull
+git checkout -b feature/login
+git commit -am "Add login screen"
+git push -u origin feature/login
 
-Consejo para entrevista:
-Menciona branching strategy (GitFlow simplificado o trunk-based), .gitignore Android, y que CI compila en cada PR. Si preguntan conflictos: priorizar entender merge en XML/resources. No hables de rebase --force en main.
+Consejo:
+Buenas prácticas: commits pequeños, .gitignore de build/, keystores fuera del repo o cifrados, y conventional commits si el equipo los usa.

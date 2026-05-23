@@ -1,39 +1,16 @@
 Concepto:
-MVC en Android clásico asigna Model (datos), View (layouts/widgets) y Controller (Activity/Fragment) que recibe eventos, actualiza Model y refresca View; en la práctica Activity suele acumular demasiada lógica (“fat Activity”).
+MVC en Android clásico solía ser Activity/Fragment como Controller mezclando UI y lógica, con Model en POJOs. Esa mezcla llevaba a God Activities y poca testabilidad.
 
-Explicación detallada:
-Variante Android informal:
-- Model: POJOs, SQLite, API clients, repositorios.
-- View: XML layouts + widgets; a veces se considera que Activity es parte de la View.
-- Controller: Activity/Fragment maneja onClick, AsyncTask/coroutines, navegación, permisos.
-
-Problema: sin disciplina, el Controller crece con cientos de líneas mezclando UI, red y estado. Testing difícil sin extraer capas.
-
-Evolución en Google samples: MVP luego MVVM con ViewModel que sobrevive rotación y expone UI state observable.
-
-MVC puro (como en web server-side) no mapea 1:1 porque Activity es controlador Y punto de entrada del sistema.
-
-Cuándo usarlo:
-- Entender críticas históricas al “todo en Activity”.
-- Comparar en entrevistas con MVVM/MVI/Clean.
-- Refactorizar fat Activity hacia capas.
+Por eso la comunidad migró a MVP, MVVM y ahora MVI/UDF con ViewModel.
 
 Ejemplo:
-// Anti-patrón MVC acoplado
-class UserActivity : AppCompatActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        binding.btnLoad.setOnClickListener {
-            lifecycleScope.launch {
-                binding.progress.visible()
-                val users = api.getUsers() // Model+red en Activity
-                binding.list.adapter = Adapter(users) // View update
-                binding.progress.gone()
-            }
-        }
+// Anti-patrón ilustrativo
+class MainActivity : AppCompatActivity() {
+    override fun onCreate(b: Bundle?) {
+        super.onCreate(b)
+        Thread { val data = api.fetch() /* ... */ }.start() // Controller mezclado
     }
 }
-// Mejor: ViewModel como presentación, Activity solo observa state
 
-Consejo para entrevista:
-Admite que Android MVC es ambiguo y suele degenerar en fat Activity. Explica cómo migrarías a MVVM (ViewModel, Repository, unidirectional data). No defiendas MVC para apps nuevas.
+Consejo:
+En entrevista explica por qué separar: testabilidad, ciclo de vida y estado. "MVC Android informal" suele criticarse; ofrece MVVM como evolución.

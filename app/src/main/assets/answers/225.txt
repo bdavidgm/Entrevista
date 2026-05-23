@@ -1,30 +1,12 @@
 Concepto:
-Los comandos ADB más usados cubren instalación, logs, shell, archivos, reinicios y información del dispositivo.
+Comandos ADB frecuentes: devices, install/uninstall, logcat (filtrado por tag/pid), shell (pm, am, dumpsys), reboot, reverse (túnel USB), bugreport, pull/push, screencap/screenrecord, y settings put/get para toggles de desarrollo.
 
-Explicación detallada:
-Instalación: adb install [-r reemplazar] [-d permitir downgrade] ruta.apk. adb uninstall <paquete>.
-
-Diagnóstico: adb devices -l (lista), adb get-state, adb shell getprop ro.build.version.release, adb shell dumpsys battery|meminfo|package <pkg>.
-
-Logs: adb logcat, filtros por tag/prioridad, adb bugreport (informe completo, pesado).
-
-Shell: adb shell entra al dispositivo; pm list packages, am start -n para lanzar Activity, settings put global development_settings_enabled 1 (con cuidado).
-
-Archivos: adb push / adb pull entre PC y /sdcard/ o rutas accesibles.
-
-Reinicios: adb reboot, adb reboot bootloader, adb reboot recovery.
-
-Red: adb tcpip 5555 y adb connect IP:5555 para inalámbrico en la misma LAN.
-
-Técnico: adb sideload update.zip en recovery oficial para OTA locales; adb backup (legacy) casi obsoleto.
-
-Cuándo usarlo:
-Cualquier sesión de depuración, soporte remoto o taller con PC autorizado.
+dumpsys meminfo/battery ayuda a diagnosticar problemas.
 
 Ejemplo:
-adb shell pm list packages -3
-adb logcat -s AndroidRuntime:E
-adb pull /sdcard/screenshot.png .
+adb shell dumpsys activity activities | grep mResumedActivity
+adb reverse tcp:8080 tcp:8080   // localhost del PC desde el móvil
+adb uninstall com.example.app
 
-Consejo para entrevista:
-Demuestra dominio con logcat, install, shell pm/am y reboot bootloader.
+Consejo:
+logcat --pid filtra ruido. adb emu para comandos específicos del emulador. Autoriza la huella RSA la primera vez que conectas un dispositivo.
