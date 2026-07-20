@@ -1,13 +1,16 @@
 Concepto:
-RxJava modela flujos asíncronos con Observable/Single/Flowable y operadores encadenables. En Android fue popular con Retrofit adapters y debounce en búsquedas, pero hoy muchos equipos migran a Kotlin Flow + corrutinas por integración con el lenguaje y menos dependencias.
+OkHttp es el cliente HTTP de Square usado por Retrofit: connection pooling, HTTP/2, interceptors (logging, auth token refresh), timeouts y caché de respuestas opcional.
 
-Mantenimiento legacy o librerías solo Rx siguen siendo motivos válidos.
+También puedes usarlo solo sin Retrofit para llamadas muy custom.
 
 Ejemplo:
-api.user("1")
-    .subscribeOn(Schedulers.io())
-    .observeOn(AndroidSchedulers.mainThread())
-    .subscribe({ u -> show(u) }, { e -> showError(e) })
+val client = OkHttpClient.Builder()
+    .addInterceptor { chain ->
+        val req = chain.request().newBuilder().addHeader("Authorization", "Bearer $token").build()
+        chain.proceed(req)
+    }
+    .connectTimeout(15, TimeUnit.SECONDS)
+    .build()
 
 Consejo:
-Si el proyecto ya es Flow-first, no mezcles Rx salvo en bordes; usa adaptadores o reescribe gradualmente. Rx exige dominar dispose/subscriptions.
+Distingue application vs network interceptors. Para cert pinning y metrics, OkHttp es el punto único de configuración.

@@ -1,10 +1,12 @@
 Concepto:
-launchMode en el manifest controla cómo se instancia una Activity ante nuevos intents: standard (siempre nueva), singleTop (reusa si está arriba del stack), singleTask (una instancia por task, limpia encima) y singleInstance (task exclusivo).
+Git es control de versiones distribuido: ramas, merges, pull requests, bisect y etiquetas de release. En Android permite colaborar en paralelo, revisar cambios en Gradle/manifestes y revertir regresiones con precisión.
 
-singleTask/singleInstance requieren entender taskAffinity y cuidado con datos en memoria.
+Se integra con CI (GitHub Actions, Bitrise) para lint, tests y builds por commit.
 
 Ejemplo:
-<activity android:name=".MainActivity" android:launchMode="singleTask"/>
+git checkout -b feature/login
+git commit -am "Add login screen"
+git push -u origin feature/login
 
 Consejo:
-Sobreactual: la mayoría de apps Compose usan single-activity + NavHost. launchMode sirve para flows especiales (pago, captura) o integración con notificaciones.
+Buenas prácticas: commits pequeños, .gitignore de build/, keystores fuera del repo o cifrados, y conventional commits si el equipo los usa.

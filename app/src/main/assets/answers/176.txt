@@ -1,14 +1,14 @@
 Concepto:
-ContentResolver es la fachada para leer/escribir datos expuestos por ContentProviders (propios o del sistema: Contacts, MediaStore, Calendar). Métodos típicos: query, insert, update, delete, openInputStream/openFileDescriptor.
+WorkManager ejecuta trabajo diferible respetando Doze y restricciones de batería; garantiza intentos y persistencia. AlarmManager dispara a una hora concreta o repetición con más control temporal, incluso despertando el dispositivo, pero no es cola de trabajo con reintentos automáticos.
 
-Unifica acceso CRUD sobre URIs content://.
+Regla práctica: datos/sync/reporting → WorkManager; despertador/calendario/alarma exacta → AlarmManager (+ permisos recientes).
 
 Ejemplo:
-val cursor = contentResolver.query(
-    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-    arrayOf(MediaStore.Images.Media.DISPLAY_NAME),
-    null, null, null
-)
+// Diferible
+WorkManager.getInstance(ctx).enqueue(OneTimeWorkRequest.from(SyncWorker::class.java))
+
+// Exacta (con permisos y buena UX)
+alarmMgr.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, atMillis, pi)
 
 Consejo:
-Cierra cursores con use. En Android 10+ el almacenamiento con scopes puede requerir SAF o permisos de medios específicos según el tipo de archivo.
+Menciona SCHEDULE_EXACT_ALARM y que FGS + ubicación tienen reglas aparte. No uses alarmas exactas para polling de red.

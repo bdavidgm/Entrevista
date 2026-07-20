@@ -1,15 +1,16 @@
 Concepto:
-DiffUtil compara dos listas y calcula un conjunto mínimo de insert/remove/move para actualizar RecyclerView sin recargar todo. ListAdapter en Kotlin delega en AsyncListDiffer para aplicar el resultado en el hilo principal.
+ConstraintLayout posiciona vistas con restricciones a bordes, guías, barreras y cadenas en un grafo plano. Reduce anidación frente a Linear/Relative y escala mejor a tablets con bias y dimensionRatio.
 
-Mejora rendimiento y animaciones de cambio.
+Existe variante en Compose para layouts complejos.
 
 Ejemplo:
-private object UserDiff : DiffUtil.ItemCallback<User>() {
-    override fun areItemsTheSame(a: User, b: User) = a.id == b.id
-    override fun areContentsTheSame(a: User, b: User) = a == b
-}
-
-class UserAdapter : ListAdapter<User, VH>(UserDiff)
+<androidx.constraintlayout.widget.ConstraintLayout ...>
+    <Button
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginBottom="24dp"/>
+</androidx.constraintlayout.widget.ConstraintLayout>
 
 Consejo:
-Si solo cambia un campo, implementa getChangePayload para actualizar parcialmente el ViewHolder y evitar rebind completo.
+Menciona barriers para alinear con el texto más largo y chains para distribuir espacio. Editor visual + código es el flujo habitual.

@@ -1,22 +1,18 @@
 Concepto:
-Los callbacks del ciclo de vida de un Service son: onCreate (al crearse), onStartCommand (cada vez que recibe un startService/startForegroundService), onBind / onUnbind / onRebind (en bound services) y onDestroy (al terminarse). El retorno de onStartCommand (START_STICKY, START_NOT_STICKY, START_REDELIVER_INTENT) indica al sistema cómo recrearlo si lo mata.
+Un Service "started" se arranca con startService/startForegroundService y vive hasta que él mismo se detiene (stopSelf) o lo detiene quien lo creó (stopService); ejecuta trabajo aunque el cliente desaparezca. Un Service "bound" se enlaza con bindService desde uno o varios clientes, expone un IBinder para llamarlo como API y se destruye cuando se desligan todos los clientes.
 
-Service vive en el hilo principal: el trabajo pesado se hace en coroutines, threads o WorkManager.
+Un mismo Service puede ser ambos a la vez. El started es típico para procesos largos (reproductor, descargas); el bound, para comunicación cliente-servicio (música controlada desde UI).
 
 Ejemplo:
-class SyncService : Service() {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+// Started
+startForegroundService(Intent(this, MusicService::class.java))
 
-    override fun onCreate() { super.onCreate() }
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        scope.launch { repository.sync() }
-        return START_NOT_STICKY
-    }
-    override fun onDestroy() {
-        scope.cancel(); super.onDestroy()
-    }
-    override fun onBind(intent: Intent?): IBinder? = null
+// Bound
+val conn = object : ServiceConnection {
+    override fun onServiceConnected(name: ComponentName?, binder: IBinder?) { /* ... */ }
+    override fun onServiceDisconnected(name: ComponentName?) { }
 }
+bindService(Intent(this, MyService::class.java), conn, Context.BIND_AUTO_CREATE)
 
 Consejo:
-Distinguir flags de retorno y aclarar que Service no es un hilo: hay que crear uno propio para no bloquear el Main.
+"Started vive por sí solo; bound vive mientras haya clientes". Conoce que startForegroundService obliga a llamar startForeground en 5 s.

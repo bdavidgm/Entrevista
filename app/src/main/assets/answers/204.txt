@@ -1,16 +1,15 @@
 Concepto:
-MVC en Android clásico solía ser Activity/Fragment como Controller mezclando UI y lógica, con Model en POJOs. Esa mezcla llevaba a God Activities y poca testabilidad.
+DiffUtil compara dos listas y calcula un conjunto mínimo de insert/remove/move para actualizar RecyclerView sin recargar todo. ListAdapter en Kotlin delega en AsyncListDiffer para aplicar el resultado en el hilo principal.
 
-Por eso la comunidad migró a MVP, MVVM y ahora MVI/UDF con ViewModel.
+Mejora rendimiento y animaciones de cambio.
 
 Ejemplo:
-// Anti-patrón ilustrativo
-class MainActivity : AppCompatActivity() {
-    override fun onCreate(b: Bundle?) {
-        super.onCreate(b)
-        Thread { val data = api.fetch() /* ... */ }.start() // Controller mezclado
-    }
+private object UserDiff : DiffUtil.ItemCallback<User>() {
+    override fun areItemsTheSame(a: User, b: User) = a.id == b.id
+    override fun areContentsTheSame(a: User, b: User) = a == b
 }
 
+class UserAdapter : ListAdapter<User, VH>(UserDiff)
+
 Consejo:
-En entrevista explica por qué separar: testabilidad, ciclo de vida y estado. "MVC Android informal" suele criticarse; ofrece MVVM como evolución.
+Si solo cambia un campo, implementa getChangePayload para actualizar parcialmente el ViewHolder y evitar rebind completo.

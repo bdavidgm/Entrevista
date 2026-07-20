@@ -1,0 +1,14 @@
+Concepto:
+Las clases y sus miembros son final por defecto en Kotlin: no pueden heredarse ni sobrescribirse. Debes marcarlos open de forma explícita. Una subclase declara el tipo base después de : y llama a su constructor.
+
+Ejemplo:
+open class Employee(val name: String) {
+    open fun role() = "Empleado"
+}
+
+class AndroidDeveloper(name: String) : Employee(name) {
+    override fun role() = "Android Developer"
+}
+
+Consejo:
+El valor final por defecto evita jerarquías accidentales. Abre solo los puntos de extensión que formen parte del diseño.

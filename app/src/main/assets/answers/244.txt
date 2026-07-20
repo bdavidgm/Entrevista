@@ -1,0 +1,16 @@
+Concepto:
+Encapsular significa ocultar el estado interno y permitir cambios solo mediante operaciones válidas. Kotlin ofrece public (por defecto), internal (mismo módulo), protected (clase y subclases) y private (clase o archivo, según dónde se declare).
+
+Ejemplo:
+class BankAccount(initialBalance: Long) {
+    var balance: Long = initialBalance
+        private set
+
+    fun deposit(amount: Long) {
+        require(amount > 0)
+        balance += amount
+    }
+}
+
+Consejo:
+Expón la menor visibilidad necesaria. private set permite lectura pública sin permitir modificaciones arbitrarias.

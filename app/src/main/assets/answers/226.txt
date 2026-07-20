@@ -1,12 +1,13 @@
 Concepto:
-Fastboot es un protocolo de bootloader distinto de ADB: se usa con el dispositivo en modo fastboot (no arranca Android) para flashear particiones, desbloquear bootloader o borrar datos de fábrica a bajo nivel.
+ADB (Android Debug Bridge) es el puente entre PC y dispositivo/emulador: instala APK, lee logs, abre shell, reenvía puertos, captura pantallas y reinicia el daemon de USB.
 
-ADB habla con Android ya iniciado; fastboot habla antes del SO.
+Es la herramienta base de desarrollo y soporte.
 
 Ejemplo:
-adb reboot bootloader
-fastboot flashing unlock   // según OEM/política
-fastboot flash boot boot.img
+adb devices
+adb install -r app-debug.apk
+adb logcat | grep MyTag
+adb shell screencap -p /sdcard/screen.png && adb pull /sdcard/screen.png
 
 Consejo:
-Flashear particiones equivocadas puede brickar el equipo. OEMs distintos tienen comandos y políticas distintas (Xiaomi requiere cuenta unlock, etc.).
+adb shell pm list packages y am start ayudan a reproducir intents. En CI, adb para tests instrumentados en emulador headless.

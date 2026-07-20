@@ -1,0 +1,19 @@
+Concepto:
+KClass permite inspeccionar constructores, propiedades, funciones y anotaciones en runtime. Las operaciones avanzadas requieren la dependencia kotlin-reflect; son más lentas y menos seguras que acceder directamente al código, por lo que conviene reservarlas para frameworks, serialización o herramientas.
+
+Ejemplo:
+import kotlin.reflect.full.findAnnotation
+import kotlin.reflect.full.memberProperties
+
+@Target(AnnotationTarget.CLASS)
+annotation class Screen(val route: String)
+
+@Screen("profile")
+data class Profile(val id: String, val name: String)
+
+val type = Profile::class
+val route = type.findAnnotation<Screen>()?.route
+val fields = type.memberProperties.map { it.name }
+
+Consejo:
+R8 puede renombrar miembros usados por reflexión; añade reglas keep cuando una biblioteca lo requiera. Si conoces el tipo en compilación, prefiere interfaces, genéricos o reified antes que reflexión.

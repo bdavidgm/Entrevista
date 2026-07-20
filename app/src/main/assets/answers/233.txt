@@ -1,11 +1,11 @@
 Concepto:
-Tipos de permisos en Android: normales (solo manifest, bajo riesgo: INTERNET), peligrosos/dangerous (runtime: cámara, micrófono, SMS), especiales (WRITE_SETTINGS, MANAGE_EXTERNAL_STORAGE, PACKAGE_USAGE_STATS, SCHEDULE_EXACT_ALARM…) y por instalación (notification en 13+, nearby en 12+).
+OEM unlock es la opción de desarrollador que permite desbloquear el bootloader del fabricante. Verified Boot (AVB/dm-verity) comprueba firmas de particiones en cada arranque; si desactivas verificación, el estado de arranque cambia (p. ej. “orange state” en Pixel).
 
-Cada categoría tiene flujo y políticas de Play Console distintos.
+Magisk puede parchear vbmeta en escenarios avanzados, con impacto en integridad.
 
 Ejemplo:
-<uses-permission android:name="android.permission.CAMERA"/>
-ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA), REQ)
+fastboot flashing unlock
+fastboot getvar unlocked
 
 Consejo:
-Declara el permiso mínimo (fine vs coarse location). Para APIs especiales guía al usuario a la pantalla de Ajustes con intents de settings.
+Relaciona con Play Integrity/SafetyNet: banca y DRM pueden negar servicio con bootloader unlock o root. Para soporte, documenta restauración a stock.

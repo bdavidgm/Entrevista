@@ -1,16 +1,13 @@
 Concepto:
-ConstraintLayout posiciona vistas con restricciones a bordes, guías, barreras y cadenas en un grafo plano. Reduce anidación frente a Linear/Relative y escala mejor a tablets con bias y dimensionRatio.
+LinearLayout apila hijos en vertical u horizontal según android:orientation. Es simple y predecible, pero anidar muchos LinearLayout impacta medición (layout passes profundos).
 
-Existe variante en Compose para layouts complejos.
+En XML sigue siendo común; en Compose el equivalente es Column/Row.
 
 Ejemplo:
-<androidx.constraintlayout.widget.ConstraintLayout ...>
-    <Button
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginBottom="24dp"/>
-</androidx.constraintlayout.widget.ConstraintLayout>
+<LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content">
+    <TextView android:text="Título"/>
+    <Button android:text="OK"/>
+</LinearLayout>
 
 Consejo:
-Menciona barriers para alinear con el texto más largo y chains para distribuir espacio. Editor visual + código es el flujo habitual.
+Para UIs complejas, ConstraintLayout o Compose reducen anidación. Usa layout_weight en horizontal/vertical para repartir espacio.

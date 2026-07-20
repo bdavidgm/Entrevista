@@ -1,16 +1,11 @@
 Concepto:
-Vibrator (o VibratorManager en API 31+) reproduce patrones de vibración con VibrationEffect: createOneShot, createWaveform o predefined constants (EFFECT_CLICK). Requiere permiso VIBRATE (normal).
+AccountManager centraliza cuentas online del usuario (tipo Google, corporativas) y tokens reutilizables entre apps con el consentimiento adecuado. Expone APIs para añadir cuenta, obtener auth token y sincronizar.
 
-En API 26+ usa siempre VibrationEffect; APIs antiguas vibrate(long) están deprecadas.
+Muchas apps consumer ya no lo usan directamente: OAuth en WebView/custom tabs o credenciales por app.
 
 Ejemplo:
-val vibrator = getSystemService(Vibrator::class.java)
-if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-    vibrator.vibrate(VibrationEffect.createOneShot(40, VibrationEffect.DEFAULT_AMPLITUDE))
-} else {
-    @Suppress("DEPRECATION")
-    vibrator.vibrate(40)
-}
+val am = AccountManager.get(this)
+val accounts = am.getAccountsByType("com.google")
 
 Consejo:
-Respeta “Desactivar vibración” y canales de accesibilidad; no abuses de patrones largos. Para haptics finos en UI, considera performHapticFeedback en vistas.
+GET_ACCOUNTS y flujos legacy cambiaron mucho con permisos y scoped access. Para identidad moderna menciona Credential Manager / Sign in with Google.

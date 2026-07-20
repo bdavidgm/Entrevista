@@ -1,11 +1,11 @@
 Concepto:
-WindowManager gestiona ventanas y layout params: tamaño, tipo, flags (FULLSCREEN, SECURE), y en APIs recientes el control de insets y picture-in-picture. También puedes añadir vistas con addView en casos especiales (overlay), aunque lo habitual es trabajar con WindowInsetsController y decorFitsSystemWindows.
+ClipboardManager gestiona el portapapeles del sistema: setPrimaryClip para copiar texto/HTML/URI e intentos de pegado desde primaryClip. Desde Android 10 el contenido del portapapeles puede estar oculto a apps en segundo plano por privacidad.
 
-Compose y Activity.setContent encapsulan la interacción con la ventana raíz.
+Para copiar texto simple usa ClipData.newPlainText.
 
 Ejemplo:
-window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-WindowCompat.setDecorFitsSystemWindows(window, false)
+val clipboard = getSystemService(ClipboardManager::class.java)
+clipboard.setPrimaryClip(ClipData.newPlainText("label", userToken))
 
 Consejo:
-FLAG_SECURE evita capturas de pantalla en pantallas sensibles. Para overlays usa SYSTEM_ALERT_WINDOW con permiso especial y mucho cuidado con UX/privacidad.
+No copies secretos largos sin avisar al usuario. Para pegar, maneja clips vacíos y permisos de visibilidad en versiones recientes.

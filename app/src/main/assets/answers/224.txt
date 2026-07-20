@@ -1,13 +1,22 @@
 Concepto:
-ADB (Android Debug Bridge) es el puente entre PC y dispositivo/emulador: instala APK, lee logs, abre shell, reenvía puertos, captura pantallas y reinicia el daemon de USB.
+Los callbacks del ciclo de vida de un Service son: onCreate (al crearse), onStartCommand (cada vez que recibe un startService/startForegroundService), onBind / onUnbind / onRebind (en bound services) y onDestroy (al terminarse). El retorno de onStartCommand (START_STICKY, START_NOT_STICKY, START_REDELIVER_INTENT) indica al sistema cómo recrearlo si lo mata.
 
-Es la herramienta base de desarrollo y soporte.
+Service vive en el hilo principal: el trabajo pesado se hace en coroutines, threads o WorkManager.
 
 Ejemplo:
-adb devices
-adb install -r app-debug.apk
-adb logcat | grep MyTag
-adb shell screencap -p /sdcard/screen.png && adb pull /sdcard/screen.png
+class SyncService : Service() {
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    override fun onCreate() { super.onCreate() }
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        scope.launch { repository.sync() }
+        return START_NOT_STICKY
+    }
+    override fun onDestroy() {
+        scope.cancel(); super.onDestroy()
+    }
+    override fun onBind(intent: Intent?): IBinder? = null
+}
 
 Consejo:
-adb shell pm list packages y am start ayudan a reproducir intents. En CI, adb para tests instrumentados en emulador headless.
+Distinguir flags de retorno y aclarar que Service no es un hilo: hay que crear uno propio para no bloquear el Main.

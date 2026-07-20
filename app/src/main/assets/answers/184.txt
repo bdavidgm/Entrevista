@@ -1,14 +1,11 @@
 Concepto:
-Los App Shortcuts son accesos directos a acciones o pantallas de tu app desde el launcher (long press en el icono). Hay estáticos (xml en res/xml/shortcuts.xml) y dinámicos (ShortcutManager.addDynamicShortcuts).
+WindowManager gestiona ventanas y layout params: tamaño, tipo, flags (FULLSCREEN, SECURE), y en APIs recientes el control de insets y picture-in-picture. También puedes añadir vistas con addView en casos especiales (overlay), aunque lo habitual es trabajar con WindowInsetsController y decorFitsSystemWindows.
 
-Cada atajo apunta a un Intent con action explícita y categorías adecuadas.
+Compose y Activity.setContent encapsulan la interacción con la ventana raíz.
 
 Ejemplo:
-<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
-    <shortcut android:shortcutId="new_note" android:shortcutShortLabel="@string/new_note">
-        <intent android:action="com.app.ACTION_NEW_NOTE" android:targetPackage="com.app" android:targetClass="com.app.MainActivity"/>
-    </shortcut>
-</shortcuts>
+window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+WindowCompat.setDecorFitsSystemWindows(window, false)
 
 Consejo:
-Limita cantidad (dynamic máx ~4 visibles según OEM). Actualiza shortcuts cuando cambie el estado relevante (usuario deslogueado, etc.).
+FLAG_SECURE evita capturas de pantalla en pantallas sensibles. Para overlays usa SYSTEM_ALERT_WINDOW con permiso especial y mucho cuidado con UX/privacidad.

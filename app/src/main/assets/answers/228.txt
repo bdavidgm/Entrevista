@@ -1,10 +1,12 @@
 Concepto:
-Rootear es obtener acceso de superusuario (uid 0) en Android, típicamente parcheando boot image con Magisk o instalando su binario. Permite modificar sistema, bloquear anuncios a nivel sistema o usar apps que requieren root.
+Fastboot es un protocolo de bootloader distinto de ADB: se usa con el dispositivo en modo fastboot (no arranca Android) para flashear particiones, desbloquear bootloader o borrar datos de fábrica a bajo nivel.
 
-Conlleva riesgo de seguridad, actualizaciones OTA complicadas y posible bloqueo de apps sensibles.
+ADB habla con Android ya iniciado; fastboot habla antes del SO.
 
 Ejemplo:
-adb sideload magisk_patched_boot.img tras desbloquear bootloader y parchear imagen oficial.
+adb reboot bootloader
+fastboot flashing unlock   // según OEM/política
+fastboot flash boot boot.img
 
 Consejo:
-Para desarrollo, el emulador con adb root basta. En dispositivo real, root rompe supuestos de sandbox de muchas apps de productividad/pago.
+Flashear particiones equivocadas puede brickar el equipo. OEMs distintos tienen comandos y políticas distintas (Xiaomi requiere cuenta unlock, etc.).

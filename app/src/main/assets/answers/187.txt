@@ -1,14 +1,14 @@
 Concepto:
-JobScheduler (API 21) programa trabajos con requisitos de red, carga y tipo de red; el sistema los ejecuta en ventanas eficientes energéticamente. WorkManager de Jetpack usa JobScheduler bajo el capó en dispositivos modernos.
+La SplashScreen API (Android 12+) unifica la pantalla de arranque: icono animado, fondo y transición a la app. Se configura con tema Theme.SplashScreen y SplashScreen.installSplashScreen() en onCreate antes de super.
 
-No es para UI ni latencia sub-segundo: es para sync y mantenimiento.
+Evita pantallas splash duplicadas: la primera ventana ya es la splash del sistema.
 
 Ejemplo:
-val job = JobInfo.Builder(JOB_ID, ComponentName(this, MyJobService::class.java))
-    .setRequiredNetworkType(JobInfo.NETWORK_TYPE_UNMETERED)
-    .setPersisted(true)
-    .build()
-(getSystemService(Context.JOB_SCHEDULER_SERVICE) as JobScheduler).schedule(job)
+override fun onCreate(savedInstanceState: Bundle?) {
+    val splash = installSplashScreen()
+    splash.setKeepOnScreenCondition { viewModel.isLoading.value }
+    super.onCreate(savedInstanceState)
+}
 
 Consejo:
-En apps nuevas casi siempre WorkManager por compatibilidad y pruebas. JobScheduler directo sirve cuando necesitas control fino del JobService.
+setKeepOnScreenCondition solo mientras cargas lo mínimo; no bloquees arranque con red síncrona. En versiones antiguas, windowBackground clásico.

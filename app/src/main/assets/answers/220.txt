@@ -1,18 +1,20 @@
 Concepto:
-Un Service "started" se arranca con startService/startForegroundService y vive hasta que él mismo se detiene (stopSelf) o lo detiene quien lo creó (stopService); ejecuta trabajo aunque el cliente desaparezca. Un Service "bound" se enlaza con bindService desde uno o varios clientes, expone un IBinder para llamarlo como API y se destruye cuando se desligan todos los clientes.
+R8 (sucesor de ProGuard en el Android Gradle Plugin) encoge, optimiza y ofusca el bytecode en release cuando minifyEnabled es true: elimina código no alcanzado, renombra símbolos y aplica optimizaciones. Las reglas en proguard-rules.pro conservan clases usadas por reflexión (Room, Retrofit, Parcelable, serialización JSON).
 
-Un mismo Service puede ser ambos a la vez. El started es típico para procesos largos (reproductor, descargas); el bound, para comunicación cliente-servicio (música controlada desde UI).
+El mapping.txt enlaza nombres ofuscados con originales: súbelo a Play Console y Crashlytics para stack traces legibles.
 
 Ejemplo:
-// Started
-startForegroundService(Intent(this, MusicService::class.java))
-
-// Bound
-val conn = object : ServiceConnection {
-    override fun onServiceConnected(name: ComponentName?, binder: IBinder?) { /* ... */ }
-    override fun onServiceDisconnected(name: ComponentName?) { }
+android {
+    buildTypes {
+        release {
+            isMinifyEnabled = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+        }
+    }
 }
-bindService(Intent(this, MyService::class.java), conn, Context.BIND_AUTO_CREATE)
 
 Consejo:
-"Started vive por sí solo; bound vive mientras haya clientes". Conoce que startForegroundService obliga a llamar startForeground en 5 s.
+Evita -keep amplio “por si acaso”: anula el shrinker. Añade -dontwarn solo para dependencias opcionales conocidas. Prueba release builds antes de publicar.

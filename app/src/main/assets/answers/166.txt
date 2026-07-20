@@ -1,12 +1,21 @@
 Concepto:
-FusedLocationProviderClient es la API de Google Play services que unifica fuentes de ubicación y ahorra batería frente a pedir GPS a pelo. Ofrece lastLocation, requestLocationUpdates, getCurrentLocation y settings client para comprobar si el usuario tiene ubicación activada.
+El “badge” es el indicador sobre el icono de la app (punto o número) que resume notificaciones no leídas o pendientes. Desde Android 8, NotificationChannel.setShowBadge controla si ese canal puede contribuir al punto del launcher. NotificationCompat.Builder.setNumber(n) sugiere un contador en la propia notificación (el launcher puede ignorarlo o mostrar solo punto según OEM).
 
-Requiere dependencia play-services-location y Google Play en el dispositivo.
+No hay API única garantizada para “número exacto en todos los launchers”: Samsung, Xiaomi, Pixel pueden comportarse distinto. Evita librerías legacy tipo ShortcutBadger salvo compatibilidad muy antigua.
 
 Ejemplo:
-val fused = LocationServices.getFusedLocationProviderClient(this)
-fused.getCurrentLocation(Priority.PRIORITY_BALANCED_POWER_ACCURACY, CancellationTokenSource().token)
-    .addOnSuccessListener { /* usar Location */ }
+val channel = NotificationChannel("msg", "Mensajes", NotificationManager.IMPORTANCE_DEFAULT).apply {
+    description = "Chat"
+    setShowBadge(true)
+}
+notificationManager.createNotificationChannel(channel)
+
+val notif = NotificationCompat.Builder(context, "msg")
+    .setSmallIcon(R.drawable.ic_stat)
+    .setContentTitle("3 nuevos mensajes")
+    .setNumber(3)
+    .setOnlyAlertOnce(true)
+    .build()
 
 Consejo:
-Contrasta con LocationManager del framework para dispositivos sin Play Services. Siempre maneja el caso null (permiso denegado o sin fix aún).
+Actualiza o cancela notificaciones con el mismo id para que el badge refleje la realidad. Para contador global de la app, muchos equipos combinan notificaciones agrupadas (setGroup) y un summary. Pide POST_NOTIFICATIONS y respeta si el usuario silencia el canal.

@@ -1,11 +1,12 @@
 Concepto:
-SharedPreferences es un almacén clave-valor persistente basado en archivos XML, síncrono en su API antigua y típicamente envuelto en apply() para escritura asíncrona. Hoy Google recomienda migrar a DataStore (Preferences o Proto) por seguridad de hilos y API moderna con Flow.
+AlarmManager programa operaciones en el tiempo (RTC, ELAPSED_REALTIME) con PendingIntent. Sirve para alarmas exactas o inexactas, repetición y despertar el dispositivo (WAKEUP) según flags. Desde Android 12+ las alarmas exactas requieren permiso SCHEDULE_EXACT_ALARM o USE_EXACT_ALARM según caso.
 
-Sigue apareciendo en código legado y en preferencias simples de SDK.
+No sustituye a WorkManager para trabajo diferible y tolerante a Doze.
 
 Ejemplo:
-val prefs = getSharedPreferences("settings", MODE_PRIVATE)
-prefs.edit { putBoolean("dark", true) }
+val alarmMgr = getSystemService(AlarmManager::class.java)
+val pi = PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_IMMUTABLE)
+alarmMgr.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pi)
 
 Consejo:
-Evita leer prefs en hot paths del main thread con get* síncronos masivos. Para datos estructurados o observables, DataStore.
+Prefiere setWindow/setInexactRepeating cuando la exactitud al segundo no importa; respeta ahorro de batería y políticas de background.

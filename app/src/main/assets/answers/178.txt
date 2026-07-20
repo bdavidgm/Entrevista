@@ -1,14 +1,14 @@
 Concepto:
-SAF (Storage Access Framework) permite al usuario conceder acceso a documentos o árboles mediante ACTION_OPEN_DOCUMENT, ACTION_CREATE_DOCUMENT o ACTION_OPEN_DOCUMENT_TREE; obtienes URIs persistentes con takePersistableUriPermission. Es la forma correcta de leer carpetas arbitrarias sin MANAGE_EXTERNAL_STORAGE.
+ContentResolver es la fachada para leer/escribir datos expuestos por ContentProviders (propios o del sistema: Contacts, MediaStore, Calendar). Métodos típicos: query, insert, update, delete, openInputStream/openFileDescriptor.
 
-Funciona con proveedores de documentos del sistema y de terceros.
+Unifica acceso CRUD sobre URIs content://.
 
 Ejemplo:
-val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
-    addCategory(Intent.CATEGORY_OPENABLE)
-    type = "application/pdf"
-}
-startActivityForResult(intent, REQ_CODE)
+val cursor = contentResolver.query(
+    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+    arrayOf(MediaStore.Images.Media.DISPLAY_NAME),
+    null, null, null
+)
 
 Consejo:
-Persiste permisos con takePersistableUriPermission tras FLAG_GRANT_PERSISTABLE_URI_PERMISSION. No asumas rutas de archivo absolutas.
+Cierra cursores con use. En Android 10+ el almacenamiento con scopes puede requerir SAF o permisos de medios específicos según el tipo de archivo.

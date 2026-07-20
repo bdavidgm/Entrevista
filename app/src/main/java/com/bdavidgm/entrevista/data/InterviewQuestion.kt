@@ -10,6 +10,7 @@ data class InterviewQuestion(
 enum class Category(val displayName: String) {
     KOTLIN_BASICS("Kotlin básico"),
     KOTLIN_ADVANCED("Kotlin avanzado"),
+    KOTLIN_OOP("POO en Kotlin"),
     ANDROID_BASICS("Android básico"),
     ANDROID_LIFECYCLE("Ciclo de vida"),
     COMPOSE("Jetpack Compose"),

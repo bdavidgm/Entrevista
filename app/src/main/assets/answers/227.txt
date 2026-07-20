@@ -1,10 +1,12 @@
 Concepto:
-El bootloader es el programa inicial que decide qué imagen arrancar y si verifica firmas (locked bootloader solo arranca builds firmados por el OEM). Desbloquearlo permite flashear ROMs custom o root, pero suele borrar datos y anular garantía.
+Comandos ADB frecuentes: devices, install/uninstall, logcat (filtrado por tag/pid), shell (pm, am, dumpsys), reboot, reverse (túnel USB), bugreport, pull/push, screencap/screenrecord, y settings put/get para toggles de desarrollo.
 
-Verified boot (AVB) comprueba la cadena de firma en cada arranque.
+dumpsys meminfo/battery ayuda a diagnosticar problemas.
 
 Ejemplo:
-fastboot oem unlock  // nombre varía por fabricante
+adb shell dumpsys activity activities | grep mResumedActivity
+adb reverse tcp:8080 tcp:8080   // localhost del PC desde el móvil
+adb uninstall com.example.app
 
 Consejo:
-Apps bancarias (Play Integrity) pueden detectar bootloader desbloqueado. Para soporte avanzado documenta cómo volver a stock y re-bloquear si el OEM lo permite.
+logcat --pid filtra ruido. adb emu para comandos específicos del emulador. Autoriza la huella RSA la primera vez que conectas un dispositivo.

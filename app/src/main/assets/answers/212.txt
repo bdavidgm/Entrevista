@@ -1,15 +1,12 @@
 Concepto:
-Koin es un framework de DI en Kotlin puro: módulos declaran single/factory/viewModel y se arranca con startKoin { modules(...) }. Resuelve dependencias en runtime (sin anotaciones ni procesador de código como Dagger/Hilt).
+Crashlytics recopila crashes no capturados, ANRs y logs personalizados (keys, logs no PII) agrupados en la consola de Firebase. Se integra con el Gradle plugin y arranca en Application.
 
-Ventaja: simplicidad y multiplataforma. Desventaja: errores de grafo en runtime y algo menos de optimización que Dagger.
+Sirve para priorizar fixes según impacto y versiones.
 
 Ejemplo:
-val appModule = module {
-    single { Retrofit.Builder()...build().create(Api::class.java) }
-    viewModel { HomeViewModel(get()) }
-}
-
-startKoin { androidContext(this@App); modules(appModule) }
+FirebaseCrashlytics.getInstance().log("checkout_opened")
+FirebaseCrashlytics.getInstance().setCustomKey("plan", userPlan)
+// Crash no manejado se sube automáticamente
 
 Consejo:
-"Hilt = compile-time + Android integrado; Koin = runtime + ligero". Para apps grandes muchos equipos prefieren Hilt por seguridad de grafo.
+Filtra datos sensibles (tokens, email) de logs y keys. Combina con versionado de mapping files (R8) para stack traces legibles en release.

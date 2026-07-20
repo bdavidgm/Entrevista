@@ -1,0 +1,20 @@
+Concepto:
+Una interfaz declara propiedades y funciones que una clase debe proporcionar. Puede incluir funciones con implementación por defecto. Si dos interfaces aportan el mismo miembro, la clase debe resolver el conflicto y puede elegir una implementación con super<Tipo>.
+
+Ejemplo:
+interface Clickable {
+    fun click()
+    fun label() = "Acción"
+}
+
+interface Named {
+    fun label() = "Elemento"
+}
+
+class Button : Clickable, Named {
+    override fun click() = println("click")
+    override fun label() = super<Clickable>.label()
+}
+
+Consejo:
+Mantén interfaces pequeñas y orientadas a una capacidad. Esto facilita fakes, sustitución e inyección de dependencias.

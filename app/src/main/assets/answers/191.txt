@@ -1,14 +1,14 @@
 Concepto:
-AudioManager controla volumen y rutas de audio: STREAM_MUSIC, MODE_IN_CALL, solicitud de foco audio con requestAudioFocus para pausar o duck otros reproductores, y gestión de dispositivos Bluetooth/USB.
+PowerManager ofrece flags y control de energía: isInteractive, newWakeLock para mantener CPU/pantalla encendida de forma explícita. WakeLock debe adquirirse por intervalos cortos y liberarse en finally; abuso drena batería y molesta al usuario.
 
-El foco es cooperativo: otras apps pueden ignorarlo, pero es buena ciudadanía.
+Doze y App Standby limitan wakeups aunque tengas locks.
 
 Ejemplo:
-val am = getSystemService(AudioManager::class.java)
-am.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI)
-
-val afChange = AudioManager.OnAudioFocusChangeListener { /* duck o pause */ }
-am.requestAudioFocus(afChange, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN)
+val wakeLock = powerManager.newWakeLock(
+    PowerManager.PARTIAL_WAKE_LOCK, "MyApp::SyncTag"
+)
+wakeLock.acquire(10_000L)
+try { sync() } finally { if (wakeLock.isHeld) wakeLock.release() }
 
 Consejo:
-En Android 8+ AudioFocusRequest builder. Para VoIP/media, combina con Foreground Service tipo mediaPlayback.
+Prefiere WorkManager + constraints antes que PARTIAL_WAKE_LOCK. Para mantener pantalla encendida en video, FLAG_KEEP_SCREEN_ON en la ventana es más claro.

@@ -1,13 +1,14 @@
 Concepto:
-Kotlin aporta null safety, data classes, extension functions, corrutinas con suspend/Flow, strings templates y sintaxis más expresiva con menos boilerplate que Java. Interopera al 100% con el SDK Android y bibliotecas Java existentes.
+AudioManager controla volumen y rutas de audio: STREAM_MUSIC, MODE_IN_CALL, solicitud de foco audio con requestAudioFocus para pausar o duck otros reproductores, y gestión de dispositivos Bluetooth/USB.
 
-Google recomienda Kotlin como lenguaje preferido para Android nuevo.
+El foco es cooperativo: otras apps pueden ignorarlo, pero es buena ciudadanía.
 
 Ejemplo:
-viewLifecycleOwner.lifecycleScope.launch {
-    val users = withContext(Dispatchers.IO) { api.fetchUsers() }
-    adapter.submitList(users)
-}
+val am = getSystemService(AudioManager::class.java)
+am.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI)
+
+val afChange = AudioManager.OnAudioFocusChangeListener { /* duck o pause */ }
+am.requestAudioFocus(afChange, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN)
 
 Consejo:
-Menciona coroutines frente a callbacks + Executors, y que @Parcelize reduce código repetitivo frente a Parcelable manual en Java.
+En Android 8+ AudioFocusRequest builder. Para VoIP/media, combina con Foreground Service tipo mediaPlayback.

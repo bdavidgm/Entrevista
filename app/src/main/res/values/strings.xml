@@ -17,4 +17,7 @@
     <string name="view_later">Guardar</string>
     <string name="next">Siguiente</string>
     <string name="question_copied_to_clipboard">Pregunta copiada al portapapeles</string>
+    <string name="answer_copied_to_clipboard">Respuesta copiada al portapapeles</string>
+    <string name="code_copied_to_clipboard">Código copiado al portapapeles</string>
+    <string name="copy_code">Copiar código</string>
 </resources>

@@ -1,20 +1,13 @@
 Concepto:
-Retrofit convierte una interfaz HTTP en cliente tipado mediante anotaciones @GET, @POST, @Body, @Query. Se apoya en OkHttp para conexión, interceptores y timeouts, y en un converter (Moshi/Gson) para JSON.
+MVP separa View (pasiva, interfaz) de Presenter, que contiene la lógica de presentación y habla con el Model. La View implementa contratos (showLoading) y reenvía eventos al Presenter; el Presenter no conoce detalles de Android salvo lo mínimo.
 
-Suspend functions o Call/Flow integran bien con corrutinas.
+Fue popular antes de ViewModel; hoy MVVM/MVI + ViewModel es más idiomático.
 
 Ejemplo:
-interface Api {
-    @GET("users/{id}")
-    suspend fun user(@Path("id") id: String): UserDto
+interface LoginView { fun showError(msg: String) }
+class LoginPresenter(private val view: LoginView, private val repo: AuthRepository) {
+    fun login(email: String) { /* repo + view.showError */ }
 }
 
-val retrofit = Retrofit.Builder()
-    .baseUrl("https://api.example.com/")
-    .addConverterFactory(MoshiConverterFactory.create())
-    .client(okHttp)
-    .build()
-    .create(Api::class.java)
-
 Consejo:
-Centraliza auth, logging y reintentos en interceptores OkHttp. Usa Response<T> si necesitas leer códigos HTTP sin excepción.
+Contrasta con MVVM: Presenter no sobrevive a rotación salvo que lo gestiones tú; ViewModel lo resuelve de serie.

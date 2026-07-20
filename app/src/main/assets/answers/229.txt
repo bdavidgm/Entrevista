@@ -1,10 +1,10 @@
 Concepto:
-Flashear es escribir una imagen firmware (boot, system, recovery, vbmeta) en particiones del dispositivo mediante fastboot o herramientas OEM. Se usa para actualizar, downgrade, reparar bricks suaves o instalar ROMs.
+El bootloader es el programa inicial que decide qué imagen arrancar y si verifica firmas (locked bootloader solo arranca builds firmados por el OEM). Desbloquearlo permite flashear ROMs custom o root, pero suele borrar datos y anular garantía.
 
-Siempre verifica checksums y guías del modelo exacto.
+Verified boot (AVB) comprueba la cadena de firma en cada arranque.
 
 Ejemplo:
-fastboot flash system system.img && fastboot reboot
+fastboot oem unlock  // nombre varía por fabricante
 
 Consejo:
-vbmeta/avb pueden requerir --disable-verity en flasheos no oficiales (riesgoso). Haz backup de partición crítica si el OEM lo permite.
+Apps bancarias (Play Integrity) pueden detectar bootloader desbloqueado. Para soporte avanzado documenta cómo volver a stock y re-bloquear si el OEM lo permite.

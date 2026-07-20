@@ -1,16 +1,16 @@
 Concepto:
-OkHttp es el cliente HTTP de Square usado por Retrofit: connection pooling, HTTP/2, interceptors (logging, auth token refresh), timeouts y caché de respuestas opcional.
+MVC en Android clásico solía ser Activity/Fragment como Controller mezclando UI y lógica, con Model en POJOs. Esa mezcla llevaba a God Activities y poca testabilidad.
 
-También puedes usarlo solo sin Retrofit para llamadas muy custom.
+Por eso la comunidad migró a MVP, MVVM y ahora MVI/UDF con ViewModel.
 
 Ejemplo:
-val client = OkHttpClient.Builder()
-    .addInterceptor { chain ->
-        val req = chain.request().newBuilder().addHeader("Authorization", "Bearer $token").build()
-        chain.proceed(req)
+// Anti-patrón ilustrativo
+class MainActivity : AppCompatActivity() {
+    override fun onCreate(b: Bundle?) {
+        super.onCreate(b)
+        Thread { val data = api.fetch() /* ... */ }.start() // Controller mezclado
     }
-    .connectTimeout(15, TimeUnit.SECONDS)
-    .build()
+}
 
 Consejo:
-Distingue application vs network interceptors. Para cert pinning y metrics, OkHttp es el punto único de configuración.
+En entrevista explica por qué separar: testabilidad, ciclo de vida y estado. "MVC Android informal" suele criticarse; ofrece MVVM como evolución.

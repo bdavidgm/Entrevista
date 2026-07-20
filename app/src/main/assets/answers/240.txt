@@ -1,0 +1,26 @@
+Concepto:
+Un WebSocket es una conexión TCP persistente entre cliente y servidor, iniciada con un handshake HTTP y luego bidireccional: ambos lados pueden enviar frames en cualquier momento sin abrir una petición nueva por mensaje. Sirve para chat en vivo, cotizaciones, presencia o juegos; evita polling constante de REST.
+
+En Android suele implementarse con OkHttp (`newWebSocket`) o con clientes como Ktor. Hay que enlazar el ciclo de vida (pausar/cerrar al salir de primer plano si no usas FGS) y reconectar con backoff ante cortes de red.
+
+Ejemplo:
+val client = OkHttpClient()
+val request = Request.Builder().url("wss://echo.websocket.events").build()
+
+val socket = client.newWebSocket(request, object : WebSocketListener() {
+    override fun onOpen(webSocket: WebSocket, response: Response) {
+        webSocket.send("""{"type":"hello"}""")
+    }
+    override fun onMessage(webSocket: WebSocket, text: String) {
+        // procesar JSON / texto
+    }
+    override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
+        // reintentar con delay exponencial
+    }
+})
+
+// Al destruir el scope de la pantalla:
+socket.close(1000, "bye")
+
+Consejo:
+Usa ping/pong o heartbeats si el proxy corta conexiones idle. Valida TLS y certificados como en HTTPS. Si solo necesitas servidor→cliente con baja latencia, compara con SSE o FCM data antes de añadir complejidad de sockets.

@@ -1,0 +1,23 @@
+Concepto:
+SOLID reúne cinco principios para diseñar objetos mantenibles:
+- S: una clase tiene una razón principal para cambiar.
+- O: se amplía mediante nuevos tipos sin modificar lógica estable.
+- L: un subtipo puede sustituir al tipo base sin romper su contrato.
+- I: interfaces pequeñas y específicas.
+- D: las capas de alto nivel dependen de abstracciones, no de implementaciones.
+
+Ejemplo:
+interface UserRepository {
+    suspend fun user(id: String): User
+}
+
+class GetUser(private val repository: UserRepository) {
+    suspend operator fun invoke(id: String) = repository.user(id)
+}
+
+class RoomUserRepository(private val dao: UserDao) : UserRepository {
+    override suspend fun user(id: String) = dao.user(id).toDomain()
+}
+
+Consejo:
+SOLID son criterios, no reglas para crear más capas. Aplícalos cuando reduzcan acoplamiento, faciliten tests o separen responsabilidades reales.

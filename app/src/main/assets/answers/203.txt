@@ -1,13 +1,16 @@
 Concepto:
-MVP separa View (pasiva, interfaz) de Presenter, que contiene la lógica de presentación y habla con el Model. La View implementa contratos (showLoading) y reenvía eventos al Presenter; el Presenter no conoce detalles de Android salvo lo mínimo.
+RecyclerView recicla filas fuera de pantalla: el Adapter crea ViewHolder y enlaza datos en onBindViewHolder; el LayoutManager coloca ítems (Linear, Grid, Staggered). ListAdapter + DiffUtil automatiza animaciones y diffs.
 
-Fue popular antes de ViewModel; hoy MVVM/MVI + ViewModel es más idiomático.
+Separar ViewHolder reduce trabajo en scroll.
 
 Ejemplo:
-interface LoginView { fun showError(msg: String) }
-class LoginPresenter(private val view: LoginView, private val repo: AuthRepository) {
-    fun login(email: String) { /* repo + view.showError */ }
+class UserAdapter : ListAdapter<User, UserVH>(UserDiff) {
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) =
+        UserVH(ItemUserBinding.inflate(LayoutInflater.from(parent.context), parent, false))
+    override fun onBindViewHolder(holder: UserVH, position: Int) {
+        holder.bind(getItem(position))
+    }
 }
 
 Consejo:
-Contrasta con MVVM: Presenter no sobrevive a rotación salvo que lo gestiones tú; ViewModel lo resuelve de serie.
+onBindViewHolder debe ser barato: usa payloads, evita allocations y mueve lógica pesada a background. DiffUtil calcula cambios mínimos.

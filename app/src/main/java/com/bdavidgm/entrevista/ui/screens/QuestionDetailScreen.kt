@@ -1,9 +1,5 @@
 package com.bdavidgm.entrevista.ui.screens
 
-import android.content.ClipData
-import android.content.ClipboardManager
-import android.content.Context
-import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -47,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import com.bdavidgm.entrevista.R
 import com.bdavidgm.entrevista.data.QuestionSummary
 import com.bdavidgm.entrevista.ui.components.InterviewAnswerBody
+import com.bdavidgm.entrevista.ui.util.copyTextToClipboard
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -180,15 +177,11 @@ fun QuestionDetailScreen(
                         .pointerInput(summary.question) {
                             detectTapGestures(
                                 onLongPress = {
-                                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                                    clipboard.setPrimaryClip(
-                                        ClipData.newPlainText("question", summary.question)
+                                    context.copyTextToClipboard(
+                                        label = "question",
+                                        text = summary.question,
+                                        toastMessageRes = R.string.question_copied_to_clipboard,
                                     )
-                                    Toast.makeText(
-                                        context,
-                                        context.getString(R.string.question_copied_to_clipboard),
-                                        Toast.LENGTH_SHORT
-                                    ).show()
                                 }
                             )
                         }

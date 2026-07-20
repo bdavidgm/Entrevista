@@ -1,0 +1,15 @@
+Concepto:
+Tipo::class es un class literal que devuelve un KClass<T>, la representación de una clase en el sistema de reflexión de Kotlin. Permite consultar su nombre, comprobar instancias, usarla como clave o pasar el tipo sin crear un objeto.
+
+Ejemplo:
+val type: KClass<User> = User::class
+
+println(type.simpleName)       // User
+println(type.qualifiedName)    // com.example.User
+println(type.isInstance(user)) // true
+
+fun register(type: KClass<*>) { /* ... */ }
+register(User::class)
+
+Consejo:
+KClass<*> representa una clase cuyo tipo concreto no conoces. No confundas User::class con ::User: el segundo es una referencia al constructor.

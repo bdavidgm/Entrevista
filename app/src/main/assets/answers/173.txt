@@ -1,12 +1,14 @@
 Concepto:
-AlarmManager programa operaciones en el tiempo (RTC, ELAPSED_REALTIME) con PendingIntent. Sirve para alarmas exactas o inexactas, repetición y despertar el dispositivo (WAKEUP) según flags. Desde Android 12+ las alarmas exactas requieren permiso SCHEDULE_EXACT_ALARM o USE_EXACT_ALARM según caso.
+Los sensores hardware se acceden con SensorManager.getDefaultSensor(TYPE_ACCELEROMETER) etc. y se registran con registerListener, recibiendo onSensorChanged en el hilo del listener (Looper opcional). Recuerda unregisterListener al pausar para ahorrar batería.
 
-No sustituye a WorkManager para trabajo diferible y tolerante a Doze.
+Los valores vienen en coordenadas del dispositivo; el giroscopio mide velocidad angular.
 
 Ejemplo:
-val alarmMgr = getSystemService(AlarmManager::class.java)
-val pi = PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_IMMUTABLE)
-alarmMgr.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pi)
+val sm = getSystemService(SensorManager::class.java)
+val accel = sm.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+sm.registerListener({ e, _ ->
+    val (x, y, z) = e.values
+}, accel, SensorManager.SENSOR_DELAY_GAME)
 
 Consejo:
-Prefiere setWindow/setInexactRepeating cuando la exactitud al segundo no importa; respeta ahorro de batería y políticas de background.
+Usa SENSOR_DELAY_UI o GAME según necesidad; muestreos altos gastan batería. Para fusionar sensores y orientación, SensorManager.getRotationMatrix/getOrientation.

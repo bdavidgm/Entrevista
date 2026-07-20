@@ -1,12 +1,14 @@
 Concepto:
-Acceder a la cámara implica permiso CAMERA (y en Android 13+ lectura de medios puede implicar permisos distintos según caso), configurar CameraProvider y gestionar el ciclo de vida. La vía recomendada es CameraX (Preview, ImageCapture, ImageAnalysis) enlazada al Lifecycle.
+Para saber si hay red usable se usa ConnectivityManager: activeNetwork + getNetworkCapabilities o, mejor, registerDefaultNetworkCallback para recibir onAvailable/onLost/onCapabilitiesChanged. NET_CAPABILITY_VALIDATED indica Internet real (no solo Wi‑Fi asociado sin portal).
 
-La alternativa trivial es delegar en ACTION_IMAGE_CAPTURE si solo necesitas una foto puntual.
+El permiso ACCESS_NETWORK_STATE es normal (manifest).
 
 Ejemplo:
-val provider = ProcessCameraProvider.getInstance(this).get()
-val preview = Preview.Builder().build().also { it.setSurfaceProvider(previewView.surfaceProvider) }
-provider.bindToLifecycle(this, CameraSelector.DEFAULT_BACK_CAMERA, preview)
+val cm = getSystemService(ConnectivityManager::class.java)
+val online = cm.activeNetwork?.let { net ->
+    cm.getNetworkCapabilities(net)
+        ?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) == true
+} == true
 
 Consejo:
-Para permisos runtime usa ActivityResultContracts.RequestPermission. Comprueba flash, rotación y threading en ImageAnalysis (no bloquees el analyzer).
+No uses APIs deprecadas tipo NetworkInfo. Para políticas de sync, WorkManager Constraints.setRequiredNetworkType es la integración natural.

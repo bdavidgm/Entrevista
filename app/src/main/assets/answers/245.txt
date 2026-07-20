@@ -1,0 +1,17 @@
+Concepto:
+Una propiedad Kotlin combina acceso y, cuando hace falta, almacenamiento. Puedes personalizar get y set. Dentro de un accessor, field representa el backing field generado por el compilador; no existe si la propiedad siempre se calcula a partir de otros datos.
+
+Ejemplo:
+class Person(firstName: String, val lastName: String) {
+    var firstName: String = firstName
+        set(value) {
+            require(value.isNotBlank())
+            field = value.trim()
+        }
+
+    val fullName: String
+        get() = "$firstName $lastName"
+}
+
+Consejo:
+Usa propiedades calculadas para datos derivados y evita duplicar estado que podría quedar inconsistente.

@@ -1,15 +1,25 @@
 Concepto:
-La ubicación se obtiene con FusedLocationProviderClient (Google Play services), que fusiona GPS, red y sensores. Pide permisos ACCESS_FINE_LOCATION / ACCESS_COARSE_LOCATION (y BACKGROUND desde Android 10 si necesitas ubicación con app en segundo plano).
+Las notificaciones push llegan desde un servidor a través de Firebase Cloud Messaging (FCM). Tu app obtiene un token de registro por instalación; el backend envía mensajes a ese token (o a topics). Hay mensajes de tipo notification (Play Services pueden mostrar la bandeja si la app está en segundo plano) y data (tú construyes la Notification en código; en background suele requerir FirebaseMessagingService).
 
-Para apps modernas usa el contrato de permisos y comprueba si el usuario eligió “precisa” o “aproximada”.
+En Android 13+ hace falta permiso POST_NOTIFICATIONS para mostrar notificaciones al usuario. El canal (NotificationChannel) sigue siendo obligatorio desde Android 8.
 
 Ejemplo:
-fused.lastLocation.addOnSuccessListener { loc ->
-    loc?.let { println("${it.latitude},${it.longitude}") }
+class AppMessagingService : FirebaseMessagingService() {
+    override fun onMessageReceived(message: RemoteMessage) {
+        message.notification?.let { /* título/cuerpo del payload notification */ }
+        message.data["orderId"]?.let { /* payload data */ }
+        val notif = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_stat)
+            .setContentTitle(message.notification?.title ?: "Pedido")
+            .setContentText(message.notification?.body ?: message.data["status"])
+            .build()
+        NotificationManagerCompat.from(this).notify(orderId.hashCode(), notif)
+    }
+
+    override fun onNewToken(token: String) {
+        // Enviar token a tu backend para dirigir pushes a este dispositivo
+    }
 }
 
-val request = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 10_000).build()
-fused.requestLocationUpdates(request, callback, Looper.getMainLooper())
-
 Consejo:
-Menciona justificación en UI, intervalos de muestreo y Foreground Service + tipo location si rastreas en background. Alternativa sin GMS: LocationManager.
+No confíes solo en el payload notification para lógica crítica: en iOS/Android el comportamiento en background difiere; combina data + tu propia UI. Renueva el token en backend y maneja revocaciones. Para alto volumen, colas y reintentos van en el servidor, no en el cliente.

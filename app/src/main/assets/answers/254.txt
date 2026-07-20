@@ -1,0 +1,20 @@
+Concepto:
+Una enum class representa un conjunto cerrado de instancias conocidas, cada una con nombre y ordinal. Puede tener propiedades, métodos e implementar interfaces. Es adecuada para estados simples sin datos distintos por caso; si cada caso necesita datos propios, suele convenir una sealed class.
+
+Ejemplo:
+enum class Priority(val level: Int) {
+    LOW(1),
+    MEDIUM(2),
+    HIGH(3);
+
+    fun isUrgent() = this == HIGH
+}
+
+fun color(priority: Priority) = when (priority) {
+    Priority.LOW -> "gris"
+    Priority.MEDIUM -> "amarillo"
+    Priority.HIGH -> "rojo"
+}
+
+Consejo:
+Usa entries para recorrer valores. No persistas ordinal: guarda name o un código estable, porque el orden puede cambiar.

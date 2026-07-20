@@ -1,10 +1,16 @@
 Concepto:
-Android Studio es el IDE oficial: integra el Android Gradle Plugin, emulador, Layout Inspector, Profiler (CPU/memoria/red/energía), Database Inspector, Logcat y asistentes para Jetpack/Compose. Está optimizado para el ciclo completo compile-deploy-debug de apps Android.
+Vibrator (o VibratorManager en API 31+) reproduce patrones de vibración con VibrationEffect: createOneShot, createWaveform o predefined constants (EFFECT_CLICK). Requiere permiso VIBRATE (normal).
 
-Alternativas existen, pero pierdes tooling de primera parte y actualización al día con cada API.
+En API 26+ usa siempre VibrationEffect; APIs antiguas vibrate(long) están deprecadas.
 
 Ejemplo:
-./gradlew assembleDebug desde la terminal integrada; Breakpoints en código Kotlin/Java y en layouts híbridos.
+val vibrator = getSystemService(Vibrator::class.java)
+if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+    vibrator.vibrate(VibrationEffect.createOneShot(40, VibrationEffect.DEFAULT_AMPLITUDE))
+} else {
+    @Suppress("DEPRECATION")
+    vibrator.vibrate(40)
+}
 
 Consejo:
-Menciona Baseline Profile, Lint y version catalog como parte del flujo profesional. El emulador con snapshots acelera iteraciones.
+Respeta “Desactivar vibración” y canales de accesibilidad; no abuses de patrones largos. Para haptics finos en UI, considera performHapticFeedback en vistas.

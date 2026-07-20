@@ -1,10 +1,10 @@
 Concepto:
-Estructuras de datos y algoritmos sirven para razonar sobre complejidad (listas vs mapas, búsqueda binaria), evitar trabajo innecesario en el hilo principal y resolver entrevistas técnicas. En Android impacta RecyclerView (DiffUtil), caches LRU, grafos de dependencias y parsing.
+Android Studio es el IDE oficial: integra el Android Gradle Plugin, emulador, Layout Inspector, Profiler (CPU/memoria/red/energía), Database Inspector, Logcat y asistentes para Jetpack/Compose. Está optimizado para el ciclo completo compile-deploy-debug de apps Android.
 
-No hace falta competir en competitive programming, sí dominar listas, mapas, sets y complejidad básica O(n).
+Alternativas existen, pero pierdes tooling de primera parte y actualización al día con cada API.
 
 Ejemplo:
-Usar Map<id, User> para lookup O(1) en lugar de buscar en List O(n) por cada render.
+./gradlew assembleDebug desde la terminal integrada; Breakpoints en código Kotlin/Java y en layouts híbridos.
 
 Consejo:
-Relaciona con ANR/jank: algoritmos cuadráticos en listas grandes en main thread son un antipatrón clásico.
+Menciona Baseline Profile, Lint y version catalog como parte del flujo profesional. El emulador con snapshots acelera iteraciones.

@@ -1,12 +1,12 @@
 Concepto:
-Cámara, micrófono y contactos son permisos peligrosos con alto impacto en privacidad: pídelos en contexto (just-in-time), ofrece degradación si el usuario niega (funcionalidad limitada) y evita escuchar en segundo plano sin indicador claro (mic/cámara foreground service + notificación desde Android 9/12 según caso).
+Ubicación en Android se divide en aproximada (red) vs precisa (GPS/multilateración). Desde Android 10 necesitas ACCESS_BACKGROUND_LOCATION aparte de fine/coarse si rastreas con la app en segundo plano (y Foreground Service tipo location).
 
-Los indicadores de punto verde/naranja muestran acceso activo a cámara/mic.
+Minimiza frecuencia y precisión; muestra justificación en UI y desactiva tracking cuando basta coarse.
 
 Ejemplo:
-registerForActivityResult(RequestPermission()) { granted ->
-    if (granted) startPreview() else showRationale()
-}
+requestPermissions(arrayOf(ACCESS_FINE_LOCATION), 0)
+// Si necesitas background:
+requestPermissions(arrayOf(ACCESS_BACKGROUND_LOCATION), 1)
 
 Consejo:
-shouldShowRequestPermissionRationale guía el copy. Para contactos, pide la mínima proyección de columnas y no subas libretas enteras al servidor sin consentimiento explícito.
+Data access auditing y permisos temporales (approximate) reducen superficie. Play Console exige declaración detallada de uso de ubicación.

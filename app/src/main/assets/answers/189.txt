@@ -1,14 +1,14 @@
 Concepto:
-PowerManager ofrece flags y control de energía: isInteractive, newWakeLock para mantener CPU/pantalla encendida de forma explícita. WakeLock debe adquirirse por intervalos cortos y liberarse en finally; abuso drena batería y molesta al usuario.
+JobScheduler (API 21) programa trabajos con requisitos de red, carga y tipo de red; el sistema los ejecuta en ventanas eficientes energéticamente. WorkManager de Jetpack usa JobScheduler bajo el capó en dispositivos modernos.
 
-Doze y App Standby limitan wakeups aunque tengas locks.
+No es para UI ni latencia sub-segundo: es para sync y mantenimiento.
 
 Ejemplo:
-val wakeLock = powerManager.newWakeLock(
-    PowerManager.PARTIAL_WAKE_LOCK, "MyApp::SyncTag"
-)
-wakeLock.acquire(10_000L)
-try { sync() } finally { if (wakeLock.isHeld) wakeLock.release() }
+val job = JobInfo.Builder(JOB_ID, ComponentName(this, MyJobService::class.java))
+    .setRequiredNetworkType(JobInfo.NETWORK_TYPE_UNMETERED)
+    .setPersisted(true)
+    .build()
+(getSystemService(Context.JOB_SCHEDULER_SERVICE) as JobScheduler).schedule(job)
 
 Consejo:
-Prefiere WorkManager + constraints antes que PARTIAL_WAKE_LOCK. Para mantener pantalla encendida en video, FLAG_KEEP_SCREEN_ON en la ventana es más claro.
+En apps nuevas casi siempre WorkManager por compatibilidad y pruebas. JobScheduler directo sirve cuando necesitas control fino del JobService.

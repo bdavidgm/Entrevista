@@ -1,15 +1,11 @@
 Concepto:
-MediaStore es el ContentProvider del sistema para imágenes, vídeo y audio en almacenamiento compartido. Expone URIs y columnas estándar; accedes vía ContentResolver. En Android 10+ con scoped storage es la vía principal para bibliotecas multimedia sin permisos de almacenamiento amplio.
+SharedPreferences es un almacén clave-valor persistente basado en archivos XML, síncrono en su API antigua y típicamente envuelto en apply() para escritura asíncrona. Hoy Google recomienda migrar a DataStore (Preferences o Proto) por seguridad de hilos y API moderna con Flow.
 
-Scoped access: lee/escribe con URIs y permisos granulares (READ_MEDIA_* / pick visual media).
+Sigue apareciendo en código legado y en preferencias simples de SDK.
 
 Ejemplo:
-val values = ContentValues().apply {
-    put(MediaStore.Images.Media.DISPLAY_NAME, "foto_${System.currentTimeMillis()}.jpg")
-    put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
-}
-val uri = contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
-contentResolver.openOutputStream(uri!!)?.use { /* escribir JPEG */ }
+val prefs = getSharedPreferences("settings", MODE_PRIVATE)
+prefs.edit { putBoolean("dark", true) }
 
 Consejo:
-Usa Photo Picker cuando baste con selección de medios sin permisos amplios. Relaciona con SAF para carpetas arbitrarias.
+Evita leer prefs en hot paths del main thread con get* síncronos masivos. Para datos estructurados o observables, DataStore.

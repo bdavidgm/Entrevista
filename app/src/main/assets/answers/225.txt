@@ -1,12 +1,16 @@
 Concepto:
-Comandos ADB frecuentes: devices, install/uninstall, logcat (filtrado por tag/pid), shell (pm, am, dumpsys), reboot, reverse (túnel USB), bugreport, pull/push, screencap/screenrecord, y settings put/get para toggles de desarrollo.
+Desde Android 8 (API 26) el sistema limita fuertemente lo que las apps pueden hacer en background para ahorrar batería: no pueden iniciar servicios "normales" si están en background ni recibir la mayoría de broadcasts implícitos del sistema desde el manifest. Las alternativas son JobScheduler, WorkManager, Foreground Service y broadcasts dinámicos.
 
-dumpsys meminfo/battery ayuda a diagnosticar problemas.
+Android 9+ añade buckets de App Standby y Doze; Android 12+ restringe los foreground services iniciados desde background; Android 13+ obliga al permiso POST_NOTIFICATIONS; Android 14 endurece aún más los foreground services.
 
 Ejemplo:
-adb shell dumpsys activity activities | grep mResumedActivity
-adb reverse tcp:8080 tcp:8080   // localhost del PC desde el móvil
-adb uninstall com.example.app
+val request = OneTimeWorkRequestBuilder<SyncWorker>()
+    .setConstraints(
+        Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .build()
+    ).build()
+WorkManager.getInstance(context).enqueue(request)
 
 Consejo:
-logcat --pid filtra ruido. adb emu para comandos específicos del emulador. Autoriza la huella RSA la primera vez que conectas un dispositivo.
+"Para trabajo diferible, WorkManager; para tareas visibles, foreground service". Conocer Doze, App Standby y restricciones por versión.

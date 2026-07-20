@@ -1,10 +1,15 @@
 Concepto:
-Publicar en Play Console implica: cuenta de desarrollador, crear la app, subir AAB firmado, completar ficha de tienda (textos, capturas, clasificación de contenido), declarar permisos sensibles/políticas de privacidad, configurar países y precios, pruebas internas/cerradas/abiertas y revisión de Google.
+Koin es un framework de DI en Kotlin puro: módulos declaran single/factory/viewModel y se arranca con startKoin { modules(...) }. Resuelve dependencias en runtime (sin anotaciones ni procesador de código como Dagger/Hilt).
 
-Tras aprobación, releases por fases o completos.
+Ventaja: simplicidad y multiplataforma. Desventaja: errores de grafo en runtime y algo menos de optimización que Dagger.
 
 Ejemplo:
-bundleRelease → firma con keystore → Play Console → Producción → revisión (horas/días).
+val appModule = module {
+    single { Retrofit.Builder()...build().create(Api::class.java) }
+    viewModel { HomeViewModel(get()) }
+}
+
+startKoin { androidContext(this@App); modules(appModule) }
 
 Consejo:
-Data safety form, política de permisos de ubicación en background y mensajes de promoción in-app son causas frecuentes de rechazo. Planifica rollout por porcentajes.
+"Hilt = compile-time + Android integrado; Koin = runtime + ligero". Para apps grandes muchos equipos prefieren Hilt por seguridad de grafo.

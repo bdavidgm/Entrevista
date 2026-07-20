@@ -1,11 +1,10 @@
 Concepto:
-Recovery es un mini-entorno de arranque para aplicar OTA, borrar datos (wipe) o montar almacenamiento. El recovery de stock es limitado; recoveries custom (TWRP) ofrecen backups nandroid, sideload ZIP y gestión de archivos con touch.
+Rootear es obtener acceso de superusuario (uid 0) en Android, típicamente parcheando boot image con Magisk o instalando su binario. Permite modificar sistema, bloquear anuncios a nivel sistema o usar apps que requieren root.
 
-Se accede con combinación de teclas o adb reboot recovery.
+Conlleva riesgo de seguridad, actualizaciones OTA complicadas y posible bloqueo de apps sensibles.
 
 Ejemplo:
-adb reboot recovery
-// En TWRP: Install → seleccionar ROM zip → swipe
+adb sideload magisk_patched_boot.img tras desbloquear bootloader y parchear imagen oficial.
 
 Consejo:
-Cifrado de datos + TWRP requiere versión compatible con tu Android. Los OTA oficiales pueden fallar con recovery modificado.
+Para desarrollo, el emulador con adb root basta. En dispositivo real, root rompe supuestos de sandbox de muchas apps de productividad/pago.

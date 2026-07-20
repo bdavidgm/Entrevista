@@ -1,10 +1,11 @@
 Concepto:
-Un técnico Android en taller combina diagnóstico por software (modo seguro, wipe cache, ADB logcat, reinstalar ROM stock) y hardware (pantalla, batería, puerto USB-C, micrófonos). También gestiona cuentas Google/FRP, transferencias de datos y políticas de garantía del OEM.
+Recovery es un mini-entorno de arranque para aplicar OTA, borrar datos (wipe) o montar almacenamiento. El recovery de stock es limitado; recoveries custom (TWRP) ofrecen backups nandroid, sideload ZIP y gestión de archivos con touch.
 
-No confundir con desarrollo de apps: se solapan ADB y conocimiento del sistema.
+Se accede con combinación de teclas o adb reboot recovery.
 
 Ejemplo:
-Bucle de boot: intentar recovery wipe cache → flashear firmware oficial con herramienta OEM → revisar eMMC UFS en casos graves.
+adb reboot recovery
+// En TWRP: Install → seleccionar ROM zip → swipe
 
 Consejo:
-FRP (Factory Reset Protection) requiere credenciales legítimas; explicar bypass no ético no es objetivo de entrevista dev, pero conocer FRP evita “reparaciones” ilegales.
+Cifrado de datos + TWRP requiere versión compatible con tu Android. Los OTA oficiales pueden fallar con recovery modificado.

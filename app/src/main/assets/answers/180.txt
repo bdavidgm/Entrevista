@@ -1,11 +1,14 @@
 Concepto:
-ClipboardManager gestiona el portapapeles del sistema: setPrimaryClip para copiar texto/HTML/URI e intentos de pegado desde primaryClip. Desde Android 10 el contenido del portapapeles puede estar oculto a apps en segundo plano por privacidad.
+SAF (Storage Access Framework) permite al usuario conceder acceso a documentos o árboles mediante ACTION_OPEN_DOCUMENT, ACTION_CREATE_DOCUMENT o ACTION_OPEN_DOCUMENT_TREE; obtienes URIs persistentes con takePersistableUriPermission. Es la forma correcta de leer carpetas arbitrarias sin MANAGE_EXTERNAL_STORAGE.
 
-Para copiar texto simple usa ClipData.newPlainText.
+Funciona con proveedores de documentos del sistema y de terceros.
 
 Ejemplo:
-val clipboard = getSystemService(ClipboardManager::class.java)
-clipboard.setPrimaryClip(ClipData.newPlainText("label", userToken))
+val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+    addCategory(Intent.CATEGORY_OPENABLE)
+    type = "application/pdf"
+}
+startActivityForResult(intent, REQ_CODE)
 
 Consejo:
-No copies secretos largos sin avisar al usuario. Para pegar, maneja clips vacíos y permisos de visibilidad en versiones recientes.
+Persiste permisos con takePersistableUriPermission tras FLAG_GRANT_PERSISTABLE_URI_PERMISSION. No asumas rutas de archivo absolutas.

@@ -1,0 +1,18 @@
+Concepto:
+override indica explícitamente que una propiedad o función reemplaza un miembro open o abstract del padre. super permite invocar la implementación heredada. Un miembro sobrescrito continúa abierto, salvo que se marque final override.
+
+Ejemplo:
+open class Logger {
+    open fun log(message: String) {
+        println(message)
+    }
+}
+
+class TaggedLogger : Logger() {
+    final override fun log(message: String) {
+        super.log("[APP] $message")
+    }
+}
+
+Consejo:
+override obligatorio evita sobrescrituras por accidente. Usa super solo si el contrato de la clase base exige conservar parte de su comportamiento.

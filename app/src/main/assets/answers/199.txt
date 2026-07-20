@@ -1,13 +1,10 @@
 Concepto:
-RelativeLayout posiciona vistas respecto al padre o a otras vistas (layout_below, layout_toStartOf). Con una sola pasada de medición resolvía casos que en LinearLayout requerían anidación, pero hoy ConstraintLayout lo sustituye casi por completo.
+launchMode en el manifest controla cómo se instancia una Activity ante nuevos intents: standard (siempre nueva), singleTop (reusa si está arriba del stack), singleTask (una instancia por task, limpia encima) y singleInstance (task exclusivo).
 
-Sigue en código legacy; nuevas pantallas rara vez lo eligen.
+singleTask/singleInstance requieren entender taskAffinity y cuidado con datos en memoria.
 
 Ejemplo:
-<RelativeLayout android:layout_width="match_parent" android:layout_height="match_parent">
-    <TextView android:id="@+id/title" android:layout_alignParentTop="true" android:layout_centerHorizontal="true"/>
-    <Button android:layout_below="@id/title" android:layout_centerHorizontal="true" android:text="OK"/>
-</RelativeLayout>
+<activity android:name=".MainActivity" android:launchMode="singleTask"/>
 
 Consejo:
-"Legacy: preferir ConstraintLayout". RelativeLayout anidado vuelve ilegible; ConstraintLayout expresa restricciones con mejor tooling.
+Sobreactual: la mayoría de apps Compose usan single-activity + NavHost. launchMode sirve para flows especiales (pago, captura) o integración con notificaciones.

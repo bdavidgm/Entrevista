@@ -1,15 +1,12 @@
 Concepto:
-InputMethodManager controla el teclado software: showSoftInput, hideSoftInputFromWindow y toggleSoftInput. Se usa típicamente desde un EditText o para cerrar teclado al enviar un formulario.
+getSystemService(Class) devuelve el servicio del sistema tipado (ConnectivityManager, AlarmManager, ClipboardManager, etc.) asociado al Context. Es la forma recomendada frente a getSystemService(String) con cast manual.
 
-En Compose, KeyboardOptions/Actions y el foco gestionan buena parte del flujo.
+Cada servicio encapsula hardware o políticas del sistema.
 
 Ejemplo:
+val cm = getSystemService(ConnectivityManager::class.java)
+val nm = getSystemService(NotificationManager::class.java)
 val imm = getSystemService(InputMethodManager::class.java)
-editText.requestFocus()
-imm.showSoftInput(editText, InputMethodManager.SHOW_IMPLICIT)
-
-// Ocultar
-imm.hideSoftInputFromWindow(editText.windowToken, 0)
 
 Consejo:
-En ventanas decoradas usa WindowInsetsControllerCompat cuando trabajes con edge-to-edge. Evita forzar show/hide en bucle.
+Usa ContextCompat o applicationContext cuando el servicio no dependa de la Activity. Algunos servicios requieren API mínima: comprueba versiones.

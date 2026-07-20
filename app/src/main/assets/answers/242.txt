@@ -1,0 +1,16 @@
+Concepto:
+Una clase es el molde que define propiedades y funciones; un objeto es una instancia concreta creada a partir de esa clase. Cada instancia mantiene su propio estado. La declaración object, en cambio, crea directamente una única instancia singleton.
+
+Ejemplo:
+class User(val id: String, var name: String) {
+    fun rename(newName: String) {
+        name = newName
+    }
+}
+
+val ana = User("1", "Ana")
+val leo = User("2", "Leo")
+ana.rename("Ana María")
+
+Consejo:
+Clase = definición; objeto = instancia. Usa object solo cuando realmente deba existir una única instancia.

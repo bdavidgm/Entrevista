@@ -1,15 +1,14 @@
 Concepto:
-DownloadManager encola descargas HTTP grandes en segundo plano, muestra progreso en la barra de notificaciones y guarda el archivo en un destino público o privado según políticas de almacenamiento. Evita mantener tu propio foreground service solo para descargar.
+Los App Shortcuts son accesos directos a acciones o pantallas de tu app desde el launcher (long press en el icono). Hay estáticos (xml en res/xml/shortcuts.xml) y dinámicos (ShortcutManager.addDynamicShortcuts).
 
-Requiere permisos según destino y versión (INTERNET, notificaciones, a veces WRITE en APIs antiguas).
+Cada atajo apunta a un Intent con action explícita y categorías adecuadas.
 
 Ejemplo:
-val request = DownloadManager.Request(Uri.parse("https://cdn.example.com/app.bin"))
-    .setTitle("Actualización")
-    .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-    .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "app.bin")
-
-val id = downloadManager.enqueue(request)
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut android:shortcutId="new_note" android:shortcutShortLabel="@string/new_note">
+        <intent android:action="com.app.ACTION_NEW_NOTE" android:targetPackage="com.app" android:targetClass="com.app.MainActivity"/>
+    </shortcut>
+</shortcuts>
 
 Consejo:
-Consulta COLUMN_STATUS y COLUMN_REASON con query. Para descargas privadas de la app, a veces OkHttp + archivo en cache es más simple.
+Limita cantidad (dynamic máx ~4 visibles según OEM). Actualiza shortcuts cuando cambie el estado relevante (usuario deslogueado, etc.).

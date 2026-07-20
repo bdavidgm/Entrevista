@@ -1,12 +1,10 @@
 Concepto:
-Ubicación en Android se divide en aproximada (red) vs precisa (GPS/multilateración). Desde Android 10 necesitas ACCESS_BACKGROUND_LOCATION aparte de fine/coarse si rastreas con la app en segundo plano (y Foreground Service tipo location).
+Un técnico Android en taller combina diagnóstico por software (modo seguro, wipe cache, ADB logcat, reinstalar ROM stock) y hardware (pantalla, batería, puerto USB-C, micrófonos). También gestiona cuentas Google/FRP, transferencias de datos y políticas de garantía del OEM.
 
-Minimiza frecuencia y precisión; muestra justificación en UI y desactiva tracking cuando basta coarse.
+No confundir con desarrollo de apps: se solapan ADB y conocimiento del sistema.
 
 Ejemplo:
-requestPermissions(arrayOf(ACCESS_FINE_LOCATION), 0)
-// Si necesitas background:
-requestPermissions(arrayOf(ACCESS_BACKGROUND_LOCATION), 1)
+Bucle de boot: intentar recovery wipe cache → flashear firmware oficial con herramienta OEM → revisar eMMC UFS en casos graves.
 
 Consejo:
-Data access auditing y permisos temporales (approximate) reducen superficie. Play Console exige declaración detallada de uso de ubicación.
+FRP (Factory Reset Protection) requiere credenciales legítimas; explicar bypass no ético no es objetivo de entrevista dev, pero conocer FRP evita “reparaciones” ilegales.

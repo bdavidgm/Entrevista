@@ -1,0 +1,17 @@
+Concepto:
+Una clase nested declarada dentro de otra no conserva referencia a la instancia exterior; equivale a una clase static anidada de Java. Una clase inner sí mantiene esa referencia y puede acceder a los miembros del objeto exterior.
+
+Ejemplo:
+class Screen(private val title: String) {
+    class Arguments(val id: String)
+
+    inner class Renderer {
+        fun render() = println(title)
+    }
+}
+
+val args = Screen.Arguments("42")
+val renderer = Screen("Perfil").Renderer()
+
+Consejo:
+Prefiere nested. Usa inner solo si necesita realmente el objeto exterior, porque esa referencia también puede prolongar su vida y causar leaks.

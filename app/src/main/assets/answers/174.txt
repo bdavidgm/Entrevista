@@ -1,14 +1,14 @@
 Concepto:
-WorkManager ejecuta trabajo diferible respetando Doze y restricciones de batería; garantiza intentos y persistencia. AlarmManager dispara a una hora concreta o repetición con más control temporal, incluso despertando el dispositivo, pero no es cola de trabajo con reintentos automáticos.
+PackageManager consulta metadatos de apps instaladas: getPackageInfo, resolveActivity, queryIntentActivities, getApplicationInfo, etc. Sirve para comprobar si existe un manejador para un intent, leer versión, permisos declarados o features del dispositivo.
 
-Regla práctica: datos/sync/reporting → WorkManager; despertador/calendario/alarma exacta → AlarmManager (+ permisos recientes).
+Desde Android 11 muchas consultas requieren declarar <queries> en el manifest por visibilidad de paquetes.
 
 Ejemplo:
-// Diferible
-WorkManager.getInstance(ctx).enqueue(OneTimeWorkRequest.from(SyncWorker::class.java))
+val pm = packageManager
+val info = pm.getPackageInfo(packageName, PackageManager.PackageInfoFlags.of(0))
+val versionName = info.versionName
 
-// Exacta (con permisos y buena UX)
-alarmMgr.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, atMillis, pi)
+val canHandle = pm.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY) != null
 
 Consejo:
-Menciona SCHEDULE_EXACT_ALARM y que FGS + ubicación tienen reglas aparte. No uses alarmas exactas para polling de red.
+Si resolveActivity devuelve null, ofrece fallback o mensaje. Declara queries explícitas para evitar listas vacías en Android 11+.

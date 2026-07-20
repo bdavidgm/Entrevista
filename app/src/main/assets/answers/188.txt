@@ -1,11 +1,15 @@
 Concepto:
-AccountManager centraliza cuentas online del usuario (tipo Google, corporativas) y tokens reutilizables entre apps con el consentimiento adecuado. Expone APIs para añadir cuenta, obtener auth token y sincronizar.
+DownloadManager encola descargas HTTP grandes en segundo plano, muestra progreso en la barra de notificaciones y guarda el archivo en un destino público o privado según políticas de almacenamiento. Evita mantener tu propio foreground service solo para descargar.
 
-Muchas apps consumer ya no lo usan directamente: OAuth en WebView/custom tabs o credenciales por app.
+Requiere permisos según destino y versión (INTERNET, notificaciones, a veces WRITE en APIs antiguas).
 
 Ejemplo:
-val am = AccountManager.get(this)
-val accounts = am.getAccountsByType("com.google")
+val request = DownloadManager.Request(Uri.parse("https://cdn.example.com/app.bin"))
+    .setTitle("Actualización")
+    .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+    .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "app.bin")
+
+val id = downloadManager.enqueue(request)
 
 Consejo:
-GET_ACCOUNTS y flujos legacy cambiaron mucho con permisos y scoped access. Para identidad moderna menciona Credential Manager / Sign in with Google.
+Consulta COLUMN_STATUS y COLUMN_REASON con query. Para descargas privadas de la app, a veces OkHttp + archivo en cache es más simple.

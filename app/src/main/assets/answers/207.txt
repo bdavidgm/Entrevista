@@ -1,17 +1,20 @@
 Concepto:
-Retrofit 2.6+ permite declarar endpoints como suspend fun; Retrofit ejecuta la llamada en el dispatcher adecuado y devuelve el resultado o lanza HttpException. Alternativamente, Call.enqueue sigue existiendo para callbacks.
+Retrofit convierte una interfaz HTTP en cliente tipado mediante anotaciones @GET, @POST, @Body, @Query. Se apoya en OkHttp para conexión, interceptores y timeouts, y en un converter (Moshi/Gson) para JSON.
 
-Evita bloquear el hilo principal: suspend ya gestiona la suspensión correctamente.
+Suspend functions o Call/Flow integran bien con corrutinas.
 
 Ejemplo:
-interface GitHubApi {
-    @GET("users/{login}")
-    suspend fun user(@Path("login") login: String): UserDto
+interface Api {
+    @GET("users/{id}")
+    suspend fun user(@Path("id") id: String): UserDto
 }
 
-viewModelScope.launch {
-    try { val u = api.user("octocat") } catch (e: HttpException) { /* 404, 500 */ }
-}
+val retrofit = Retrofit.Builder()
+    .baseUrl("https://api.example.com/")
+    .addConverterFactory(MoshiConverterFactory.create())
+    .client(okHttp)
+    .build()
+    .create(Api::class.java)
 
 Consejo:
-Para manejar errores de red vs HTTP usa runCatching o capa de Result en el repo. withContext(IO) solo si mezclas APIs no suspend.
+Centraliza auth, logging y reintentos en interceptores OkHttp. Usa Response<T> si necesitas leer códigos HTTP sin excepción.

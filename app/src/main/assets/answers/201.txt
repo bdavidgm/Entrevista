@@ -1,16 +1,13 @@
 Concepto:
-RecyclerView recicla filas fuera de pantalla: el Adapter crea ViewHolder y enlaza datos en onBindViewHolder; el LayoutManager coloca ítems (Linear, Grid, Staggered). ListAdapter + DiffUtil automatiza animaciones y diffs.
+RelativeLayout posiciona vistas respecto al padre o a otras vistas (layout_below, layout_toStartOf). Con una sola pasada de medición resolvía casos que en LinearLayout requerían anidación, pero hoy ConstraintLayout lo sustituye casi por completo.
 
-Separar ViewHolder reduce trabajo en scroll.
+Sigue en código legacy; nuevas pantallas rara vez lo eligen.
 
 Ejemplo:
-class UserAdapter : ListAdapter<User, UserVH>(UserDiff) {
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) =
-        UserVH(ItemUserBinding.inflate(LayoutInflater.from(parent.context), parent, false))
-    override fun onBindViewHolder(holder: UserVH, position: Int) {
-        holder.bind(getItem(position))
-    }
-}
+<RelativeLayout android:layout_width="match_parent" android:layout_height="match_parent">
+    <TextView android:id="@+id/title" android:layout_alignParentTop="true" android:layout_centerHorizontal="true"/>
+    <Button android:layout_below="@id/title" android:layout_centerHorizontal="true" android:text="OK"/>
+</RelativeLayout>
 
 Consejo:
-onBindViewHolder debe ser barato: usa payloads, evita allocations y mueve lógica pesada a background. DiffUtil calcula cambios mínimos.
+"Legacy: preferir ConstraintLayout". RelativeLayout anidado vuelve ilegible; ConstraintLayout expresa restricciones con mejor tooling.

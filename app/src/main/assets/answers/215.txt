@@ -1,10 +1,12 @@
 Concepto:
-Firebase App Distribution sube APK/AAB a testers sin pasar por revisión pública de Play: invitaciones por email, notas de release y métricas de instalación. Se integra con Gradle y CI.
+Apollo Kotlin es un cliente GraphQL que genera modelos tipados a partir de los .graphql y ejecuta queries/mutations/subscriptions sobre HTTP/WebSocket. Ofrece caché normalizada, interceptores y adapters multiplataforma.
 
-Útil para QA interno, stakeholders y pruebas rápidas.
+Alternativa a REST+Retrofit cuando el backend es GraphQL.
 
 Ejemplo:
-./gradlew appDistributionUploadRelease
+// query GetUser($id: ID!) definida en .graphql
+val response = apolloClient.query(GetUserQuery(id = "42")).execute()
+response.data?.user?.name
 
 Consejo:
-No sustituye tracks de Play interno/closed testing si necesitas las mismas reglas de firma y integridad que producción. Combina con Crashlytics para feedback.
+Versiona el esquema con el servidor; maneja partial data vs errors según políticas de negocio. Cache policies (NETWORK_FIRST, CACHE_FIRST) afinan offline.

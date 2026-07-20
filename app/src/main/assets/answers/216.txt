@@ -1,10 +1,10 @@
 Concepto:
-AAB (Android App Bundle) es el formato de publicación: Google Play genera APKs optimizados por configuración de dispositivo (ABI, densidad, idioma) reduciendo descarga. Ya no se sube APK monolítico a producción salvo casos especiales.
+Publicar en Play Console implica: cuenta de desarrollador, crear la app, subir AAB firmado, completar ficha de tienda (textos, capturas, clasificación de contenido), declarar permisos sensibles/políticas de privacidad, configurar países y precios, pruebas internas/cerradas/abiertas y revisión de Google.
 
-Bundletool genera splits localmente para pruebas.
+Tras aprobación, releases por fases o completos.
 
 Ejemplo:
-./gradlew bundleRelease → app-release.aab → Play Console.
+bundleRelease → firma con keystore → Play Console → Producción → revisión (horas/días).
 
 Consejo:
-Dynamic feature modules y asset packs solo funcionan con AAB. Guarda el keystore y usa Play App Signing para recuperación de claves.
+Data safety form, política de permisos de ubicación en background y mensajes de promoción in-app son causas frecuentes de rechazo. Planifica rollout por porcentajes.

@@ -1,12 +1,11 @@
 Concepto:
-Apollo Kotlin es un cliente GraphQL que genera modelos tipados a partir de los .graphql y ejecuta queries/mutations/subscriptions sobre HTTP/WebSocket. Ofrece caché normalizada, interceptores y adapters multiplataforma.
+Cloud Firestore es una base de datos de documentos en la nube en tiempo real: colecciones, documentos, consultas indexadas y listeners que emiten cambios. Las reglas de seguridad controlan lectura/escritura por usuario.
 
-Alternativa a REST+Retrofit cuando el backend es GraphQL.
+Alternativa a Realtime Database con modelo de datos más flexible.
 
 Ejemplo:
-// query GetUser($id: ID!) definida en .graphql
-val response = apolloClient.query(GetUserQuery(id = "42")).execute()
-response.data?.user?.name
+Firebase.firestore.collection("users").document(uid).get()
+    .addOnSuccessListener { doc -> println(doc.getString("name")) }
 
 Consejo:
-Versiona el esquema con el servidor; maneja partial data vs errors según políticas de negocio. Cache policies (NETWORK_FIRST, CACHE_FIRST) afinan offline.
+Diseña el esquema para consultas (índices compuestos). Offline persistence está habilitada por defecto en móvil; vigila tamaño de cache.

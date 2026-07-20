@@ -1,14 +1,20 @@
 Concepto:
-La SplashScreen API (Android 12+) unifica la pantalla de arranque: icono animado, fondo y transición a la app. Se configura con tema Theme.SplashScreen y SplashScreen.installSplashScreen() en onCreate antes de super.
+BiometricPrompt es la API unificada para huella, rostro u otros métodos Class 3/2/1 según hardware. Muestra el diálogo del sistema, gestiona intents de bloqueo y sustituye a FingerprintManager deprecado.
 
-Evita pantallas splash duplicadas: la primera ventana ya es la splash del sistema.
+Se configura con BiometricPrompt.PromptInfo (título, subtítulo, allowedAuthenticators).
 
 Ejemplo:
-override fun onCreate(savedInstanceState: Bundle?) {
-    val splash = installSplashScreen()
-    splash.setKeepOnScreenCondition { viewModel.isLoading.value }
-    super.onCreate(savedInstanceState)
-}
+val prompt = BiometricPrompt(this, executor, object : BiometricPrompt.AuthenticationCallback() {
+    override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+        unlockVault()
+    }
+})
+prompt.authenticate(
+    BiometricPrompt.PromptInfo.Builder()
+        .setTitle("Desbloquear")
+        .setNegativeButtonText("Cancelar")
+        .build()
+)
 
 Consejo:
-setKeepOnScreenCondition solo mientras cargas lo mínimo; no bloquees arranque con red síncrona. En versiones antiguas, windowBackground clásico.
+Ofrece fallback con credencial (setDeviceCredentialAllowed o flujo propio). allowedAuthenticators permite exigir hardware fuerte según requisitos de seguridad.

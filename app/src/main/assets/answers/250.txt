@@ -1,0 +1,22 @@
+Concepto:
+El polimorfismo permite tratar objetos distintos mediante un tipo base común y que cada implementación responda de forma diferente. En Kotlin se logra con interfaces o miembros open/abstract sobrescritos; la implementación concreta se elige en runtime.
+
+Ejemplo:
+interface NotificationSender {
+    suspend fun send(message: String)
+}
+
+class PushSender : NotificationSender {
+    override suspend fun send(message: String) { /* FCM */ }
+}
+
+class EmailSender : NotificationSender {
+    override suspend fun send(message: String) { /* SMTP/API */ }
+}
+
+suspend fun notify(sender: NotificationSender) {
+    sender.send("Pedido enviado")
+}
+
+Consejo:
+Depender del contrato, no de la clase concreta, permite cambiar implementaciones y probar con fakes.

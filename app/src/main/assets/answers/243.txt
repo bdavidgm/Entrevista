@@ -1,0 +1,14 @@
+Concepto:
+El constructor primario forma parte de la cabecera de la clase y suele declarar sus propiedades. Los bloques init ejecutan validación o inicialización en el orden en que aparecen. Los constructores secundarios usan constructor y deben delegar al primario con this(...).
+
+Ejemplo:
+class User(val id: String, val name: String) {
+    init {
+        require(id.isNotBlank()) { "id requerido" }
+    }
+
+    constructor(id: String) : this(id, "Sin nombre")
+}
+
+Consejo:
+Prefiere un constructor primario con valores por defecto o factories. Usa secundarios cuando necesites otra forma real de construir la instancia.

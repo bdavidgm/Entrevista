@@ -1,19 +1,10 @@
 Concepto:
-Signing firma el binario para que Play y los dispositivos verifiquen autoría e integridad. Usas un keystore (upload key) que firma el AAB; Play puede gestionar la app signing key de distribución.
+Firebase App Distribution sube APK/AAB a testers sin pasar por revisión pública de Play: invitaciones por email, notas de release y métricas de instalación. Se integra con Gradle y CI.
 
-V1/JAR + V2/APK + V3/v4 esquemas de firma; release debe usar configuración segura.
+Útil para QA interno, stakeholders y pruebas rápidas.
 
 Ejemplo:
-android {
-    signingConfigs {
-        create("release") {
-            storeFile = file("release.keystore")
-            storePassword = System.getenv("STORE_PW")
-            keyAlias = "upload"
-            keyPassword = System.getenv("KEY_PW")
-        }
-    }
-}
+./gradlew appDistributionUploadRelease
 
 Consejo:
-Nunca subas keystore al repo en claro. Play App Signing permite rotación de upload key si pierdes acceso controlado.
+No sustituye tracks de Play interno/closed testing si necesitas las mismas reglas de firma y integridad que producción. Combina con Crashlytics para feedback.

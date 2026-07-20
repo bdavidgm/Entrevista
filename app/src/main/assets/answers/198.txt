@@ -1,13 +1,10 @@
 Concepto:
-LinearLayout apila hijos en vertical u horizontal según android:orientation. Es simple y predecible, pero anidar muchos LinearLayout impacta medición (layout passes profundos).
+Un Task agrupa Activities relacionadas en el recents del usuario; el back stack es la pila LIFO de Activities dentro de ese task. Navegar con startActivity apila; finish o back desapilan. launchMode y taskAffinity alteran cómo se reutilizan instancias.
 
-En XML sigue siendo común; en Compose el equivalente es Column/Row.
+SingleTask/singleInstance cambian qué Activity recibe nuevos intents.
 
 Ejemplo:
-<LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content">
-    <TextView android:text="Título"/>
-    <Button android:text="OK"/>
-</LinearLayout>
+A → B → C (stack [A,B,C]); al pulsar back, C.finish() y vuelves a B.
 
 Consejo:
-Para UIs complejas, ConstraintLayout o Compose reducen anidación. Usa layout_weight en horizontal/vertical para repartir espacio.
+En Compose Navigation el back stack es del NavController, pero el task sigue siendo el contenedor de la Activity. Deep links pueden reordenar stacks.

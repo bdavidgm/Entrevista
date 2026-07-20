@@ -1,12 +1,13 @@
 Concepto:
-Git es control de versiones distribuido: ramas, merges, pull requests, bisect y etiquetas de release. En Android permite colaborar en paralelo, revisar cambios en Gradle/manifestes y revertir regresiones con precisión.
+Kotlin aporta null safety, data classes, extension functions, corrutinas con suspend/Flow, strings templates y sintaxis más expresiva con menos boilerplate que Java. Interopera al 100% con el SDK Android y bibliotecas Java existentes.
 
-Se integra con CI (GitHub Actions, Bitrise) para lint, tests y builds por commit.
+Google recomienda Kotlin como lenguaje preferido para Android nuevo.
 
 Ejemplo:
-git checkout -b feature/login
-git commit -am "Add login screen"
-git push -u origin feature/login
+viewLifecycleOwner.lifecycleScope.launch {
+    val users = withContext(Dispatchers.IO) { api.fetchUsers() }
+    adapter.submitList(users)
+}
 
 Consejo:
-Buenas prácticas: commits pequeños, .gitignore de build/, keystores fuera del repo o cifrados, y conventional commits si el equipo los usa.
+Menciona coroutines frente a callbacks + Executors, y que @Parcelize reduce código repetitivo frente a Parcelable manual en Java.

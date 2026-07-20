@@ -1,15 +1,12 @@
 Concepto:
-NetworkCallback es la interfaz que recibes al registrar un callback en ConnectivityManager (registerDefaultNetworkCallback o registerNetworkCallback). Te avisa cuando cambia la red activa, se pierde o cambian capacidades (validada, medida, VPN).
+FusedLocationProviderClient es la API de Google Play services que unifica fuentes de ubicación y ahorra batería frente a pedir GPS a pelo. Ofrece lastLocation, requestLocationUpdates, getCurrentLocation y settings client para comprobar si el usuario tiene ubicación activada.
 
-Desregistra en onStop/onDestroy para no filtrar el Context.
+Requiere dependencia play-services-location y Google Play en el dispositivo.
 
 Ejemplo:
-val callback = object : ConnectivityManager.NetworkCallback() {
-    override fun onAvailable(network: Network) { _online.value = true }
-    override fun onLost(network: Network) { _online.value = false }
-}
-cm.registerDefaultNetworkCallback(callback)
-// onDestroy: cm.unregisterNetworkCallback(callback)
+val fused = LocationServices.getFusedLocationProviderClient(this)
+fused.getCurrentLocation(Priority.PRIORITY_BALANCED_POWER_ACCURACY, CancellationTokenSource().token)
+    .addOnSuccessListener { /* usar Location */ }
 
 Consejo:
-Combina onCapabilitiesChanged con NET_CAPABILITY_VALIDATED para distinguir “Wi‑Fi con portal cautivo” de Internet real.
+Contrasta con LocationManager del framework para dispositivos sin Play Services. Siempre maneja el caso null (permiso denegado o sin fix aún).

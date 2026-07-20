@@ -1,20 +1,10 @@
 Concepto:
-R8 (sucesor de ProGuard en el Android Gradle Plugin) encoge, optimiza y ofusca el bytecode en release cuando minifyEnabled es true: elimina código no alcanzado, renombra símbolos y aplica optimizaciones. Las reglas en proguard-rules.pro conservan clases usadas por reflexión (Room, Retrofit, Parcelable, serialización JSON).
+AAB (Android App Bundle) es el formato de publicación: Google Play genera APKs optimizados por configuración de dispositivo (ABI, densidad, idioma) reduciendo descarga. Ya no se sube APK monolítico a producción salvo casos especiales.
 
-El mapping.txt enlaza nombres ofuscados con originales: súbelo a Play Console y Crashlytics para stack traces legibles.
+Bundletool genera splits localmente para pruebas.
 
 Ejemplo:
-android {
-    buildTypes {
-        release {
-            isMinifyEnabled = true
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
-        }
-    }
-}
+./gradlew bundleRelease → app-release.aab → Play Console.
 
 Consejo:
-Evita -keep amplio “por si acaso”: anula el shrinker. Añade -dontwarn solo para dependencias opcionales conocidas. Prueba release builds antes de publicar.
+Dynamic feature modules y asset packs solo funcionan con AAB. Guarda el keystore y usa Play App Signing para recuperación de claves.

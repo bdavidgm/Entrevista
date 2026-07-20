@@ -1,10 +1,19 @@
 Concepto:
-Un roadmap Android (por ejemplo roadmap.sh) ordena el aprendizaje en bloques: lenguaje (Kotlin), componentes y ciclo de vida, UI (Views o Compose), arquitectura (MVVM, Repository, DI), datos (Room, Retrofit, DataStore), concurrencia (corrutinas, Flow), calidad (tests, Lint, CI) y publicación (AAB, Play Console, R8).
+Signing firma el binario para que Play y los dispositivos verifiquen autoría e integridad. Usas un keystore (upload key) que firma el AAB; Play puede gestionar la app signing key de distribución.
 
-Sirve como mapa, no como lista cerrada: se consolida con proyectos reales por fases.
+V1/JAR + V2/APK + V3/v4 esquemas de firma; release debe usar configuración segura.
 
 Ejemplo:
-Plan trimestral: (1) lista con Compose+Room → (2) capa red+Hilt → (3) tests de ViewModel+UI → (4) release en pista interna.
+android {
+    signingConfigs {
+        create("release") {
+            storeFile = file("release.keystore")
+            storePassword = System.getenv("STORE_PW")
+            keyAlias = "upload"
+            keyPassword = System.getenv("KEY_PW")
+        }
+    }
+}
 
 Consejo:
-En entrevista enlaza cada tema con algo que hayas construido o medido (Profiler, Vitals). Profundiza donde el puesto lo exija (performance, modularización, seguridad).
+Nunca subas keystore al repo en claro. Play App Signing permite rotación de upload key si pierdes acceso controlado.

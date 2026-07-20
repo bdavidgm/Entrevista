@@ -1,12 +1,15 @@
 Concepto:
-getSystemService(Class) devuelve el servicio del sistema tipado (ConnectivityManager, AlarmManager, ClipboardManager, etc.) asociado al Context. Es la forma recomendada frente a getSystemService(String) con cast manual.
+MediaStore es el ContentProvider del sistema para imágenes, vídeo y audio en almacenamiento compartido. Expone URIs y columnas estándar; accedes vía ContentResolver. En Android 10+ con scoped storage es la vía principal para bibliotecas multimedia sin permisos de almacenamiento amplio.
 
-Cada servicio encapsula hardware o políticas del sistema.
+Scoped access: lee/escribe con URIs y permisos granulares (READ_MEDIA_* / pick visual media).
 
 Ejemplo:
-val cm = getSystemService(ConnectivityManager::class.java)
-val nm = getSystemService(NotificationManager::class.java)
-val imm = getSystemService(InputMethodManager::class.java)
+val values = ContentValues().apply {
+    put(MediaStore.Images.Media.DISPLAY_NAME, "foto_${System.currentTimeMillis()}.jpg")
+    put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+}
+val uri = contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+contentResolver.openOutputStream(uri!!)?.use { /* escribir JPEG */ }
 
 Consejo:
-Usa ContextCompat o applicationContext cuando el servicio no dependa de la Activity. Algunos servicios requieren API mínima: comprueba versiones.
+Usa Photo Picker cuando baste con selección de medios sin permisos amplios. Relaciona con SAF para carpetas arbitrarias.

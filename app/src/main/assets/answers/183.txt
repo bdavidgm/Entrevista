@@ -1,20 +1,15 @@
 Concepto:
-BiometricPrompt es la API unificada para huella, rostro u otros métodos Class 3/2/1 según hardware. Muestra el diálogo del sistema, gestiona intents de bloqueo y sustituye a FingerprintManager deprecado.
+InputMethodManager controla el teclado software: showSoftInput, hideSoftInputFromWindow y toggleSoftInput. Se usa típicamente desde un EditText o para cerrar teclado al enviar un formulario.
 
-Se configura con BiometricPrompt.PromptInfo (título, subtítulo, allowedAuthenticators).
+En Compose, KeyboardOptions/Actions y el foco gestionan buena parte del flujo.
 
 Ejemplo:
-val prompt = BiometricPrompt(this, executor, object : BiometricPrompt.AuthenticationCallback() {
-    override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
-        unlockVault()
-    }
-})
-prompt.authenticate(
-    BiometricPrompt.PromptInfo.Builder()
-        .setTitle("Desbloquear")
-        .setNegativeButtonText("Cancelar")
-        .build()
-)
+val imm = getSystemService(InputMethodManager::class.java)
+editText.requestFocus()
+imm.showSoftInput(editText, InputMethodManager.SHOW_IMPLICIT)
+
+// Ocultar
+imm.hideSoftInputFromWindow(editText.windowToken, 0)
 
 Consejo:
-Ofrece fallback con credencial (setDeviceCredentialAllowed o flujo propio). allowedAuthenticators permite exigir hardware fuerte según requisitos de seguridad.
+En ventanas decoradas usa WindowInsetsControllerCompat cuando trabajes con edge-to-edge. Evita forzar show/hide en bucle.

@@ -1,0 +1,21 @@
+Concepto:
+Herencia expresa una relación «es un» y acopla la subclase al comportamiento del padre. Composición expresa «tiene un»: una clase recibe colaboradores y delega en ellos. Suele ser más flexible porque puedes sustituir piezas sin alterar una jerarquía.
+
+Ejemplo:
+interface Engine {
+    fun start()
+}
+
+class ElectricEngine : Engine {
+    override fun start() = println("Motor eléctrico")
+}
+
+class Car(private val engine: Engine) {
+    fun drive() {
+        engine.start()
+        println("En marcha")
+    }
+}
+
+Consejo:
+Prefiere composición para reutilizar comportamiento. Usa herencia cuando exista una relación estable y el subtipo cumpla completamente el contrato del padre.

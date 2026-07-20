@@ -1,0 +1,18 @@
+Concepto:
+La programación orientada a objetos organiza el software alrededor de objetos que combinan estado y comportamiento. Sus cuatro pilares son: encapsulación (proteger el estado), abstracción (mostrar solo lo necesario), herencia (especializar un tipo) y polimorfismo (usar distintas implementaciones mediante un contrato común).
+
+Kotlin soporta POO, pero también favorece composición, funciones de orden superior e inmutabilidad.
+
+Ejemplo:
+interface Shape {
+    fun area(): Double
+}
+
+class Circle(private val radius: Double) : Shape {
+    override fun area() = Math.PI * radius * radius
+}
+
+fun printArea(shape: Shape) = println(shape.area())
+
+Consejo:
+No fuerces todo a una jerarquía. Usa objetos cuando estado y comportamiento pertenezcan juntos; para reutilizar comportamiento suele ser preferible composición.

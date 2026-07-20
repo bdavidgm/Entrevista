@@ -1,12 +1,15 @@
 Concepto:
-CameraX es la capa Jetpack sobre Camera2 con casos de uso (Preview, ImageCapture, ImageAnalysis) y bindToLifecycle, que abre/cierra la cámara según STARTED/STOPPED. Oculta buena parte de la complejidad OEM y unifica comportamiento.
+NetworkCallback es la interfaz que recibes al registrar un callback en ConnectivityManager (registerDefaultNetworkCallback o registerNetworkCallback). Te avisa cuando cambia la red activa, se pierde o cambian capacidades (validada, medida, VPN).
 
-Incluye extensiones opcionales (HDR, noche) si el dispositivo las soporta.
+Desregistra en onStop/onDestroy para no filtrar el Context.
 
 Ejemplo:
-val cameraProvider = ProcessCameraProvider.getInstance(context).get()
-val preview = Preview.Builder().build().also { it.setSurfaceProvider(surfaceProvider) }
-cameraProvider.bindToLifecycle(lifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA, preview)
+val callback = object : ConnectivityManager.NetworkCallback() {
+    override fun onAvailable(network: Network) { _online.value = true }
+    override fun onLost(network: Network) { _online.value = false }
+}
+cm.registerDefaultNetworkCallback(callback)
+// onDestroy: cm.unregisterNetworkCallback(callback)
 
 Consejo:
-Menciona ImageAnalysis para ML/QR y que Camera2 directo sigue existiendo para control fino. En Compose envuelve PreviewView con AndroidView.
+Combina onCapabilitiesChanged con NET_CAPABILITY_VALIDATED para distinguir “Wi‑Fi con portal cautivo” de Internet real.

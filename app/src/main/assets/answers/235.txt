@@ -1,11 +1,11 @@
 Concepto:
-El modelo de almacenamiento evolucionó hacia scoped storage: apps tienen directorio privado sin permisos; medios compartidos vía MediaStore o SAF; MANAGE_EXTERNAL_STORAGE es excepción rara y auditada por Play. READ_EXTERNAL_STORAGE está segmentado en READ_MEDIA_IMAGES/VIDEO/AUDIO en Android 13+.
+Tipos de permisos en Android: normales (solo manifest, bajo riesgo: INTERNET), peligrosos/dangerous (runtime: cámara, micrófono, SMS), especiales (WRITE_SETTINGS, MANAGE_EXTERNAL_STORAGE, PACKAGE_USAGE_STATS, SCHEDULE_EXACT_ALARM…) y por instalación (notification en 13+, nearby en 12+).
 
-No uses rutas absolutas /sdcard arbitrarias.
+Cada categoría tiene flujo y políticas de Play Console distintos.
 
 Ejemplo:
-val uri = MediaStore.Downloads.EXTERNAL_CONTENT_URI
-contentResolver.query(uri, projection, bundle, null)
+<uses-permission android:name="android.permission.CAMERA"/>
+ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA), REQ)
 
 Consejo:
-Photo Picker y SAF reducen permisos. Si solo exportas archivo propio, usa FileProvider para compartir URI segura.
+Declara el permiso mínimo (fine vs coarse location). Para APIs especiales guía al usuario a la pantalla de Ajustes con intents de settings.

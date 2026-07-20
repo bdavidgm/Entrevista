@@ -1,11 +1,13 @@
 Concepto:
-Cloud Firestore es una base de datos de documentos en la nube en tiempo real: colecciones, documentos, consultas indexadas y listeners que emiten cambios. Las reglas de seguridad controlan lectura/escritura por usuario.
+Firebase Authentication ofrece login con email/contraseña, teléfono (SMS), Google, Facebook, etc., gestionando tokens y refresco en el SDK. Los datos de perfil viven en Firebase; tu backend puede verificar ID tokens JWT.
 
-Alternativa a Realtime Database con modelo de datos más flexible.
+Se integra con UI de login y reglas de seguridad en otras piezas de Firebase.
 
 Ejemplo:
-Firebase.firestore.collection("users").document(uid).get()
-    .addOnSuccessListener { doc -> println(doc.getString("name")) }
+Firebase.auth.signInWithEmailAndPassword(email, pass)
+    .addOnCompleteListener { task ->
+        if (task.isSuccessful) navigateHome()
+    }
 
 Consejo:
-Diseña el esquema para consultas (índices compuestos). Offline persistence está habilitada por defecto en móvil; vigila tamaño de cache.
+Nunca confíes solo en el cliente: valida tokens en servidor con las claves públicas de Google. Habilita verificación de email y rate limits donde aplique.

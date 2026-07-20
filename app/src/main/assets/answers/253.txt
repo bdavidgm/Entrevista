@@ -1,0 +1,18 @@
+Concepto:
+equals determina igualdad lógica y hashCode ubica objetos en colecciones hash. Si a == b es true, ambos deben producir el mismo hashCode. Si sobrescribes uno, debes sobrescribir el otro; sus resultados deben basarse en los mismos campos estables.
+
+Las data class generan ambos correctamente a partir de las propiedades del constructor primario.
+
+Ejemplo:
+class User(val id: String, val name: String) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is User && id == other.id)
+
+    override fun hashCode(): Int = id.hashCode()
+}
+
+val users = hashSetOf(User("1", "Ana"))
+check(User("1", "Otro nombre") in users)
+
+Consejo:
+No uses propiedades mutables en hashCode mientras el objeto esté dentro de HashSet o como clave de HashMap.

@@ -1,0 +1,12 @@
+Concepto:
+Además de los “peligrosos” clásicos, existen permisos especiales concedidos solo desde Ajustes: SYSTEM_ALERT_WINDOW (overlay), WRITE_SETTINGS, PACKAGE_USAGE_STATS, REQUEST_INSTALL_PACKAGES, MANAGE_EXTERNAL_STORAGE, ACCESS_NOTIFICATION_POLICY, SCHEDULE_EXACT_ALARM / USE_EXACT_ALARM, QUERY_ALL_PACKAGES (muy restringido en Play), etc.
+
+Suelen abrir Settings.ACTION_* con startActivityForResult.
+
+Ejemplo:
+if (!Settings.canDrawOverlays(this)) {
+    startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName")))
+}
+
+Consejo:
+Play Console pide video y justificación para permisos sensibles. Muchos especiales son señal de malware si se abusan: documenta el caso de uso real del producto.

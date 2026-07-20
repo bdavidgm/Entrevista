@@ -1,13 +1,17 @@
 Concepto:
-Firebase Authentication ofrece login con email/contraseña, teléfono (SMS), Google, Facebook, etc., gestionando tokens y refresco en el SDK. Los datos de perfil viven en Firebase; tu backend puede verificar ID tokens JWT.
+Retrofit 2.6+ permite declarar endpoints como suspend fun; Retrofit ejecuta la llamada en el dispatcher adecuado y devuelve el resultado o lanza HttpException. Alternativamente, Call.enqueue sigue existiendo para callbacks.
 
-Se integra con UI de login y reglas de seguridad en otras piezas de Firebase.
+Evita bloquear el hilo principal: suspend ya gestiona la suspensión correctamente.
 
 Ejemplo:
-Firebase.auth.signInWithEmailAndPassword(email, pass)
-    .addOnCompleteListener { task ->
-        if (task.isSuccessful) navigateHome()
-    }
+interface GitHubApi {
+    @GET("users/{login}")
+    suspend fun user(@Path("login") login: String): UserDto
+}
+
+viewModelScope.launch {
+    try { val u = api.user("octocat") } catch (e: HttpException) { /* 404, 500 */ }
+}
 
 Consejo:
-Nunca confíes solo en el cliente: valida tokens en servidor con las claves públicas de Google. Habilita verificación de email y rate limits donde aplique.
+Para manejar errores de red vs HTTP usa runCatching o capa de Result en el repo. withContext(IO) solo si mezclas APIs no suspend.

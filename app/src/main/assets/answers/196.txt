@@ -1,10 +1,10 @@
 Concepto:
-Un Task agrupa Activities relacionadas en el recents del usuario; el back stack es la pila LIFO de Activities dentro de ese task. Navegar con startActivity apila; finish o back desapilan. launchMode y taskAffinity alteran cómo se reutilizan instancias.
+Estructuras de datos y algoritmos sirven para razonar sobre complejidad (listas vs mapas, búsqueda binaria), evitar trabajo innecesario en el hilo principal y resolver entrevistas técnicas. En Android impacta RecyclerView (DiffUtil), caches LRU, grafos de dependencias y parsing.
 
-SingleTask/singleInstance cambian qué Activity recibe nuevos intents.
+No hace falta competir en competitive programming, sí dominar listas, mapas, sets y complejidad básica O(n).
 
 Ejemplo:
-A → B → C (stack [A,B,C]); al pulsar back, C.finish() y vuelves a B.
+Usar Map<id, User> para lookup O(1) en lugar de buscar en List O(n) por cada render.
 
 Consejo:
-En Compose Navigation el back stack es del NavController, pero el task sigue siendo el contenedor de la Activity. Deep links pueden reordenar stacks.
+Relaciona con ANR/jank: algoritmos cuadráticos en listas grandes en main thread son un antipatrón clásico.

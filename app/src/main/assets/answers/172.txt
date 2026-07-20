@@ -1,14 +1,12 @@
 Concepto:
-PackageManager consulta metadatos de apps instaladas: getPackageInfo, resolveActivity, queryIntentActivities, getApplicationInfo, etc. Sirve para comprobar si existe un manejador para un intent, leer versión, permisos declarados o features del dispositivo.
+CameraX es la capa Jetpack sobre Camera2 con casos de uso (Preview, ImageCapture, ImageAnalysis) y bindToLifecycle, que abre/cierra la cámara según STARTED/STOPPED. Oculta buena parte de la complejidad OEM y unifica comportamiento.
 
-Desde Android 11 muchas consultas requieren declarar <queries> en el manifest por visibilidad de paquetes.
+Incluye extensiones opcionales (HDR, noche) si el dispositivo las soporta.
 
 Ejemplo:
-val pm = packageManager
-val info = pm.getPackageInfo(packageName, PackageManager.PackageInfoFlags.of(0))
-val versionName = info.versionName
-
-val canHandle = pm.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY) != null
+val cameraProvider = ProcessCameraProvider.getInstance(context).get()
+val preview = Preview.Builder().build().also { it.setSurfaceProvider(surfaceProvider) }
+cameraProvider.bindToLifecycle(lifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA, preview)
 
 Consejo:
-Si resolveActivity devuelve null, ofrece fallback o mensaje. Declara queries explícitas para evitar listas vacías en Android 11+.
+Menciona ImageAnalysis para ML/QR y que Camera2 directo sigue existiendo para control fino. En Compose envuelve PreviewView con AndroidView.

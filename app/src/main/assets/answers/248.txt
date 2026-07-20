@@ -1,0 +1,20 @@
+Concepto:
+Una clase abstracta puede tener constructor, estado y miembros implementados o abstractos, pero solo se hereda de una clase. Una interfaz define un contrato, puede aportar implementaciones por defecto y una clase puede implementar varias; no almacena estado con backing field.
+
+Ejemplo:
+abstract class BaseRepository(protected val api: Api) {
+    abstract suspend fun refresh()
+}
+
+interface Cacheable {
+    fun clearCache()
+    fun isCacheEnabled() = true
+}
+
+class UserRepository(api: Api) : BaseRepository(api), Cacheable {
+    override suspend fun refresh() { /* ... */ }
+    override fun clearCache() { /* ... */ }
+}
+
+Consejo:
+Usa interfaz para capacidades y desacoplamiento; clase abstracta cuando las implementaciones comparten estado o inicialización.

@@ -1,14 +1,15 @@
 Concepto:
-Para saber si hay red usable se usa ConnectivityManager: activeNetwork + getNetworkCapabilities o, mejor, registerDefaultNetworkCallback para recibir onAvailable/onLost/onCapabilitiesChanged. NET_CAPABILITY_VALIDATED indica Internet real (no solo Wi‑Fi asociado sin portal).
+La ubicación se obtiene con FusedLocationProviderClient (Google Play services), que fusiona GPS, red y sensores. Pide permisos ACCESS_FINE_LOCATION / ACCESS_COARSE_LOCATION (y BACKGROUND desde Android 10 si necesitas ubicación con app en segundo plano).
 
-El permiso ACCESS_NETWORK_STATE es normal (manifest).
+Para apps modernas usa el contrato de permisos y comprueba si el usuario eligió “precisa” o “aproximada”.
 
 Ejemplo:
-val cm = getSystemService(ConnectivityManager::class.java)
-val online = cm.activeNetwork?.let { net ->
-    cm.getNetworkCapabilities(net)
-        ?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) == true
-} == true
+fused.lastLocation.addOnSuccessListener { loc ->
+    loc?.let { println("${it.latitude},${it.longitude}") }
+}
+
+val request = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 10_000).build()
+fused.requestLocationUpdates(request, callback, Looper.getMainLooper())
 
 Consejo:
-No uses APIs deprecadas tipo NetworkInfo. Para políticas de sync, WorkManager Constraints.setRequiredNetworkType es la integración natural.
+Menciona justificación en UI, intervalos de muestreo y Foreground Service + tipo location si rastreas en background. Alternativa sin GMS: LocationManager.
