@@ -15,5 +15,9 @@ class Converters {
 @TypeConverters(Converters::class)
 abstract class AppDb : RoomDatabase()
 
+
+ExplicaciónKotlin:
+`class Converters` es clase normal con funciones marcadas `@TypeConverter`; Room las invoca por reflexión/generación. `fromDate(value: Long?): Date?` acepta nullable y usa `value?.let(::Date)` — safe call más referencia al constructor `Date` como función (`::Date` es callable reference equivalente a `{ millis -> Date(millis) }`). `toDate(date: Date?): Long?` usa propiedad `time` de `Date`. `fromTags` combina Elvis `?: emptyList()` para devolver lista vacía cuando el string es null; `split(",")` devuelve `List<String>`. `toTags` usa `joinToString(",")` sobre `List<String>`. `@Database(entities = [Note::class], version = 1)` pasa array de clases KClass con literal `Note::class`. `abstract class AppDb : RoomDatabase()` hereda de clase base generada; Kotlin exige `abstract` porque Room implementa métodos concretos.
+
 Consejo:
 Mantén los conversores pequeños y deterministas. Para JSON evita acoplarte al parser dentro del converter: extrae la lógica para poder testearla aislada.

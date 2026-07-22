@@ -13,5 +13,8 @@ val javaType = Dog::class.java     // Class<Dog>
 
 val intent = Intent(context, DetailActivity::class.java)
 
+ExplicaciónKotlin:
+`open class Animal` permite subclases; `class Dog : Animal()` hereda con constructor vacío implícito. `val animal: Animal = Dog()` demuestra polimorfismo: tipo declarado `Animal`, runtime `Dog`. `Animal::class` devuelve `KClass<Animal>` del tipo estático declarado, no el runtime. `animal::class` obtiene `KClass<out Animal>` reflejando clase real (`Dog`); útil en logging o serializers. `Dog::class.java` convierte KClass a `Class<Dog>` Java requerido por APIs legacy. `Intent(context, DetailActivity::class.java)` es patrón estándar Activities: segunda parameter es `Class<?>`. Alternativa Kotlin pura: `DetailActivity::class` en APIs que acepten KClass. `javaClass` en instancia (`animal.javaClass`) equivale a `animal::class.java`. Variance `out` en KClass refleja que subtipo es válido donde se espera base.
+
 Consejo:
 Usa ::class en APIs Kotlin y ::class.java cuando una API Java solicite Class<T>. javaClass también obtiene la clase runtime de una instancia.

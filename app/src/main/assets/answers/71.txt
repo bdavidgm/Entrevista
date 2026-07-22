@@ -12,5 +12,8 @@ interface UserDao {
     @Delete suspend fun delete(user: User)
 }
 
+ExplicaciónKotlin:
+@Dao interface UserDao define operaciones sin implementación manual. @Query("SELECT * FROM User WHERE id = :id") suspend fun byId(id: String): User? devuelve nullable User: el ? indica que puede no existir fila; :id en SQL vincula parámetro id. observeAll(): Flow<List<User>> contrasta con suspend byId: Flow para observación continua. @Upsert suspend fun upsert(user: User) usa anotación agregada de Room. @Delete suspend fun delete(user: User) recibe entidad completa. Todas las funciones de escritura son suspend; las lecturas puntual suspend y la observación Flow. interface sin cuerpo es válido en Kotlin; Room genera implementación. Parámetros nombrados implícitos en @Query con sintaxis :nombre.
+
 Consejo:
 "DAO = interfaz que Room implementa". Recuerda que las queries se verifican en compile-time y que los Flow se reemiten al cambiar la tabla.

@@ -13,5 +13,9 @@ class Analytics(private val context: Context) {
 val service = context.getSystemService(Context.CONNECTIVITY_SERVICE)
         as ConnectivityManager
 
+
+ExplicaciónKotlin:
+`class Analytics(private val context: Context)` — constructor primario con Context Android. `fun log(event: String)` recibe string. `context.applicationContext` accede getter que retorna Context de aplicación (seguro almacenar vs Activity). `val service = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager` — `getSystemService` retorna `Any?`; cast inseguro `as` a tipo concreto (preferible `as?` o getSystemService tipado en API moderna). `Context.CONNECTIVITY_SERVICE` constante string. Interop Java/Android desde Kotlin: Context es clase Android, no Kotlin stdlib. Memory leak si se guardara `context` de Activity en singleton.
+
 Consejo:
 "Usa applicationContext para singletons; Activity context solo para UI/diálogos". Memory leak clásico: guardar this de una Activity en un objeto estático.

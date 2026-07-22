@@ -34,5 +34,9 @@ class DiscountTest {
     }
 }
 
+
+ExplicaciónKotlin:
+`class DiscountTest` define una clase de prueba JUnit en Kotlin; no requiere modificador `public` porque la visibilidad por defecto es pública a nivel de módulo. `@Test` anota el método `applies ten percent`, cuyo identificador entre backticks es válido en Kotlin y se lee como frase en español/inglés. La función invoca `calculateDiscount(100, 0.10)`, donde `100` es `Int` y `0.10` es `Double`; Kotlin promueve o exige tipos compatibles según la firma. `assertEquals(90.0, result, 0.001)` es la sobrecarga para `Double` con delta de tolerancia por precisión de coma flotante. No hay `runTest` porque la función bajo prueba no es `suspend`; es lógica pura JVM. El patrón es unit test clásico: Arrange (entrada 100, 10%), Act (llamada), Assert (resultado 90.0).
+
 Consejo para entrevista:
 Menciona runTest y reglas Android. Diferencia JUnit test vs androidTest source set.

@@ -22,5 +22,8 @@ val message = with(StringBuilder()) {
     toString()
 }
 
+ExplicaciónKotlin:
+`Intent(context, Detail::class.java).apply { ... }` crea un Intent y lo configura con `apply`: dentro del bloque `this` es el Intent, permitiendo llamar `putExtra` y asignar `flags` sin repetir la variable; `apply` devuelve el Intent configurado. `Detail::class.java` obtiene la clase Java a partir de la KClass de Kotlin. `user?.name?.let { it.trim().length }` encadena safe calls y transforma con `let`, devolviendo `Int?`. `with(StringBuilder()) { ... }` no es extension del builder sino función estándar que recibe el objeto como argumento y ejecuta un lambda con receptor (`StringBuilder.() -> Unit`): `append` y `toString()` se resuelven sobre `this` implícito; `with` devuelve el resultado del bloque (`String`). Cada scope function se elige según si necesitas el receptor como `this` o `it`, y si quieres devolver el objeto o el resultado de la transformación.
+
 Consejo:
 Elige la scope function por intención: apply/also si quieres seguir usando el objeto; let/run si quieres transformarlo. apply para configurar, also para side effects, let para nullable-safe.

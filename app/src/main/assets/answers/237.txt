@@ -7,5 +7,8 @@ Ejemplo:
 val uri = MediaStore.Downloads.EXTERNAL_CONTENT_URI
 contentResolver.query(uri, projection, bundle, null)
 
+ExplicaciónKotlin:
+`val uri = MediaStore.Downloads.EXTERNAL_CONTENT_URI` declara una propiedad con inferencia de tipo `Uri`, constante del content provider de descargas en scoped storage. `contentResolver` es propiedad heredada de `Context` para acceder a providers sin rutas absolutas `/sdcard`. `.query(uri, projection, bundle, null)` usa la sobrecarga moderna con `Bundle` de selección (API 30+); `projection` sería `arrayOf(...)` de columnas y el último `null` es `CancellationSignal` opcional. Kotlin permite pasar null explícito donde el parámetro Java es nullable. No se pide `READ_EXTERNAL_STORAGE` para leer archivos propios vía MediaStore en muchos casos, alineado con scoped storage. Para escribir, usarías `ContentValues()` y `contentResolver.insert(...)`. `FileProvider` complementa compartir URIs seguras con `Intent` y flags `FLAG_GRANT_READ_URI_PERMISSION`. Este snippet muestra acceso declarativo a almacenamiento compartido sin APIs de archivo directo deprecadas.
+
 Consejo:
 Photo Picker y SAF reducen permisos. Si solo exportas archivo propio, usa FileProvider para compartir URI segura.

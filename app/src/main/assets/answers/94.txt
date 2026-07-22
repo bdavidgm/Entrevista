@@ -36,5 +36,9 @@ fun onClick() = lifecycleScope.launch {
     textView.text = json
 }
 
+
+ExplicaciónKotlin:
+El ejemplo "Mal" muestra función `onClick()` regular (no suspend) que llama `URL(url).readText()`: operación bloqueante de red en Main. `textView.text = json` muta la vista desde el mismo hilo. El ejemplo "Bien" usa `fun onClick() = lifecycleScope.launch { }`: expresión de cuerpo único donde `launch` devuelve `Job` y la función devuelve ese Job implícitamente. `lifecycleScope` es extensión de `LifecycleOwner` cancelada al destruir el lifecycle. `withContext(Dispatchers.IO) { api.fetch() }` cambia a pool IO para trabajo bloqueante; `api.fetch()` presumiblemente es `suspend` o bloqueante envuelto. Tras `withContext`, la corrutina vuelve a Main (dispatcher de lanzamiento en Android), permitiendo `textView.text = json` de forma segura. `Dispatchers.IO` y `Dispatchers.Main` son singletons del objeto `Dispatchers`.
+
 Consejo para entrevista:
 Menciona 16ms frame budget y ANR. Herramientas: StrictMode, Profiler. Compose: no parses JSON en @Composable body.

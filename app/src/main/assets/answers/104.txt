@@ -40,5 +40,9 @@ fun requestCamera() {
     }
 }
 
+
+ExplicaciónKotlin:
+`rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted -> ... }` es API Compose que registra contrato de Activity Result; la lambda `{ granted -> }` recibe `Boolean` con resultado. `rememberLauncher` persiste el launcher entre recomposiciones. `fun requestCamera()` usa `when` sin argumento como sustituto de if-else encadenado (estilo Kotlin idiomático). `ContextCompat.checkSelfPermission(ctx, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED` compara enteros de estado. `Manifest.permission.CAMERA` es constante string del manifest mergeado. `launcher.launch(Manifest.permission.CAMERA)` dispara diálogo del sistema. `startCamera()` y `showPermissionDenied()` serían funciones locales o métodos del composable scope. El patrón combina nullable safety, expresión `when`, y lambdas trailing en Compose.
+
 Consejo para entrevista:
 Normal vs dangerous, runtime, rationale, granular Android 13+. Menciona política Play para background location.

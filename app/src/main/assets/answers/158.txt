@@ -14,5 +14,9 @@ for ((key, value) in mapOf("a" to 1, "b" to 2)) {
 
 val (success, error) = repository.load()
 
+
+ExplicaciónKotlin:
+`data class User(val id: String, val name: String)` genera `component1()` y `component2()` automáticamente. `val (id, name) = user` es declaración destructuring que descompone en dos `val` inmutables siguiendo orden de propiedades del constructor. `for ((key, value) in mapOf("a" to 1, "b" to 2))` itera entradas de mapa: `mapOf` crea mapa inmutable y `to` construye `Pair`; el loop desestructura cada `Map.Entry`. `val (success, error) = repository.load()` supone que `load()` devuelve tipo con `component1` y `component2` (Pair, data class o custom). El guion bajo `_` podría ignorar componentes no usados. Destructuring es azúcar sintáctico sobre funciones `componentN` del operador.
+
 Consejo:
 Las variables se asignan por posición, no por nombre. Si solo necesitas algunas, usa _ para ignorar: val (_, name) = user.

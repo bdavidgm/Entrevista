@@ -14,5 +14,8 @@ class User(val id: String, val name: String) {
 val users = hashSetOf(User("1", "Ana"))
 check(User("1", "Otro nombre") in users)
 
+ExplicaciónKotlin:
+`override fun equals(other: Any?): Boolean = this === other || (other is User && id == other.id)` implementa igualdad por identificador: primero referencia (`===`), luego type check smart cast `other is User` y comparación de `id`. Parámetro `Any?` nullable porque cualquier objeto puede compararse. `override fun hashCode(): Int = id.hashCode()` debe ser consistente con equals (mismo campo `id`). `hashSetOf(User("1", "Ana"))` crea `HashSet` Kotlin backed por Java hash. `User("1", "Otro nombre") in users` usa operador `in` que traduce a `contains`, válido porque equals ignora `name`. Si `name` fuera mutable y participara en hashCode, mutar tras insert rompería el set. `data class User(val id: String, val name: String)` generaría equals/hashCode/toString/copy automáticamente. Manual override útil cuando igualdad de negocio difiere de todas las propiedades.
+
 Consejo:
 No uses propiedades mutables en hashCode mientras el objeto esté dentro de HashSet o como clave de HashMap.

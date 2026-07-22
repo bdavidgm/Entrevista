@@ -14,5 +14,8 @@ class Prefs(prefs: SharedPreferences) {
     var token: String? by prefs.string("token")
 }
 
+ExplicaciónKotlin:
+`val name: String by lazy { computeExpensiveName() }` delega la inicialización: el getter ejecuta la lambda una sola vez (thread-safe por defecto) y cachea el resultado; `name` es `val` porque la referencia no cambia, solo se retrasa su cálculo. `var age: Int by Delegates.observable(0) { _, old, new -> ... }` usa el delegado de la stdlib que invoca el callback tras cada cambio; los parámetros `_`, `old`, `new` son convención para valor anterior y nuevo. La clase `Prefs` recibe `SharedPreferences` en el constructor primario. `var token: String? by prefs.string("token")` usa un delegado personalizado (patrón común en Android): `by` enlaza get/set a funciones `getValue`/`setValue` del delegate, aquí tipado como anulable. La sintaxis `by` separa la API pública de la lógica de almacenamiento.
+
 Consejo:
 Distingue propiedades delegadas (by Delegate()) de delegación de clases (class A : I by impl). Menciona delegados comunes en Android.

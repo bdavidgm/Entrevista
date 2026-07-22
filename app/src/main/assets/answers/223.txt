@@ -16,5 +16,8 @@ class LocationService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 }
 
+ExplicaciónKotlin:
+`LocationService : Service()` usa herencia de la clase Java `Service`; en Kotlin el constructor del padre se invoca sin `()` explícito si no hay argumentos. `override fun onStartCommand(...)` reemplaza el método Java con la misma firma; el retorno `Int` será una constante como `START_STICKY` importada estáticamente. `NotificationCompat.Builder(this, CHANNEL_ID)` recibe el `Context` del servicio como receptor; `CHANNEL_ID` debería ser una constante `companion object` o top-level en Kotlin. El encadenamiento `.setSmallIcon(...).setContentTitle(...).build()` aplica el patrón builder común en APIs Android. `startForeground(NOTIF_ID, notif)` es obligatorio tras `startForegroundService` en el cliente. `onBind` devuelve `null` con expresión de una sola línea (`= null`), indicando que este servicio no es bound. Los tipos nullable `Intent?` e `IBinder?` reflejan que Android puede pasar null en edge cases. Declarar `foregroundServiceType` ocurre en el manifest XML, no en este Kotlin, pero el código asume ese contrato.
+
 Consejo:
 "Visible + notificación obligatoria + foregroundServiceType". A partir de Android 14 hay restricciones aún más estrictas para iniciar foreground services desde background.

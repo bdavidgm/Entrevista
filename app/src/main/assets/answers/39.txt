@@ -18,5 +18,8 @@ Ejemplo:
         android:layout_height="wrap_content"/>
 </LinearLayout>
 
+ExplicaciónKotlin:
+El bloque principal es XML de layouts Android (Views clásicas), no Kotlin: define un `LinearLayout` contenedor con `TextView` y `Button` hijos. En un proyecto Kotlin, este XML se inflaría con `ActivityMainBinding.inflate(...)` o `R.layout.*` desde una Activity/Fragment escrita en Kotlin. Las clases `TextView`, `Button` y `LinearLayout` son vistas del framework referenciadas por nombre en XML; Kotlin accede a ellas tras inflado mediante findViewById o View Binding generado. El comentario `// Compose` introduce la alternativa moderna en Kotlin puro: `Text("Hola", fontSize = 16.sp)` usa función composable con parámetro nombrado, y `Spacer(Modifier.height(12.dp))` aplica extensiones `sp`/`dp` del paquete Compose UI. Así el ejemplo contrasta XML declarativo (Views) con UI 100 % Kotlin (Compose).
+
 Consejo:
 ViewGroup = contenedor; View = nodo hoja. Menciona que árboles muy profundos perjudican el rendimiento (ConstraintLayout para aplanar).

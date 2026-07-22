@@ -6,5 +6,8 @@ singleTask/singleInstance requieren entender taskAffinity y cuidado con datos en
 Ejemplo:
 <activity android:name=".MainActivity" android:launchMode="singleTask"/>
 
+ExplicaciónKotlin:
+El ejemplo es declaración XML en el manifest, no Kotlin; `android:launchMode="singleTask"` es atributo que el sistema lee al arrancar componentes. En Kotlin, el equivalente programático no existe para launchMode — debe declararse en XML o vía manifest merger en build Gradle. La clase `.MainActivity` se resuelve a `com.example.MainActivity` y en Kotlin se declararía `class MainActivity : AppCompatActivity()`. Cuando un intent llega a una Activity `singleTask` existente, Kotlin recibe el intent en `onNewIntent(intent: Intent?)`, método override con parámetro anulable. Comprender launchMode ayuda al diseñar apps Kotlin single-Activity donde solo la host Activity usa `singleTask` y la navegación interna es `NavController`. Gradle y el manifest merger integran el XML con el código Kotlin en el APK final.
+
 Consejo:
 Sobreactual: la mayoría de apps Compose usan single-activity + NavHost. launchMode sirve para flows especiales (pago, captura) o integración con notificaciones.

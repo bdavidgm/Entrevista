@@ -13,5 +13,8 @@ inline fun <reified T : Activity> Context.startActivity() {
 
 context.startActivity<DetailActivity>()
 
+ExplicaciónKotlin:
+`inline fun <reified T> Gson.fromJson(json: String): T` es una extension function genérica con `reified`: en cada call site el compilador sustituye `T` por el tipo concreto, permitiendo `T::class.java` sin pasar `Class<T>` manualmente. `fromJson(json, T::class.java)` delega en la API Java de Gson. La segunda función `inline fun <reified T : Activity> Context.startActivity()` restringe `T` a subtipos de `Activity` con bound superior. Dentro, `Intent(this, T::class.java)` usa `this` como el `Context` receptor de la extension y resuelve la clase destino en compile-time. `context.startActivity<DetailActivity>()` es una llamada con type argument explícito gracias a reified e inline. Sin `inline`, el type erasure de la JVM borraría `T` en runtime y este patrón no sería posible.
+
 Consejo:
 "reified resuelve type erasure en inline functions". Útil en APIs como Gson/Moshi, Retrofit, Intents tipados y Bundle.getParcelable<T>.

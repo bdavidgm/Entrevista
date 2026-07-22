@@ -42,5 +42,8 @@ fun onSaved() = viewModelScope.launch {
     _events.emit(UiEvent.ShowSnackbar("Guardado"))
 }
 
+ExplicaciónKotlin:
+private val _uiState = MutableStateFlow(HomeUiState()) encapsula estado mutable privado con valor inicial constructor HomeUiState(). val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow() expone solo lectura. private val _events = MutableSharedFlow<UiEvent>(); val events: SharedFlow<UiEvent> = _events.asSharedFlow() replica patrón para eventos one-shot sin replay por defecto en SharedFlow. fun onSaved() = viewModelScope.launch { _events.emit(UiEvent.ShowSnackbar("Guardado")) } usa launch para emit suspend en SharedFlow; UiEvent.ShowSnackbar("Guardado") presumiblemente data class/object sealed con mensaje String. Contrasta StateFlow (siempre tiene valor, uiState) con SharedFlow (eventos efímeros). viewModelScope.launch devuelve Job; emit es suspend por backpressure.
+
 Consejo para entrevista:
 StateFlow vs SharedFlow = estado vs evento. replay y buffer. No uses SharedFlow con replay=1 para toast que se repite en rotación sin consumir.

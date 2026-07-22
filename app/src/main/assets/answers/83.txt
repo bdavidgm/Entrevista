@@ -43,5 +43,8 @@ fun onCancelClick() {
     job.cancel()
 }
 
+ExplicaciónKotlin:
+val job = viewModelScope.launch { try { val data = repository.longPoll(); _state.value = data } catch (e: CancellationException) { throw e } catch (e: Exception) { _state.value = ErrorState(e) } } guarda Job retornado por launch. try/catch múltiple: CancellationException se relanza (buena práctica para no tragar cancelación); Exception genérica mapea a ErrorState(e). repository.longPoll() suspend. _state.value asigna a MutableStateFlow o similar. fun onCancelClick() { job.cancel() } llama cancel() sobre Job guardado. CancellationException es subclase de Exception en kotlinx; el orden catch importa. job es tipo Job de corrutinas, referencia mutable con val.
+
 Consejo para entrevista:
 Explica cooperativa vs forzada, SupervisorJob, y onCleared. Pregunta: ¿cancel detiene hilo? No, solo señala cooperación en coroutines.

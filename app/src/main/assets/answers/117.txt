@@ -50,5 +50,9 @@ class MyActivity : AppCompatActivity() {
   }
 }
 
+
+ExplicaciónKotlin:
+`class BadManager { companion object { var activityRef: Activity? = null } }` — `companion object` es singleton en la clase; `var` nullable retiene Activity estática, fuga clásica. `class GoodRepository @Inject constructor(@ApplicationContext private val context: Context)` — qualifier Hilt `@ApplicationContext` garantiza Context de aplicación, no Activity. `class MyActivity : AppCompatActivity()` define `private val job = SupervisorJob()`: Job que no cancela hijos por fallo de uno. `private val scope = CoroutineScope(Dispatchers.Main + job)` combina dispatchers con `+` sobre `CoroutineContext`. `override fun onDestroy() { job.cancel(); super.onDestroy() }` cancela corrutinas antes de destruir Activity. `SupervisorJob` y cancelación explícita evitan retener Activity tras destroy.
+
 Consejo para entrevista:
 Cita Activity retenida por static/singleton/Handler y corrutinas sin cancelar. Menciona LeakCanary y lifecycle-aware components. Demuestra que entiendes la diferencia entre Context de Activity y Application.

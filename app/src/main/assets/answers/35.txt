@@ -22,5 +22,8 @@ Ejemplo:
     </application>
 </manifest>
 
+ExplicaciónKotlin:
+Este ejemplo es XML del AndroidManifest, no código Kotlin: declara permisos, application y activities para el sistema Android. Sin embargo, los componentes referenciados (`MainActivity`) suelen implementarse en Kotlin con `class MainActivity : AppCompatActivity()`. El atributo `android:name=".MainActivity"` usa nombre relativo al package del manifest, que el build system resuelve contra las clases Kotlin/Java compiladas. `android:exported="true"` es requisito desde Android 12 para componentes con intent-filters. En proyectos Kotlin modernos, parte de esta configuración puede generarse o complementarse vía Gradle KTS (también Kotlin), pero la declaración de componentes en manifest sigue siendo XML. Al leer el ejemplo, relaciona cada `<activity>` con su clase Kotlin correspondiente en el source set `main`.
+
 Consejo:
 Conoce exported (obligatorio en Android 12+) y los nuevos requisitos de queries para visibilidad de paquetes. Cuidado con permisos peligrosos: deben pedirse en runtime.

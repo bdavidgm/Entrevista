@@ -11,5 +11,8 @@ NavHost(navController, startDestination = "home") {
     composable("detail/{id}") { DetailScreen(it.arguments?.getString("id")!!) }
 }
 
+ExplicaciónKotlin:
+val navController = rememberNavController() tipado NavHostController implícito. NavHost(navController, startDestination = "home") { composable("home") { HomeScreen { navController.navigate("detail/$it") } } } usa lambda trailing: HomeScreen recibe lambda sin nombre (it -> navigate) donde it es argumento inferido del callback onNavigate. composable("detail/{id}") { DetailScreen(it.arguments?.getString("id")!!) } usa safe call ?. sobre arguments nullable y !! para forzar String; alternativa idiomática sería requireNotNull o let. DetailScreen(...) recibe id forzado. Las rutas son strings interpolados "detail/$it". El DSL composable anida lambdas @Composable. NavHostController.navigate es función regular Kotlin/Java de la librería Navigation.
+
 Consejo:
 "Single Activity + NavHost". Prefiere rutas tipadas (sealed o API type-safe nueva) y respeta el back stack del sistema con popBackStack / NavController.navigateUp.

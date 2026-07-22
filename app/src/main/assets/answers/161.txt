@@ -13,5 +13,9 @@ class UserRepository(private val api: UserApi, private val dao: UserDao) {
     }
 }
 
+
+ExplicaciónKotlin:
+`class UserRepository(private val api: UserApi, private val dao: UserDao)` constructor primario con dos dependencias privadas. `fun users(): Flow<List<User>> = dao.observeAll()` expone flujo frío/caliente según implementación DAO sin cuerpo de función explícito — expresión única. `suspend fun refresh()` puede llamar API y persistir. `api.fetchUsers().map { it.toEntity() }` usa `map` de colección sobre lista devuelta por suspend; lambda `it` transforma DTO a entidad con extensión `toEntity()`. `dao.replaceAll(remote)` persiste lista completa en transacción implícita del DAO. El pipeline `fetch -> map -> replace` es secuencial suspendido en una función. Tipos explícitos en firma documentan contrato del repositorio.
+
 Consejo:
 Combina con WorkManager para sync periódico y muestra banner “sin conexión” cuando sirves datos viejos. Evita dos fuentes de verdad sin estrategia.

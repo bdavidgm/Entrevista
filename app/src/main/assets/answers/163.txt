@@ -13,5 +13,9 @@ if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
     notificationManager.createNotificationChannel(ch)
 }
 
+
+ExplicaciónKotlin:
+`if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)` guarda creación de canal solo en API 26+. `NotificationChannel("sync", "Sincronización", NotificationManager.IMPORTANCE_LOW)` instancia con id, nombre visible e importancia enum. `.apply { description = "..." }` usa scope function `apply`: receiver es el canal, retorna el mismo objeto tras configurar propiedad `description`. `notificationManager.createNotificationChannel(ch)` registra canal en sistema. `apply` es idiomático Kotlin para configuración inicial encadenada. Las propiedades dentro del bloque se resuelven como miembros del receptor sin calificar. Comparación con `VERSION_CODES.O` evita magic number 26.
+
 Consejo:
 No borres y recrees canales en cada arranque con distinto id. IMPORTANCE_LOW evita heads-up intrusivos para tareas rutinarias.

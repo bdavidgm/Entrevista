@@ -16,5 +16,9 @@ fun BouncyBox() {
     )
 }
 
+
+ExplicaciónKotlin:
+`remember { Animatable(0f) }` memoriza un `Animatable<Float>` entre recomposiciones; el lambda de `remember` solo corre en la primera composición. `LaunchedEffect(Unit)` lanza corrutina asociada al composable para llamar `animateTo`, función suspend que interpola hacia `200f` usando `animationSpec = spring()` (parámetro nombrado con valor por defecto sobrescrito). `offsetX.value` lee el valor actual del animatable dentro del lambda de `Modifier.offset`, que recibe `@Composable`-aware lambda `Density.() -> IntOffset`. `toInt()` convierte el `Float` animado a entero para posicionamiento en píxeles. La cadena `Modifier.offset(...).size(48.dp).background(Color.Red)` encadena extensiones que retornan `Modifier` (patrón fluent de Compose). `48.dp` usa propiedad de extensión `Int.dp` del tipo `Dp`. `Box` es contenedor composable cuyo único hijo es el modificador aplicado al propio contenedor.
+
 Consejo:
 "Animatable = animación imperativa controlable". Para casos declarativos simples, prefiere animate*AsState; usa Animatable cuando necesitas pausar, reiniciar o combinar con gestos.

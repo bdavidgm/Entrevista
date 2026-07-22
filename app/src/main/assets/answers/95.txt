@@ -25,16 +25,27 @@ Nunca bloquear main; aplica esta regla en todo el ciclo de vida de la Activity y
 
 Ejemplo:
 // Provoca ANR
-override fun onCreate(savedInstanceState: Bundle?) {
-    super.onCreate(savedInstanceState)
-    val all = database.dao().getAllSync() // miles de filas en main
+class BadActivity : AppCompatActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        val all = database.dao().getAllSync() // miles de filas en main
+    }
 }
 
 // Correcto
-lifecycleScope.launch {
-    val all = withContext(Dispatchers.IO) { database.dao().getAll() }
-    adapter.submitList(all)
+class MainActivity : AppCompatActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        lifecycleScope.launch {
+            val all = withContext(Dispatchers.IO) { database.dao().getAll() }
+            adapter.submitList(all)
+        }
+    }
 }
+
+
+ExplicaciónKotlin:
+`BadActivity : AppCompatActivity()` hereda Activity de AppCompat; `override fun onCreate(savedInstanceState: Bundle?)` sobrescribe callback del framework. `Bundle?` es nullable: en primer arranque puede ser null. `database.dao().getAllSync()` sugiere consulta Room síncrona bloqueante ejecutada directamente en Main durante `onCreate`, riesgo de ANR. `MainActivity` usa el mismo patrón de lifecycle pero envuelve la consulta en `lifecycleScope.launch { }`, iniciando corrutina ligada al lifecycle. `withContext(Dispatchers.IO) { database.dao().getAll() }` ejecuta la versión suspend de la consulta en IO. `adapter.submitList(all)` actualiza RecyclerView adapter (probablemente `ListAdapter`) con la lista obtenida; al estar en corrutina lanzada desde lifecycleScope en Activity, la continuación tras `withContext` vuelve a Main para tocar `adapter`.
 
 Consejo para entrevista:
 Cita tiempos aproximados (5s input). Diferencia ANR vs crash. Menciona Play Vitals ANR rate.

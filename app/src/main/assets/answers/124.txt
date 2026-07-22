@@ -19,5 +19,9 @@ class LoggingRepository(
     }
 }
 
+
+ExplicaciónKotlin:
+`interface Repository { suspend fun load(): List<User> }` — interfaz con función suspendida. `class RemoteRepository : Repository { ... }` implementación concreta. `class LoggingRepository(private val inner: Repository) : Repository by inner` — delegación de interfaz: compilador genera forward de métodos no sobrescritos a `inner`. `by inner` requiere que `inner` implemente `Repository`. `override suspend fun load(): List<User>` sobrescribe solo este método para logging antes/después. `Log.d(TAG, "load()")` side effect Android. `return inner.load()` llama implementación delegada explícitamente. Patrón decorador sin herencia múltiple; `private val inner` retiene referencia al repo real. Diferente de `val x by lazy { }` que es delegación de propiedad.
+
 Consejo:
 Distinguir de la delegación de propiedades (val x by lazy). Útil para decoradores (logging, cache, métrica) sin extender una clase concreta.

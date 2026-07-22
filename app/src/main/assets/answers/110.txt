@@ -41,5 +41,9 @@ android {
     }
 }
 
+
+ExplicaciónKotlin:
+`flavorDimensions += "env"` añade dimensión de product flavors con operador `+=` sobre colección mutable del DSL. `productFlavors { create("dev") { ... } }` usa función `create` con lambda de configuración; `dimension = "env"` asigna dimensión. `buildConfigField("String", "BASE_URL", ""https://dev.api.example.com"")` genera campo estático en `BuildConfig` Java/Kotlin interop: el valor es string escapado para código generado. Flavor `prod` repite patrón con URL distinta. `buildTypes { getByName("release") { isMinifyEnabled = true } }` obtiene build type existente por nombre y muta propiedad. En runtime Kotlin se accede `BuildConfig.BASE_URL` como `String` según flavor compilado.
+
 Consejo para entrevista:
 buildType = cómo compila; flavor = qué producto. Variants = combinación. Menciona BuildConfig y signing por variant.

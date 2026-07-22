@@ -9,5 +9,9 @@ handler.postDelayed({
     textView.text = "Hola"
 }, 1_000)
 
+
+ExplicaciónKotlin:
+`Handler(Looper.getMainLooper())` construye handler atado al looper del hilo UI; `getMainLooper()` es estático Java accesible desde Kotlin. `handler.postDelayed({ ... }, 1_000)` encola lambda Runnable con retardo en milisegundos; el literal usa separador `_`. Dentro del lambda, `textView.text = "Hola"` muta propiedad Java `text` — Kotlin permite asignación de propiedad sintética. La lambda es closure que captura `textView` del scope externo. No hay corrutinas: patrón clásico pre-coroutines. El segundo argumento `1_000` es `Long` inferido por sobrecarga de `postDelayed`. Equivalente moderno sería `viewModelScope.launch { delay(1000); ... }` en Main.
+
 Consejo:
 "Looper = bucle de mensajes del hilo; Handler = la cola para postear". En código moderno prefiere viewModelScope + Dispatchers.Main.

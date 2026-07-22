@@ -17,5 +17,8 @@ object NetworkModule {
 @HiltViewModel
 class HomeViewModel @Inject constructor(private val api: Api) : ViewModel()
 
+ExplicaciónKotlin:
+@HiltAndroidApp class MyApp : Application() marca Application para generación de componente raíz Hilt. @Module @InstallIn(SingletonComponent::class) object NetworkModule declara módulo Dagger como object singleton Kotlin (no class instanciable). @Provides @Singleton fun provideApi(): Api = Retrofit.Builder()...build().create(Api::class.java) es función @Provides: create(Api::class.java) usa class reference Java Class y genérico de Retrofit. @HiltViewModel class HomeViewModel @Inject constructor(private val api: Api) : ViewModel() conecta ViewModel con grafo DI. object NetworkModule evita estado; @InstallIn vincula módulo al componente Singleton. Las anotaciones son metadatos compile-time procesados por KAPT/KSP. Api::class.java interop Java-Kotlin para Retrofit proxy.
+
 Consejo:
 "Hilt = Dagger fácil con scopes Android". Para apps pequeñas o multiplataforma considera Koin, que es más liviano pero resuelve en runtime.

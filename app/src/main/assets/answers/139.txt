@@ -14,5 +14,9 @@ Room.databaseBuilder(context, AppDb::class.java, "app.db")
     .addMigrations(MIGRATION_1_2)
     .build()
 
+
+ExplicaciónKotlin:
+`val MIGRATION_1_2 = object : Migration(1, 2)` crea instancia anónima de objeto que extiende `Migration`, pasando versiones origen y destino al constructor superior. `override fun migrate(db: SupportSQLiteDatabase)` sobrescribe método abierto; el parámetro `db` expone API SQLite de soporte. `db.execSQL(...)` ejecuta DDL como string. `Room.databaseBuilder(context, AppDb::class.java, "app.db")` usa referencia Java `::class.java` de la KClass para el tipo de la base de datos — puente Kotlin/Java habitual en Room. `.addMigrations(MIGRATION_1_2)` encadena configuración con expresión fluente y `.build()` materializa la instancia. El objeto anónimo mantiene una única migración nombrada como constante de nivel superior (`val` inmutable).
+
 Consejo:
 Activa exportSchema = true y commitea los JSON del esquema; permite migraciones automáticas en versiones recientes de Room y revisión en CI.

@@ -9,5 +9,8 @@ api.user("1")
     .observeOn(AndroidSchedulers.mainThread())
     .subscribe({ u -> show(u) }, { e -> showError(e) })
 
+ExplicaciónKotlin:
+`api.user("1")` devuelve un `Single`/`Observable` RxJava (según firma Retrofit adapter), encadenado con operadores fluentes. `.subscribeOn(Schedulers.io())` programa la suscripción en hilo de IO; `.observeOn(AndroidSchedulers.mainThread())` redirige emisiones al main thread para UI. `.subscribe({ u -> show(u) }, { e -> showError(e) })` pasa dos lambdas Kotlin como consumidor de éxito y error: `{ u -> show(u) }` recibe el usuario tipado inferido; `{ e -> showError(e) }` recibe la excepción. RxJava espera interfaces funcionales Java; Kotlin las adapta automáticamente. No hay `Disposable` asignado a variable — en producción conviene guardarlo y disponer en `onDestroy`. El estilo contrasta con corrutinas Kotlin (`launch { api.user(...) }`), pero la sintaxis lambda es nativa de Kotlin. `"1"` es literal de login/id.
+
 Consejo:
 Si el proyecto ya es Flow-first, no mezcles Rx salvo en bordes; usa adaptadores o reescribe gradualmente. Rx exige dominar dispose/subscriptions.

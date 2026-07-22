@@ -8,5 +8,8 @@ Ejemplo:
 val response = apolloClient.query(GetUserQuery(id = "42")).execute()
 response.data?.user?.name
 
+ExplicaciónKotlin:
+El comentario `// query GetUser($id: ID!)` documenta la operación GraphQL definida en archivo `.graphql` externo. `apolloClient.query(GetUserQuery(id = "42"))` construye operación tipada: `GetUserQuery` es clase generada por Apollo con argumento nombrado `id = "42"` (parámetro del constructor Kotlin data class). `.execute()` es función suspendida en Apollo Kotlin 3+, por lo que debe llamarse desde corrutina; devuelve `ApolloResponse<GetUserQuery.Data>`. `response.data?.user?.name` encadena safe calls (`?.`): si `data`, `user` o `name` son null, toda la expresión es null sin excepción; el tipo final es `String?`. Apollo genera modelos inmutables Kotlin a partir del esquema GraphQL. No hay manejo de `errors` en el snippet; en producción inspeccionarías `response.errors` además de datos parciales.
+
 Consejo:
 Versiona el esquema con el servidor; maneja partial data vs errors según políticas de negocio. Cache policies (NETWORK_FIRST, CACHE_FIRST) afinan offline.

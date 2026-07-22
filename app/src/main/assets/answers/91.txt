@@ -33,5 +33,9 @@ fun clickShowsMessage() {
     onView(withId(R.id.message)).check(matches(withText("Enviado")))
 }
 
+
+ExplicaciónKotlin:
+`@Test fun clickShowsMessage()` es un test instrumentado JUnit que corre en dispositivo. `ActivityScenario.launch(MainActivity::class.java)` usa la referencia de clase Kotlin (`KClass` vía `::class.java`) para arrancar la Activity en aislamiento. `onView(withId(R.id.submit))` selecciona una vista del árbol UI; `R.id.submit` es constante generada por el compilador de recursos Android. `.perform(click())` simula interacción; `.check(matches(withText("Enviado")))` encadena aserción sobre el texto visible. Espresso usa matchers y ViewActions importados estáticamente; en Kotlin se escriben igual que en Java. `withText("Enviado")` compara `CharSequence`; la cadena es literal Kotlin. Este test no usa corrutinas ni mocks: valida integración Activity + layout XML + listeners.
+
 Consejo para entrevista:
 Menciona idling y flakiness. Contrasta Espresso vs Compose UI test. Pirámide: pocos tests UI.

@@ -16,5 +16,9 @@ fun Counter(count: Int) {
     Text("Clicks: $count")
 }
 
+
+ExplicaciónKotlin:
+`var count by remember { mutableStateOf(0) }` combina `var` con delegación: `mutableStateOf` devuelve `MutableState<Int>` y el delegado `by` redirige lecturas/escrituras a `.value` implícitamente. `Button(onClick = { count++ })` pasa lambda sin parámetros; `count++` usa el operador de incremento que lee y escribe el estado mutable, invalidando el scope que lee `count`. `Text("Sumar")` es hijo trailing del `Button`. Separar `Counter(count)` en otro `@Composable` crea un scope de recomposición independiente: solo `Counter` se reejecuta cuando cambia `count`, no todo `Screen`. `fun Counter(count: Int)` recibe valor inmutable por parámetro, lo que facilita el skipping del compilador de Compose. La interpolación `"Clicks: $count"` usa template string de Kotlin dentro de `Text`.
+
 Consejo:
 "Cada función @Composable es (idealmente) un scope". Aislar lecturas frecuentes en pequeños Composables ayuda al runtime a recomponer menos.

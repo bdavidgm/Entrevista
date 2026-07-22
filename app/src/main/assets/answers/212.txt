@@ -8,5 +8,8 @@ FirebaseCrashlytics.getInstance().log("checkout_opened")
 FirebaseCrashlytics.getInstance().setCustomKey("plan", userPlan)
 // Crash no manejado se sube automáticamente
 
+ExplicaciónKotlin:
+`FirebaseCrashlytics.getInstance()` obtiene el singleton del SDK Java; en Kotlin se encadena directamente. `.log("checkout_opened")` registra breadcrumb de depuración con literal `String`. `.setCustomKey("plan", userPlan)` añade clave personalizada: `"plan"` es clave fija y `userPlan` variable del ámbito (tipo inferido, típicamente `String` o numérico según overload). El comentario `// Crash no manejado...` no afecta ejecución. No hay lambdas ni corrutinas: las llamadas son síncronas en el hilo actual antes de un posible crash. Crashlytics expone overloads de `setCustomKey` para `Int`, `Boolean`, `Float`, etc.; Kotlin resuelve overload por tipo estático de `userPlan`. Para Kotlin idiomático en apps grandes, estas llamadas se encapsulan en un wrapper o se inyectan vía DI para testear sin Firebase.
+
 Consejo:
 Filtra datos sensibles (tokens, email) de logs y keys. Combina con versionado de mapping files (R8) para stack traces legibles en release.

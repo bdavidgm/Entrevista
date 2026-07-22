@@ -10,5 +10,8 @@ val job = JobInfo.Builder(JOB_ID, ComponentName(this, MyJobService::class.java))
     .build()
 (getSystemService(Context.JOB_SCHEDULER_SERVICE) as JobScheduler).schedule(job)
 
+ExplicaciónKotlin:
+`JobInfo.Builder(JOB_ID, ComponentName(this, MyJobService::class.java))` crea el builder con un entero de job id y un `ComponentName` que empaqueta el contexto `this` y la clase del servicio mediante `MyJobService::class.java`, la forma Kotlin de obtener `Class<>` para APIs Java. `.setRequiredNetworkType(...)` y `.setPersisted(true)` encadenan configuración; `true` es literal booleano Kotlin. `.build()` produce el `JobInfo` inmutable asignado a `val job`. La última línea combina cast explícito `as JobScheduler` — necesario porque la variante con `String` devuelve `Any?` — con llamada a `schedule(job)`. `JOB_ID` es constante del companion o del archivo. El patrón refleja interop directa con JobScheduler nativo antes de abstraerlo con WorkManager; Kotlin aporta referencias de clase tipadas y encadenamiento legible sobre builders Java.
+
 Consejo:
 En apps nuevas casi siempre WorkManager por compatibilidad y pruebas. JobScheduler directo sirve cuando necesitas control fino del JobService.

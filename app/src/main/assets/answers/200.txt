@@ -9,5 +9,8 @@ Ejemplo:
     <Button android:text="OK"/>
 </LinearLayout>
 
+ExplicaciónKotlin:
+El layout está en XML de recursos Android; Kotlin no define la jerarquía aquí, sino que se infla con `LayoutInflater` o View Binding. El equivalente Compose sería `Column { Text("Título"); Button(...) }` con funciones `@Composable` y modificadores en lugar de atributos XML. Con View Binding, Kotlin genera `ActivityMainBinding` con propiedades tipadas (`binding.title`, `binding.ok`) a partir de este XML. `android:orientation="vertical"` corresponde a apilar hijos en columna, análogo a `Column` en Compose o `LinearLayout.VERTICAL` en código Kotlin legacy (`LinearLayout(context).apply { orientation = VERTICAL }`). `match_parent` y `wrap_content` son constantes enteras de `ViewGroup.LayoutParams` usadas al construir vistas programáticamente en Kotlin. Migrar este XML a Kotlin/Compose elimina inflado XML y permite lógica condicional con sintaxis nativa del lenguaje.
+
 Consejo:
 Para UIs complejas, ConstraintLayout o Compose reducen anidación. Usa layout_weight en horizontal/vertical para repartir espacio.

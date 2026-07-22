@@ -13,5 +13,9 @@ interface UserDao {
     suspend fun upsert(user: User)
 }
 
+
+ExplicaciónKotlin:
+`interface UserDao` declara contrato sin implementación; Room genera la implementación en tiempo de compilación. `@Insert(onConflict = OnConflictStrategy.REPLACE)` es anotación con parámetro nombrado que referencia enum `OnConflictStrategy.REPLACE`. `suspend fun upsertAll(users: List<User>)` marca función suspendida que solo puede llamarse desde corrutina u otra suspend; `List<User>` es tipo de solo lectura inmutable en la firma. `@Upsert` es anotación más reciente que Room traduce a insert-or-update sin SQL manual. Ambas funciones devuelven `Unit` implícitamente. Las interfaces en Kotlin pueden contener funciones suspend y anotaciones JVM/Android; no necesitan cuerpo. El compilador de Room valida tipos de entidad y claves en compile-time.
+
 Consejo:
 "REPLACE puede borrar y reinsertar (cuidado con triggers/foreign keys cascada)". Para insertar y actualizar mejor @Upsert, más explícito.

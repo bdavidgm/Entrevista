@@ -38,5 +38,8 @@ viewModelScope.launch {
     _uiState.update { it.copy(loading = false, items = data) }
 }
 
+ExplicaciónKotlin:
+viewModelScope.launch { ... } inicia coroutine en scope del ViewModel cancelado en onCleared(). _uiState.update { it.copy(loading = true) } usa update sobre MutableStateFlow: lambda recibe it (estado actual) y copy de data class con parámetro nombrado loading = true. withContext(Dispatchers.IO) { repository.fetch() } es función suspend que cambia dispatcher al pool IO para fetch() y devuelve resultado al caller en dispatcher original. repository.fetch() presumiblemente suspend. Segundo _uiState.update { it.copy(loading = false, items = data) } asigna items = data donde data es valor retornado por withContext. Encadena corrutinas, scope, dispatchers, lambdas y data class copy sin bloquear Main thread durante IO.
+
 Consejo para entrevista:
 Explica suspend, scope y dispatchers. No digas que coroutine es un hilo. Seguimiento: diferencia thread vs coroutine — muchas coroutines, pocos threads.

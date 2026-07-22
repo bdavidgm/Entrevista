@@ -9,5 +9,9 @@ val work = OneTimeWorkRequestBuilder<SyncWorker>()
     .build()
 WorkManager.getInstance(context).enqueue(work)
 
+
+ExplicaciónKotlin:
+`OneTimeWorkRequestBuilder<SyncWorker>()` usa genérico de clase Worker para tipar el builder de WorkManager (API AndroidX escrita con soporte Kotlin). `.setConstraints(Constraints.Builder().setRequiresBatteryNotLow(true).build())` anida otro builder; `.build()` interno crea `Constraints`, externo prepara request. `WorkManager.getInstance(context).enqueue(work)` obtiene singleton con `context` y encola trabajo — `enqueue` es método Java/Kotlin estándar. `val work` fija referencia inmutable al request. El código muestra encadenamiento estilo fluent común en APIs Android migradas a Kotlin. No hay lambdas ni suspend: programación imperativa clásica. WorkManager gestiona constraints de batería que el sistema aplica en Doze.
+
 Consejo:
 Explica la tríada: Doze (dispositivo quieto), Standby (app idle), Background limits (Android 8+). No confíes en tareas exactas sin permiso especial en versiones nuevas.

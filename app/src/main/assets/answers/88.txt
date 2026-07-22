@@ -32,5 +32,9 @@ fun `when refresh then loading then data`() = runTest { /* ViewModel */ }
 @Test
 fun migrateDatabase() { /* MigrationTestHelper */ }
 
+
+ExplicaciónKotlin:
+Los comentarios `// test/` y `// androidTest/` marcan source sets distintos en Gradle, no sintaxis Kotlin, pero el código de ejemplo usa anotaciones JUnit. `@Test` marca funciones de prueba ejecutables por el runner de JUnit; en Kotlin el nombre puede ir entre backticks con espacios (`when refresh then loading then data`), lo que mejora la legibilidad como especificación. `runTest { }` proviene de `kotlinx-coroutines-test` y crea un `TestScope` con un `TestDispatcher` controlado: las corrutinas lanzadas dentro avanzan de forma determinista sin hilos reales, ideal para probar ViewModels. El bloque vacío `/* ViewModel */` indica dónde irían aserciones sobre `StateFlow` o llamadas a métodos del ViewModel. El segundo `@Test` en `androidTest/` compila contra el SDK Android y se ejecuta en dispositivo; `MigrationTestHelper` es API de Room para validar migraciones de base de datos en entorno instrumentado.
+
 Consejo para entrevista:
 Dibuja pirámide. Menciona qué va en cada capa. No digas solo Espresso; unit tests son la base.

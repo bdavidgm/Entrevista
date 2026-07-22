@@ -38,5 +38,9 @@ class CartViewModelTest {
     }
 }
 
+
+ExplicaciónKotlin:
+`@OptIn(ExperimentalCoroutinesApi::class)` opta explícitamente en APIs experimentales del módulo de test de corrutinas (requerido en algunas versiones para reglas o APIs inestables). `@get:Rule val main = MainDispatcherRule()` expone una regla JUnit: `@get:Rule` aplica el annotation al getter de la propiedad `val`, patrón idiomático Kotlin para reglas. `MainDispatcherRule` sustituye `Dispatchers.Main` por un `TestDispatcher` en tests. `runTest { }` proporciona scope con reloj virtual. `CartViewModel(FakeCartRepo())` construye el ViewModel con un fake (implementación real simplificada) en lugar de mock. `vm.addItem(Item("1", 10.0))` invoca lógica síncrona o suspend según implementación; `Item("1", 10.0)` usa constructor de data class. `vm.uiState.value.total` lee propiedad del estado; `assertEquals(10.0, ..., 0.0)` compara `Double` con delta cero.
+
 Consejo para entrevista:
 Menciona runTest, fake repo, Turbine. No pruebes framework Android en unit test de ViewModel.

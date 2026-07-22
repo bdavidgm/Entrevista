@@ -20,4 +20,9 @@
     <string name="answer_copied_to_clipboard">Respuesta copiada al portapapeles</string>
     <string name="code_copied_to_clipboard">Código copiado al portapapeles</string>
     <string name="copy_code">Copiar código</string>
+    <string name="kotlin_code_header">Kotlin</string>
+    <string name="kotlin_explanation_icon_cd">Explicar el ejemplo en Kotlin</string>
+    <string name="kotlin_explanation_title">Explicación del ejemplo (Kotlin)</string>
+    <string name="kotlin_explanation_close">Cerrar</string>
+    <string name="kotlin_explanation_missing">Aún no hay una explicación detallada de este ejemplo.</string>
 </resources>

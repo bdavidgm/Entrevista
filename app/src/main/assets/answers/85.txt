@@ -35,5 +35,8 @@ val user: LiveData<User> = repo.observeUser()
 val user: StateFlow<User> = repo.observeUser()
     .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), User.Empty)
 
+ExplicaciónKotlin:
+Comentarios // Antes LiveData y // Moderno separan estilos. val user: LiveData<User> = repo.observeUser() tipado explícito LiveData Java arquitectura. val user: StateFlow<User> = repo.observeUser().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), User.Empty) convierte Flow a StateFlow hot con valor inicial User.Empty (companion object o constante). stateIn requiere scope, SharingStarted y initialValue. Mismo repo.observeUser() supone Flow subyacente en versión moderna. WhileSubscribed(5_000) detiene upstream 5 segundos sin suscriptores. Contraste muestra migración API manteniendo tipado genérico User en LiveData vs StateFlow.
+
 Consejo para entrevista:
 Tabla mental: lifecycle (ambos con wrapper), operadores (Flow gana), testing (Turbine vs InstantTaskExecutorRule). No digas LiveData está prohibido; di preferencia Flow.

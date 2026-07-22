@@ -18,5 +18,9 @@ LaunchedEffect(Unit) {
     vm.events.collect { event -> when (event) { ... } }
 }
 
+
+ExplicaciónKotlin:
+`private val _events = Channel<LoginEvent>(Channel.BUFFERED)` encapsula canal mutable; `val events = _events.receiveAsFlow()` expone `Flow` de solo consumo transformando el canal. `fun onLogin() = viewModelScope.launch { _events.send(LoginEvent.NavigateHome) }` combina scope del ViewModel con envío suspendido de evento sellado (`LoginEvent` probablemente sealed class). `send` suspende si el buffer está lleno. En Compose, `LaunchedEffect(Unit) { vm.events.collect { event -> when (event) { ... } } }` colecta flujo como side effect; `when` exhaustivo si `LoginEvent` es sealed. El comentario `// Compose` indica contexto de uso. Separar `_events` privado y `events` público es patrón de encapsulación idiomático en Kotlin.
+
 Consejo:
 "State para datos, Channel/SharedFlow(0) para eventos one-shot". Evita LiveData<Event<T>> con wrappers, ya no hace falta con Flows bien diseñados.

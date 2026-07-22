@@ -16,5 +16,8 @@ interface UserDao {
 @Database(entities = [User::class], version = 1)
 abstract class AppDb : RoomDatabase() { abstract fun userDao(): UserDao }
 
+ExplicaciónKotlin:
+@Entity data class User(@PrimaryKey val id: String, val name: String) es data class con anotación Room; @PrimaryKey marca id; propiedades val inmutables definen columnas. @Dao interface UserDao declara contrato que Room implementa en compile-time. @Query("SELECT * FROM User") fun all(): Flow<List<User>> devuelve Flow reactivo, no suspend, porque emite múltiples veces. @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsert(user: User) es suspend con estrategia enum REPLACE. @Database(entities = [User::class], version = 1) abstract class AppDb : RoomDatabase() usa array literal [User::class] con class reference KClass y abstract fun userDao(): UserDao sin cuerpo. Herencia : RoomDatabase() y abstract indican clase base generada por Room. Combina anotaciones, data class, interfaces, generics Flow<List<User>> y corrutinas suspend.
+
 Consejo:
 "Queries validadas en compilación + Flow reactivo". Para producción cuida las migraciones; nunca uses fallbackToDestructiveMigration en release.

@@ -47,5 +47,9 @@ fun Screen() {
     }
 }
 
+
+ExplicaciónKotlin:
+`@Composable fun Screen()` declara funciones composables: el compilador de Compose las transforma para soportar recomposición. `var counter by remember { mutableIntStateOf(0) }` combina `remember` (estado sobrevive recomposición), delegación `by` sobre `MutableState<Int>` especializado, y `mutableIntStateOf(0)` para primitivos sin boxing. `ExpensiveList()` invoca composable hijo que se recompone cuando `counter` cambia porque comparten scope si está en la misma función. La versión mejorada extrae estado a `CounterChip()` composable separado: al subir el estado al hijo, `ExpensiveList()` queda fuera del scope que lee `counter`, permitiendo skipping de recomposición. `Column { }` es composable contenedor con trailing lambda `@Composable () -> Unit`. La estructura ilustra hoisting de estado en Compose con tipos Kotlin estándar y delegates.
+
 Consejo para entrevista:
 Menciona estabilidad, derivedStateOf, keys, y medir antes. No digas "Compose es lento"; di "mal usado".

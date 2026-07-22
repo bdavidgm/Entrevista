@@ -11,5 +11,9 @@ val pi = PendingIntent.getActivity(
 )
 builder.setContentIntent(pi)
 
+
+ExplicaciónKotlin:
+`Intent(this, DetailActivity::class.java)` crea intent explícito con contexto receptor y referencia Java de la Activity destino — `::class.java` puente Kotlin/Java. `PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)` combina flags con operador infix `or` sobre enteros bitmask. `FLAG_IMMUTABLE` es requisito moderno salvo mutabilidad explícita. `builder.setContentIntent(pi)` asocia pending intent a notificación; `builder` es variable previa de `NotificationCompat.Builder`. Los cuatro argumentos de `getActivity` son requestCode, intent y flags. Kotlin trata `PendingIntent` como tipo nullable o no según API; aquí retorno asignado a `pi`.
+
 Consejo:
 Android 12+: FLAG_IMMUTABLE por defecto salvo que realmente necesites mutabilidad. Revisa exported y URI permissions al compartir datos.

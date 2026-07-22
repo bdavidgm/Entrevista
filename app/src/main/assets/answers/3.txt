@@ -10,5 +10,8 @@ val u1 = User("1", "Ana")
 val u2 = u1.copy(isPremium = true)
 val (id, name) = u1
 
+ExplicaciónKotlin:
+`data class User(...)` declara una clase cuyo constructor primario define tres propiedades: `id` y `name` como `val` (solo lectura) y `isPremium` con valor por defecto `false`, un parámetro con default que permite omitirlo al instanciar. El compilador genera automáticamente `equals`, `hashCode`, `toString`, `copy` y funciones `componentN()` para destructuring. `User("1", "Ana")` usa inferencia de tipos en los literales y el default de `isPremium`. `u1.copy(isPremium = true)` invoca el método generado `copy`, creando una copia inmutable con un solo campo cambiado mediante argumento nombrado. `val (id, name) = u1` aplica destructuring: el compilador traduce esto a llamadas a `u1.component1()` y `u1.component2()`, extrayendo las propiedades del constructor primario.
+
 Consejo:
 Subraya el método copy() para inmutabilidad y los component functions para destructuring. Recuerda que herencia entre data classes está restringida.

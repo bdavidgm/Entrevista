@@ -49,5 +49,8 @@ viewModelScope.launch {
     }
 }
 
+ExplicaciónKotlin:
+fun searchFlow(query: Flow<String>): Flow<List<Result>> = query.debounce(300).distinctUntilChanged().flatMapLatest { q -> flow { emit(repository.search(q)) } } declara función que transforma Flow con operadores encadenados. debounce(300) suspende emisiones 300 ms; distinctUntilChanged() filtra repetidos consecutivos. flatMapLatest { q -> flow { emit(repository.search(q)) } } cancela búsqueda anterior cuando query cambia; q es String emitido; flow { emit(...) } builder crea Flow frío que emite lista de Result desde repository.search(q) suspend dentro del builder. viewModelScope.launch { searchFlow(queryState).collect { results -> _uiState.update { it.copy(results = results) } } } colecta en scope y actualiza estado con copy. queryState presumiblemente Flow o StateFlow pasado como argumento.
+
 Consejo para entrevista:
 Cold vs hot, flowOn, flatMapLatest para búsqueda. Contrasta con LiveData. Seguimiento: stateIn y WhileSubscribed.

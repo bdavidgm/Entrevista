@@ -14,5 +14,8 @@ class MyFragment : Fragment() {
     }
 }
 
+ExplicaciónKotlin:
+MyFragment hereda de Fragment() usando la sintaxis de clase Kotlin con constructor primario implícito vacío. override fun onViewCreated indica que redefinimos un método de la superclase; los parámetros view: View y savedInstanceState: Bundle? muestran tipado explícito y nullabilidad (Bundle puede ser null en el primer arranque). viewLifecycleOwner es una propiedad del Fragment que implementa LifecycleOwner y refleja el ciclo de la vista, no el del Fragment entero. lifecycleScope es una propiedad de extensión que expone un CoroutineScope cancelado cuando el LifecycleOwner se destruye. launch { } es un builder de coroutine que inicia trabajo suspendido dentro de ese scope. repeatOnLifecycle(Lifecycle.State.STARTED) { } es una función suspend que reinicia el bloque cuando el estado alcanza STARTED y lo cancela al bajar de ese umbral. viewModel.state es presumiblemente un Flow; collect(::render) usa una referencia a método (method reference) para pasar cada valor emitido a la función render sin escribir una lambda explícita.
+
 Consejo:
 "repeatOnLifecycle(STARTED) para colectar Flows en UI". En Fragments usa viewLifecycleOwner para evitar leaks tras onDestroyView.

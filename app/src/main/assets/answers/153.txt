@@ -12,5 +12,9 @@ class TimberLoggerFactory : LoggerFactory {
     override fun create(tag: String) = TimberLogger(tag)
 }
 
+
+ExplicaciónKotlin:
+`interface LoggerFactory { fun create(tag: String): Logger }` define contrato factory con método que recibe `String` y devuelve `Logger`. `class TimberLoggerFactory : LoggerFactory` implementa interfaz con `override fun create(tag: String) = TimberLogger(tag)`: expresión única instancia producto. No hay `companion object` ni genéricos; es factory simple orientado a interfaz. El parámetro `tag` se pasa al constructor de `TimberLogger`. Kotlin permite retornar subtipos de `Logger` por covarianza de retorno en override. Este patrón desacopla creación de implementación concreta, útil antes de delegar totalmente en Hilt `@Provides`.
+
 Consejo:
 Distingue Factory de Builder (pasos configurables) y de DI (Hilt ya “fabrica” con @Inject constructor).

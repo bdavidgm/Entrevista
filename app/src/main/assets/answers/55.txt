@@ -13,5 +13,8 @@ fun LoginForm() {
     TextField(value = password, onValueChange = { password = it }, visualTransformation = PasswordVisualTransformation())
 }
 
+ExplicaciónKotlin:
+LoginForm mezcla rememberSaveable y remember para distintos requisitos de persistencia. var email by rememberSaveable { mutableStateOf("") } usa delegación by sobre un State que sobrevive a recomposición y a process death/cambio de configuración gracias al Saver interno de rememberSaveable. var password by remember { mutableStateOf("") } solo sobrevive recomposiciones, no rotación ni muerte de proceso. TextField(value = email, onValueChange = { email = it }) y el equivalente para password usan lambdas con it implícito para asignar al setter delegado. PasswordVisualTransformation() instancia un objeto de Material sin argumentos para ocultar caracteres. Los dos campos comparten el mismo patrón de estado unidireccional: value lee, onValueChange escribe. La diferencia entre remember y rememberSaveable es puramente de API Compose, pero la sintaxis Kotlin (by, var, lambdas) es idéntica.
+
 Consejo:
 Regla: efímero local → remember; UI pequeña que debe sobrevivir rotación → rememberSaveable; estado de pantalla/dominio → ViewModel con StateFlow.

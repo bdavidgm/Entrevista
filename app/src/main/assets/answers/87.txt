@@ -36,5 +36,9 @@ class ReportViewModel @Inject constructor(
     }
 }
 
+
+ExplicaciónKotlin:
+La anotación `@HiltViewModel` marca la clase para que el compilador de Hilt genere el `ViewModel` factory y resuelva dependencias del constructor primario. `@Inject constructor(...)` declara inyección explícita del parámetro `io` tipado como `CoroutineDispatcher`, calificado con `@IoDispatcher` (qualifier personalizado de Hilt). La herencia `: ViewModel()` integra el ciclo de vida del ViewModel con `viewModelScope`, un `CoroutineScope` cancelado automáticamente en `onCleared()`. La función `generate()` devuelve el `Job` de `viewModelScope.launch { }`, una corrutina suspendida que arranca en el dispatcher Main por defecto en Android. Dentro, `withContext(io)` es una función suspendida que cambia temporalmente de contexto al dispatcher IO para ejecutar `heavyRepository.buildReport()` sin bloquear Main; al terminar, el control vuelve al dispatcher original. `_uiState.update { it.copy(report = report) }` usa la extensión de `MutableStateFlow` que recibe una lambda `(T) -> T`: `it` es el estado actual y `copy()` es el método generado por la `data class` del estado UI, produciendo una nueva instancia inmutable con el campo `report` actualizado.
+
 Consejo para entrevista:
 Nombra los tres dispatchers y qué pasa si haces red en Main. Menciona MainDispatcherRule en tests.

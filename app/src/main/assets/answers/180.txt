@@ -10,5 +10,8 @@ val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
 }
 startActivityForResult(intent, REQ_CODE)
 
+ExplicaciónKotlin:
+`Intent(Intent.ACTION_OPEN_DOCUMENT)` construye un intent explícito con la acción de documento del SAF; el constructor de Kotlin delega en la clase Java `Intent`. El bloque `.apply { ... }` configura el receptor: `addCategory(Intent.CATEGORY_OPENABLE)` restringe a documentos abribles y `type = "application/pdf"` usa la propiedad Kotlin generada para el setter Java `setType`. `val intent` fija la referencia inmutable al intent configurado. `startActivityForResult(intent, REQ_CODE)` es un método de `Activity` (deprecado en favor de Activity Result API, pero válido en el ejemplo) que lanza el selector del sistema; `REQ_CODE` se asume una constante `Int` del companion o del archivo. No hay lambdas ni corrutinas: el flujo es imperativo clásico de Activity. La sintaxis `apply` con asignaciones de propiedad es el patrón idiomático Kotlin para inicializar objetos Android verbosos en pocas líneas.
+
 Consejo:
 Persiste permisos con takePersistableUriPermission tras FLAG_GRANT_PERSISTABLE_URI_PERMISSION. No asumas rutas de archivo absolutas.

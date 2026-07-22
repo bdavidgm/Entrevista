@@ -10,5 +10,8 @@ am.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_RAISE, Audi
 val afChange = AudioManager.OnAudioFocusChangeListener { /* duck o pause */ }
 am.requestAudioFocus(afChange, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN)
 
+ExplicaciónKotlin:
+`getSystemService(AudioManager::class.java)` sigue el patrón tipado de servicios. `adjustStreamVolume(...)` recibe constantes estáticas Java como argumentos enteros; `FLAG_SHOW_UI` muestra el diálogo de volumen. `val afChange = AudioManager.OnAudioFocusChangeListener { /* duck o pause */ }` usa la interfaz funcional SAM de Java: Kotlin traduce el listener en una lambda con un parámetro entero (el tipo de cambio de foco) cuyo cuerpo está comentado en el ejemplo. La lambda se convierte automáticamente en instancia de `OnAudioFocusChangeListener`. `requestAudioFocus(afChange, STREAM_MUSIC, AUDIOFOCUS_GAIN)` registra el listener y solicita foco permanente. Las variables `val am` y `val afChange` son inmutables; el listener captura el ámbito léxico donde se define (closure) para reaccionar a cambios de foco desde otras apps.
+
 Consejo:
 En Android 8+ AudioFocusRequest builder. Para VoIP/media, combina con Foreground Service tipo mediaPlayback.

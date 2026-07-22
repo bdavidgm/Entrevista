@@ -33,5 +33,9 @@ fun EntrevistaTheme(
     MaterialTheme(colorScheme = colors, content = content)
 }
 
+
+ExplicaciónKotlin:
+`@Composable fun EntrevistaTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit)` define parámetro `darkTheme` con valor por defecto evaluado en call site; permite override manual además del sistema. `val colors = if (darkTheme) darkColorScheme() else lightColorScheme()` selecciona paleta Material3. `MaterialTheme(colorScheme = colors, content = content)` aplica tema con un solo parámetro explícito además de content. Parámetros con default en Kotlin permiten llamar `EntrevistaTheme { Screen() }` omitiendo `darkTheme`. `@Composable () -> Unit` es tipo funcional especializado del compilador Compose. La función es pure UI setup sin side effects.
+
 Consejo para entrevista:
 DayNight, darkColorScheme, preferencia usuario + sistema. Menciona OLED battery. No hardcodear colores fuera de tokens.

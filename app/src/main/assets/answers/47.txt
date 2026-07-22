@@ -11,5 +11,8 @@ fun Counter() {
     Text("Clicks: $count")  // solo este Text se recompone
 }
 
+ExplicaciónKotlin:
+@Composable marca Counter como función de UI declarativa. var count by remember { mutableStateOf(0) } combina tres mecanismos Kotlin/Compose: var permite mutación; by es delegación de propiedad hacia el State devuelto por remember; remember { } ejecuta el lambda solo en la primera composición y conserva el resultado en recomposiciones. mutableStateOf(0) infiere el tipo State<Int> y hace observable el valor primitivo Int. Button(onClick = { count++ }) usa una lambda que captura count del scope léxico y aplica el operador de incremento ++ sobre el valor delegado (equivalente a count = count + 1). Text("Clicks: $count") lee count durante la composición, registrándose como lector del State; cuando count cambia, solo las funciones composables que lo leen se invalidan para recomposición.
+
 Consejo:
 Distingue las 3 fases (composition / layout / draw). Menciona "tipos estables" y herramientas como Layout Inspector con recomposition counts para diagnosticar problemas.

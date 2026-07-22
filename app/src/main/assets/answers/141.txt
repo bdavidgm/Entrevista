@@ -17,5 +17,9 @@ fun ProfileRoute() {
     val vm: ProfileViewModel = hiltViewModel()
 }
 
+
+ExplicaciónKotlin:
+`@HiltViewModel` y `@Inject constructor` registran dependencias `GetUserUseCase` y `SavedStateHandle` en el grafo de Hilt. `private val userId: String = checkNotNull(savedStateHandle["userId"])` usa `checkNotNull` de la stdlib: si el valor es null lanza `IllegalStateException` con mensaje; el compilador smart-castea a `String` no nullable. El operador `get` de `SavedStateHandle` devuelve nullable porque la clave puede faltar. `@Composable fun ProfileRoute()` sin parámetros obtiene ViewModel con `hiltViewModel()` y anotación de tipo explícita `val vm: ProfileViewModel` — la inferencia también sería válida. `hiltViewModel()` es composable y debe llamarse desde contexto @Composable; Hilt resuelve el scope de navegación/back stack.
+
 Consejo:
 No inyectes Activity ni Context de UI; si hace falta Context, @ApplicationContext. Los bindings interfaz→impl van en módulos @InstallIn(ViewModelComponent::class) con @ViewModelScoped cuando aplique.

@@ -10,5 +10,9 @@ data class User(val id: String, val name: String) : Parcelable
 intent.putExtra("user", user)
 val u = intent.getParcelableExtra<User>("user")
 
+
+ExplicaciónKotlin:
+`@Parcelize data class User(val id: String, val name: String) : Parcelable` — plugin `kotlin-parcelize` genera implementación `Parcelable` en compile time. `data class` proporciona `copy`, `equals`, componentes. `: Parcelable` interfaz Android para serialización inter-proceso. `intent.putExtra("user", user)` — overload para Parcelable empaqueta en Intent extras. `intent.getParcelableExtra<User>("user")` — función genérica con reified type parameter en extensiones KTX modernas; en API antigua retorna nullable. `@Parcelize` elimina boilerplate manual de `writeToParcel`. Propiedades `val` se serializan por orden del constructor primario.
+
 Consejo:
 Prefiere @Parcelize a implementar Parcelable a mano. A partir de Android 13 usa getParcelableExtra(name, clazz) en vez del genérico deprecado.

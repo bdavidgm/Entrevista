@@ -17,5 +17,8 @@ val query = """
     |WHERE active = 1
 """.trimMargin()
 
+ExplicaciónKotlin:
+Los literales delimitados por `"""` son raw strings: conservan saltos de línea y comillas sin escapes `\n` o `\"`. `.trimIndent()` es una función de extensión sobre `String` que elimina la indentación mínima común de cada línea, útil cuando el código fuente sangra dentro de una clase o función. `.trimMargin()` elimina el prefijo hasta el primer `|` en cada línea (configurable), ideal para alinear el texto en el código sin contaminar el contenido final. Ambas devuelven un nuevo `String` inmutable. La asignación a `val json` y `val query` muestra que el resultado sigue siendo una cadena Kotlin normal, usable con APIs de parsing, Room, Retrofit, etc. Este patrón es idiomático para JSON, SQL o HTML embebidos en tests y prototipos.
+
 Consejo:
 Útiles para JSON, SQL y textos largos. Menciona trimIndent / trimMargin para limpiar la sangría sin afectar al contenido.

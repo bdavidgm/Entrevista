@@ -34,5 +34,9 @@ fun AppTheme(content: @Composable () -> Unit) {
     )
 }
 
+
+ExplicaciónKotlin:
+`@Composable fun AppTheme(content: @Composable () -> Unit)` recibe lambda composable como parámetro `content`, tipo funcional con annotation `@Composable`. `val scheme = if (isSystemInDarkTheme()) darkColorScheme() else lightColorScheme()` usa `if` como expresión que devuelve `ColorScheme`; `isSystemInDarkTheme()` lee configuración UI del sistema. `MaterialTheme(colorScheme = scheme, typography = Typography, content = content)` invoca composable raíz Material3 con argumentos nombrados; `Typography` es objeto importado del tema. La trailing lambda `content` se pasa explícitamente como parámetro nombrado. No hay estado mutable local: el tema reacciona al dark mode del sistema en cada recomposición cuando cambia configuración.
+
 Consejo para entrevista:
 M3 vs M2, dynamic color, tokens. Menciona accesibilidad. No confundas Material con Compose (Compose puede sin Material pero raro).

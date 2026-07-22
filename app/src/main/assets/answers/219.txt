@@ -15,5 +15,8 @@ android {
     }
 }
 
+ExplicaciónKotlin:
+El bloque pertenece a un `build.gradle.kts`, archivo ejecutado como script Kotlin con acceso al API del Android Gradle Plugin. `android { }` es una función de extensión que configura el módulo; dentro, `signingConfigs { }` agrupa configuraciones de firma. `create("release") { ... }` crea una entrada nombrada y ejecuta una lambda con receptor (`SigningConfig`), patrón habitual en Gradle Kotlin DSL. `storeFile = file("release.keystore")` usa la función `file()` del Project para resolver rutas relativas al módulo. `storePassword` y `keyPassword` se asignan desde `System.getenv(...)`, que devuelve `String?`; si la variable no existe, el valor será null y el build fallará en release, lo cual es deseable para no firmar con contraseñas vacías. `keyAlias = "upload"` es un literal de cadena que identifica la clave dentro del keystore. Las asignaciones con `=` configuran propiedades del objeto Gradle, no variables Kotlin locales. Este enfoque mantiene secretos fuera del código fuente y permite inyectarlos en CI.
+
 Consejo:
 Nunca subas keystore al repo en claro. Play App Signing permite rotación de upload key si pierdes acceso controlado.

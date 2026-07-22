@@ -11,5 +11,9 @@ val callback = object : ConnectivityManager.NetworkCallback() {
 cm.registerDefaultNetworkCallback(callback)
 // onDestroy: cm.unregisterNetworkCallback(callback)
 
+
+ExplicaciónKotlin:
+`object : ConnectivityManager.NetworkCallback()` crea subclase anónima de callback Java abstracto con overrides. `override fun onAvailable(network: Network)` y `onLost` mutan `_online.value` — probablemente `MutableStateFlow` o LiveData backing. `network: Network` tipa parámetro del framework. `cm.registerDefaultNetworkCallback(callback)` registra para red por defecto del app. El comentario `// onDestroy: cm.unregisterNetworkCallback(callback)` documenta cleanup necesario. Las lambdas object expression permiten múltiples métodos override en un solo bloque. Kotlin interoperabilidad Java: `NetworkCallback` es clase Java extendida con sintaxis `object :`.
+
 Consejo:
 Combina onCapabilitiesChanged con NET_CAPABILITY_VALIDATED para distinguir “Wi‑Fi con portal cautivo” de Internet real.

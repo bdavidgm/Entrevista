@@ -49,5 +49,9 @@ class ProfileViewModel @Inject constructor(
     val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()
 }
 
+
+ExplicaciónKotlin:
+`class UserRepository @Inject constructor(private val api: UserApi, private val dao: UserDao)` usa inyección Hilt en constructor primario; `private val` propiedades inmutables. `suspend fun getUser(id: String): User` combina elvis y `also`: `dao.getById(id) ?: api.fetchUser(id).also { dao.insert(it) }` — si cache miss, fetch remoto y side effect insert en lambda `also` que retorna el mismo objeto. `class GetUserUseCase @Inject constructor(private val repository: UserRepository)` encapsula caso de uso. `suspend operator fun invoke(id: String): User` permite llamar `getUser(id)` como función. `@HiltViewModel class ProfileViewModel @Inject constructor(private val getUser: GetUserUseCase) : ViewModel()` inyecta use case. `MutableStateFlow(ProfileUiState())` y `asStateFlow()` patrón estado readonly expuesto.
+
 Consejo para entrevista:
 Explica con ejemplo concreto de capas Android, no solo teoría SOLID. La frase clave es una sola razón para cambiar, no una sola función por clase.

@@ -19,5 +19,8 @@ class CounterViewModel : ViewModel() {
     }
 }
 
+ExplicaciónKotlin:
+sealed interface CounterIntent declara jerarquía cerrada; data object Inc y data object Dec son singletons de Kotlin 1.9+ (objetos de datos) implementando la interfaz sin estado. data class CounterState(val count: Int = 0) es inmutable con valor por defecto 0 en el constructor. class CounterViewModel : ViewModel() { private val _state = MutableStateFlow(CounterState()); val state = _state.asStateFlow() } encapsula mutabilidad: _state es privado MutableStateFlow, state es StateFlow de solo lectura via asStateFlow(). fun process(intent: CounterIntent) recibe intents tipados. _state.update { s -> when (intent) { ... } } usa update con lambda que recibe estado anterior s y when exhaustivo sobre sealed interface: CounterIntent.Inc -> s.copy(count = s.count + 1) crea nueva instancia con copy de data class. CounterIntent.Dec decrementa simétricamente.
+
 Consejo:
 "Estado inmutable + intents explícitos". Útil en pantallas complejas con muchas transiciones; en pantallas simples puede ser overkill.

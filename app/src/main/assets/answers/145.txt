@@ -8,5 +8,9 @@ fun users(): Flow<List<User>> = flow {
     emit(database.loadUsers()) // IO
 }.flowOn(Dispatchers.IO)
 
+
+ExplicaciónKotlin:
+`fun users(): Flow<List<User>> = flow { emit(database.loadUsers()) }` declara función que retorna `Flow` mediante builder `flow { }`: el lambda es suspend y define el upstream. `emit(...)` envía valor downstream; debe llamarse en contexto de collector activo. `.flowOn(Dispatchers.IO)` es operador de extensión que cambia contexto de ejecución del segmento upstream (incluido el bloque `flow` y `emit`), no del collector. `Dispatchers.IO` es singleton del pool para I/O. El tipo de retorno explícito `Flow<List<User>>` documenta emisiones de listas inmutables. La cadena es expresión de una sola asignación con `=`. El orden de operadores importa: solo lo anterior a `flowOn` corre en IO.
+
 Consejo:
 No confundas con subscribeOn de RxJava: en Flow, cada operador respeta el contexto del segmento. Para el collector, usa withContext o collect en el scope adecuado.

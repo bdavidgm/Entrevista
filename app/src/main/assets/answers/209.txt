@@ -13,5 +13,8 @@ viewModelScope.launch {
     try { val u = api.user("octocat") } catch (e: HttpException) { /* 404, 500 */ }
 }
 
+ExplicaciónKotlin:
+`interface GitHubApi` declara endpoint con `@GET("users/{login}")` y `suspend fun user(@Path("login") login: String): UserDto`; la función suspendida permite llamar desde corrutinas sin callbacks. `@Path("login")` vincula el parámetro Kotlin `login` al placeholder de la URL. `viewModelScope.launch { ... }` abre una corrutina en el scope del ViewModel, cancelada automáticamente al destruir el ViewModel. Dentro, `try { val u = api.user("octocat") } catch (e: HttpException) { ... }` usa try/catch estándar de Kotlin: `val u` tiene alcance al bloque try; `HttpException` es tipo concreto de Retrofit para códigos 4xx/5xx. El literal `"octocat"` es argumento `String`. No se necesita `withContext(IO)` porque Retrofit mueve la llamada suspend al dispatcher correcto. El bloque catch comentado indica manejo de errores HTTP sin capturar fallos de red (`IOException`), que requerirían otro catch o `runCatching`.
+
 Consejo:
 Para manejar errores de red vs HTTP usa runCatching o capa de Result en el repo. withContext(IO) solo si mezclas APIs no suspend.

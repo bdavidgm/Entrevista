@@ -8,5 +8,9 @@ val fused = LocationServices.getFusedLocationProviderClient(this)
 fused.getCurrentLocation(Priority.PRIORITY_BALANCED_POWER_ACCURACY, CancellationTokenSource().token)
     .addOnSuccessListener { /* usar Location */ }
 
+
+ExplicaciónKotlin:
+`LocationServices.getFusedLocationProviderClient(this)` factory estática que retorna cliente; `this` es Context/Activity. `fused.getCurrentLocation(Priority.PRIORITY_BALANCED_POWER_ACCURACY, CancellationTokenSource().token)` pide ubicación puntual con prioridad enum y token de cancelación creado inline — `CancellationTokenSource()` instancia auxiliar y `.token` expone token. `.addOnSuccessListener { /* usar Location */ }` lambda recibe `Location?`; comentario indica uso posterior. No hay manejo de fallo mostrado (`addOnFailureListener`). El encadenamiento es estilo fluent sobre Task de Play Services. Tipos `Priority` y token provienen de biblioteca Google, no stdlib Kotlin.
+
 Consejo:
 Contrasta con LocationManager del framework para dispositivos sin Play Services. Siempre maneja el caso null (permiso denegado o sin fix aún).

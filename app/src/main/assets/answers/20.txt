@@ -13,5 +13,8 @@ inline fun <T> measureMs(block: () -> T): Pair<T, Long> {
 inline fun <reified T> Bundle.getOrNull(key: String): T? =
     get(key) as? T
 
+ExplicaciónKotlin:
+`inline fun <T> measureMs(block: () -> T): Pair<T, Long>` es una función inline genérica: el compilador copia el cuerpo en cada call site, evitando el coste de una lambda como objeto en muchos casos. `block: () -> T` es un parámetro de tipo función sin argumentos que devuelve `T`. Dentro se invoca `block()` y se empaqueta el resultado con el tiempo en `Pair` usando el infix `to`: `result to (System.currentTimeMillis() - start)`. `inline fun <reified T> Bundle.getOrNull(key: String): T?` combina inline con `reified`: el tipo `T` está disponible en runtime en cada call site, permitiendo `get(key) as? T` con cast seguro (`as?` devuelve null si falla). Al ser extension function sobre `Bundle`, el receptor es el bundle sobre el que se llama el método. `reified` solo funciona dentro de funciones `inline` porque el compilador sustituye `T` por el tipo concreto en cada invocación.
+
 Consejo:
 No marques inline funciones grandes: aumentan el bytecode. Reified solo funciona en inline. Aprovecha para hablar de crossinline cuando se necesita evitar non-local returns.

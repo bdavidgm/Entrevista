@@ -10,5 +10,8 @@ Ejemplo:
     </shortcut>
 </shortcuts>
 
+ExplicaciónKotlin:
+El ejemplo está en XML de recursos Android, no en Kotlin; define atajos estáticos declarativos que el sistema lee al instalar la app. En Kotlin, los atajos dinámicos equivalentes se crean con `ShortcutManager` y clases como `ShortcutInfo.Builder`, usando lambdas o builders encadenados en código. La referencia `@string/new_note` en XML se resuelve en tiempo de compilación; en Kotlin usarías `context.getString(R.string.new_note)`. El `<intent>` con `android:action`, `targetPackage` y `targetClass` corresponde a construir un `Intent` con `.apply { action = "..."; setClassName(...) }`. Para integrar atajos desde Kotlin moderno, `ShortcutManagerCompat` de AndroidX ofrece la misma semántica con APIs tipadas. El archivo XML vive en `res/xml/` y se enlaza en el manifest; Kotlin solo interviene al registrar shortcuts en runtime o manejar el `Intent` entrante en `onCreate`.
+
 Consejo:
 Limita cantidad (dynamic máx ~4 visibles según OEM). Actualiza shortcuts cuando cambie el estado relevante (usuario deslogueado, etc.).

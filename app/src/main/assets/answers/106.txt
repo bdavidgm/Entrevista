@@ -34,5 +34,9 @@ Modifier.semantics {
     stateDescription = if (cart.isEmpty) "vacío" else "con artículos"
 }
 
+
+ExplicaciónKotlin:
+`Icon(imageVector = Icons.Default.Delete, contentDescription = stringResource(R.string.delete_item))` usa composables Material; `Icons.Default.Delete` es `ImageVector` del catálogo Material. `stringResource(R.string.delete_item)` carga string de recursos en Compose (suspende recomposición si cambia locale). El segundo fragmento usa `Modifier.semantics { }`: lambda con receiver `SemanticsPropertyReceiver` donde se asignan `contentDescription` y `stateDescription` con template strings `"Carrito, ${cart.count} artículos"`. Interpolación `$cart.count` llama getter de propiedad. `if (cart.isEmpty) "vacío" else "con artículos"` es expresión condicional para `stateDescription`. `Modifier` es interfaz encadenable; `.semantics` es función de extensión de Modifier.
+
 Consejo para entrevista:
 contentDescription, 48dp, sp, TalkBack, Semantics Compose. Menciona inclusión como calidad, no extra opcional.

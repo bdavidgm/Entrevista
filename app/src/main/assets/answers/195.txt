@@ -9,5 +9,8 @@ viewLifecycleOwner.lifecycleScope.launch {
     adapter.submitList(users)
 }
 
+ExplicaciónKotlin:
+El bloque usa corrutinas de Kotlin con el builder `launch` sobre `viewLifecycleOwner.lifecycleScope`, un `CoroutineScope` ligado al ciclo de vida del Fragment (patrón Android KTX). La lambda del `launch` es una suspending coroutine body: puede llamar funciones `suspend` y otras suspendientes sin bloquear el hilo UI. `withContext(Dispatchers.IO) { api.fetchUsers() }` cambia temporalmente al dispatcher de IO para trabajo de red o disco; el bloque trailing lambda devuelve el resultado de la última expresión (`users`), que se asigna a `val users` con tipo inferido (probablemente `List<User>`). Tras reanudar en el dispatcher original (Main), `adapter.submitList(users)` actualiza el RecyclerView en el hilo de UI. `Dispatchers.IO` es un singleton del módulo kotlinx-coroutines; no hace falta crear threads manualmente. Este patrón sustituye callbacks anidados por código secuencial legible con suspensión estructurada bajo el scope del lifecycle.
+
 Consejo:
 Menciona coroutines frente a callbacks + Executors, y que @Parcelize reduce código repetitivo frente a Parcelable manual en Java.

@@ -16,5 +16,8 @@ val retrofit = Retrofit.Builder()
     .build()
     .create(Api::class.java)
 
+ExplicaciónKotlin:
+`interface Api` declara contrato Retrofit con anotaciones Java (`@GET`, `@Path`, `@Body`) aplicables en Kotlin. `@GET("users/{id}")` mapea la ruta; `suspend fun user(@Path("id") id: String): UserDto` combina función suspendida con parámetro nombrado en la URL — Retrofit 2.6+ genera código que suspende la corrutina en lugar de bloquear. El tipo de retorno `UserDto` es no anulable; errores HTTP pueden lanzar `HttpException`. `Retrofit.Builder()` encadena configuración fluida: `baseUrl(...)` exige barra final, `addConverterFactory(MoshiConverterFactory.create())` registra Moshi para JSON, `client(okHttp)` inyecta OkHttp personalizado. `.build().create(Api::class.java)` materializa el proxy: `Api::class.java` pasa la clase al factory Java. Todo el snippet es Kotlin puro sobre APIs Java de Square, listo para inyectar en repos con corrutinas.
+
 Consejo:
 Centraliza auth, logging y reintentos en interceptores OkHttp. Usa Response<T> si necesitas leer códigos HTTP sin excepción.

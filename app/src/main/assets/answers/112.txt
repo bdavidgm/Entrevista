@@ -49,5 +49,9 @@ android {
     }
 }
 
+
+ExplicaciónKotlin:
+`settings.gradle.kts` usa DSL de settings: `pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }` invoca funciones sin argumentos con `()` Kotlin. `dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS) }` usa enum y `.set()` para propiedad mutable. `rootProject.name = "Entrevista"` asigna string. `include(":app")` registra módulo. En `app/build.gradle.kts`, `plugins { alias(libs.plugins.android.application); alias(libs.plugins.kotlin.android) }` aplica plugins del catalog. `android { namespace = ...; compileSdk = 35; defaultConfig { applicationId = ...; minSdk = 26; targetSdk = 35 } }` anida lambdas DSL. Todo es Kotlin script con tipado estático frente a Groovy legacy.
+
 Consejo para entrevista:
 Menciona tipado, version catalogs (libs.versions.toml) y que .kts es el estándar actual. No confundas Kotlin DSL (scripts de build) con Kotlin de la aplicación (runtime): son capas distintas.

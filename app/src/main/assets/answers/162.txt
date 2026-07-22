@@ -19,5 +19,9 @@ val notif = NotificationCompat.Builder(this, "msg")
 
 nm.notify(1, notif)
 
+
+ExplicaciónKotlin:
+`if (Build.VERSION.SDK_INT >= 33)` compara SDK int con literal; rama condicional para permiso runtime Android 13+. `requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 0)` usa `arrayOf` vararg factory y constante de permiso; `0` es requestCode legacy. `val channel = NotificationChannel(...)` construye canal con constructor posicional de tres argumentos. `NotificationCompat.Builder(this, "msg")` encadena `.setSmallIcon`, `.setContentTitle`, `.setContentText`, `.build()` — builder pattern Java interop. `nm.notify(1, notif)` publica con id entero. `this` en builder referencia Context/Activity. Kotlin no requiere punto y coma; cada `val` es local inmutable. Mezcla APIs framework con compat library.
+
 Consejo:
 Canal con IMPORTANCE adecuada (no todo HIGH). Deep link con PendingIntent; agrupa notificaciones relacionadas con setGroup.

@@ -12,5 +12,9 @@ fun AutoCloseSheet(onTimeout: () -> Unit) {
     }
 }
 
+
+ExplicaciónKotlin:
+`@Composable fun AutoCloseSheet(onTimeout: () -> Unit)` declara una función composable con parámetro función sin argumentos que devuelve `Unit`, tipo funcional de Kotlin. `val currentOnTimeout by rememberUpdatedState(onTimeout)` combina delegación de propiedad (`by`) con `rememberUpdatedState`, que devuelve un `State` cuyo `.value` siempre refleja el último `onTimeout` sin reiniciar efectos. `LaunchedEffect(Unit)` entra en un efecto de corrutina keyed por `Unit` constante, por lo que solo se lanza una vez por composición. `delay(3_000)` es función suspend con literal entero usando separador `_` para legibilidad. `currentOnTimeout()` invoca la referencia almacenada en el `State` mediante el operador `()` de invocación de funciones; al ser la versión actualizada, evita el stale closure clásico de lambdas capturadas en efectos de larga vida.
+
 Consejo:
 "Captura el valor actual sin reiniciar el efecto". Si pones onTimeout como key, el delay se reiniciaría cada vez que cambie la lambda.

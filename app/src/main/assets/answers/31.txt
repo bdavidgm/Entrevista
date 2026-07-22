@@ -11,5 +11,8 @@ class MainActivity : AppCompatActivity() {
     }
 }
 
+ExplicaciónKotlin:
+`class MainActivity : AppCompatActivity()` declara una Activity que hereda de la clase de soporte AndroidX; la herencia usa `:` en lugar de `extends`. `override fun onCreate(savedInstanceState: Bundle?)` sobrescribe el callback del ciclo de vida; `savedInstanceState` es `Bundle?` porque puede ser null en el primer arranque. `super.onCreate(savedInstanceState)` delega la inicialización base antes del código propio. `setContent { MyAppTheme { HomeScreen() } }` es una API Compose: recibe una lambda trailing `@Composable () -> Unit`; las llaves anidadas construyen árbol de composables con `MyAppTheme` como wrapper de tema. Kotlin trata las funciones composables como funciones normales con anotación especial; el DSL anidado es sintaxis de lambdas. No hay XML en este ejemplo: la UI se define enteramente en Kotlin declarativo.
+
 Consejo:
 Repasa el ciclo de vida y la diferencia con Fragment. Menciona "single-activity architecture" como práctica común en apps Compose.

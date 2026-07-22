@@ -12,5 +12,8 @@ val user = User().apply {
     analytics.track(it)
 }
 
+ExplicaciónKotlin:
+`User()` invoca el constructor sin argumentos (o el default de la clase). `.apply { name = "Ana"; age = 30 }` configura propiedades mutables del receptor con `this` implícito; `apply` devuelve el mismo `User` configurado, permitiendo encadenar. `.also { ... }` recibe el objeto como `it` (parámetro explícito del lambda) y ejecuta efectos secundarios: logging con plantilla `${it.id}` e `analytics.track(it)`; `also` también devuelve el receptor original, no el resultado del bloque. La diferencia clave: en `apply` accedes a miembros sin prefijo; en `also` el objeto queda visible como `it`, útil cuando quieres distinguirlo de otros identificadores en scope. El encadenamiento `apply { }.also { }` es idiomático para "construir y registrar".
+
 Consejo:
 "apply = configure, also = side effect". Si dentro del bloque vas a referirte mucho al objeto, también ayuda a evitar conflictos de nombre.

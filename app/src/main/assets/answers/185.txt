@@ -16,5 +16,8 @@ prompt.authenticate(
         .build()
 )
 
+ExplicaciónKotlin:
+`BiometricPrompt(this, executor, object : BiometricPrompt.AuthenticationCallback() { ... })` construye el prompt pasando la `Activity`/`Fragment` como `this`, un `Executor` para callbacks en hilo adecuado, y un `object : AuthenticationCallback()` — expresión de objeto anónimo de Kotlin que hereda la clase Java abstracta e implementa solo el método necesario. `override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult)` usa la palabra clave `override` y tipado explícito del parámetro `result`; el cuerpo llama a `unlockVault()`, función del ámbito exterior. `prompt.authenticate(...)` encadena la configuración con `BiometricPrompt.PromptInfo.Builder()`, el patrón builder Java al que Kotlin accede fluidamente; `.setTitle(...)`, `.setNegativeButtonText(...)` y `.build()` devuelven el `PromptInfo` final. Las cadenas `"Desbloquear"` y `"Cancelar"` son literales `String`. El estilo mezcla OOP Java (callback, builder) con sintaxis concisa de Kotlin para objetos anónimos y llamadas encadenadas.
+
 Consejo:
 Ofrece fallback con credencial (setDeviceCredentialAllowed o flujo propio). allowedAuthenticators permite exigir hardware fuerte según requisitos de seguridad.

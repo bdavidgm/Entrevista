@@ -12,5 +12,9 @@ val client = OkHttpClient.Builder()
     .certificatePinner(pinner)
     .build()
 
+
+ExplicaciónKotlin:
+`CertificatePinner.Builder()` usa patrón builder de OkHttp escrito en Kotlin/Java interoperable. `.add("api.tuapp.com", "sha256/...")` encadena configuración de hostname y pin SHA-256. `.build()` materializa instancia inmutable. `OkHttpClient.Builder().certificatePinner(pinner).build()` compone cliente HTTP con propiedad nombrada en builder. Las cadenas `"api.tuapp.com"` y el hash son literales `String`. Aunque la API es de OkHttp (Java), el código Kotlin aprovecha expresiones fluentes y `val` para inmutabilidad local. No hay corrutinas ni nullability especial: tipos no nullable por defecto. El pinning es configuración declarativa en tiempo de construcción del cliente.
+
 Consejo:
 Actualiza los pins antes de que expiren los certificados del servidor (estrategia backup pin). El pinning mal gestionado rompe la app si cambia el cert.

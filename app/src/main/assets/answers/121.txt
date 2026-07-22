@@ -39,5 +39,9 @@ if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
     requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), REQ_CODE)
 }
 
+
+ExplicaciónKotlin:
+`android { compileSdk = 35; defaultConfig { minSdk = 26; targetSdk = 35; applicationId = "com.example.app" } }` — enteros y strings en DSL Gradle. Bloque condicional Kotlin runtime: `if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) { requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), REQ_CODE) }`. `Build.VERSION.SDK_INT` es Int del API level del dispositivo. `VERSION_CODES.TIRAMISU` constante para API 33. `arrayOf(...)` crea `Array<String>` para permisos. `requestPermissions` es método Activity legacy; en API 33+ POST_NOTIFICATIONS es permiso runtime. `REQ_CODE` sería constante Int companion. Demuestra comprobación de API level idiomática Kotlin con constantes Android.
+
 Consejo para entrevista:
 Diferencia las tres: compile (build), min (instalación), target (comportamiento/políticas). Menciona que subir targetSdk puede romper tests si no adaptas permisos y background limits.

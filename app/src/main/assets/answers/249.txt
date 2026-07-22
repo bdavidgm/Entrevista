@@ -16,5 +16,8 @@ class Button : Clickable, Named {
     override fun label() = super<Clickable>.label()
 }
 
+ExplicaciónKotlin:
+`interface Clickable { fun click(); fun label() = "Acción" }` combina método abstracto y default con cuerpo en interfaz Kotlin. `interface Named { fun label() = "Elemento" }` introduce colisión de firma idéntica `label()`. `class Button : Clickable, Named` debe resolver conflicto al implementar ambas. `override fun click() = println("click")` cumple contrato abstracto con expresión body. `override fun label() = super<Clickable>.label()` elige explícitamente implementación de `Clickable` mediante qualified super (`super<Tipo>`), sintaxis exclusiva de Kotlin para múltiples interfaces. Sin qualified super, compilador no sabría cuál default usar. Interfaces pequeñas facilitan mocks en tests con `object : Clickable { override fun click() {} }`. Default implementations se compilan a clases estáticas JVM (`DefaultImpls`). Este ejemplo es clave para entender diamond problem resuelto en compilación.
+
 Consejo:
 Mantén interfaces pequeñas y orientadas a una capacidad. Esto facilita fakes, sustitución e inyección de dependencias.

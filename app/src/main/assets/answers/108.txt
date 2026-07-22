@@ -41,5 +41,9 @@ fun AddIcon() {
     app:srcCompat="@drawable/ic_add"
     app:tint="?attr/colorPrimary" />
 
+
+ExplicaciónKotlin:
+`@Composable fun AddIcon()` declara composable sin parámetros. `Icon(imageVector = Icons.Default.Add, contentDescription = null)` pasa `null` explícito a `contentDescription` indicando icono decorativo (TalkBack lo ignora). `Icons.Default.Add` resuelve vector Material predefinido como `ImageVector`. El comentario XML `ImageView` no es Kotlin; en Views tradicionales `app:srcCompat` carga vector drawable. En Compose, equivalente es `Icon` o `Image(painterResource(...))`. `contentDescription = null` usa nullability del tipo `String?` para accesibilidad. Función de una expresión implícita si tuviera solo Icon, aquí es bloque con una llamada.
+
 Consejo para entrevista:
 Escalable, un XML, tint. Contrasta con PNG por densidad. Compose ImageVector equivalente.

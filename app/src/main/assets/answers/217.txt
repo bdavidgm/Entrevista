@@ -6,5 +6,8 @@ Firebase App Distribution sube APK/AAB a testers sin pasar por revisión públic
 Ejemplo:
 ./gradlew appDistributionUploadRelease
 
+ExplicaciónKotlin:
+La tarea `appDistributionUploadRelease` se registra en el script Kotlin DSL del módulo `app` mediante el plugin de Firebase App Distribution, aplicado con `id("com.google.firebase.appdistribution")` o la sintaxis `plugins { }`. En Kotlin, los plugins de Gradle exponen extensiones tipadas: por ejemplo, un bloque `firebaseAppDistribution { ... }` donde asignas `releaseNotes`, `groups` o `testers` usando literales de cadena y listas. Las propiedades se configuran en tiempo de configuración del build, no en runtime de la app Android. Si usas `buildTypes` o `productFlavors`, puedes definir distribuciones distintas por variante con lambdas anidadas, aprovechando el scope implícito de Kotlin. En CI, el mismo comando se invoca tras `./gradlew assembleRelease` o `bundleRelease`, encadenando artefactos y credenciales vía variables de entorno leídas con `System.getenv`. Aunque el ejemplo es solo la línea de terminal, el valor Kotlin está en cómo el DSL declara tareas tipadas y reutilizables. Eso permite automatizar subidas sin escribir scripts bash ad hoc.
+
 Consejo:
 No sustituye tracks de Play interno/closed testing si necesitas las mismas reglas de firma y integridad que producción. Combina con Crashlytics para feedback.

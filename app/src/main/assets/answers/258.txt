@@ -15,5 +15,8 @@ val type = Profile::class
 val route = type.findAnnotation<Screen>()?.route
 val fields = type.memberProperties.map { it.name }
 
+ExplicaciónKotlin:
+`import kotlin.reflect.full.findAnnotation` y `memberProperties` vienen de extensión kotlin-reflect (`full` package). `@Target(AnnotationTarget.CLASS) annotation class Screen(val route: String)` define anotación con propiedad `route`; `@Screen("profile")` la aplica a `data class Profile`. `Profile::class` obtiene KClass de data class; compiler genera `equals/hashCode/copy/componentN`. `type.findAnnotation<Screen>()?.route` usa generic reified-like con tipo explícito; retorna nullable por safe call `?.`. `type.memberProperties.map { it.name }` lista nombres de propiedades declaradas (`id`, `name`) vía reflexión; `it` es `KProperty1`. Reflexión es más lenta y frágil con R8 obfuscation sin reglas `-keep`. Preferir codegen (KSP), interfaces o `reified inline fun <reified T>` cuando el tipo es conocido en compilación. `@Target` restringe dónde compila la anotación. Frameworks de navegación Compose usan patrones similares para rutas.
+
 Consejo:
 R8 puede renombrar miembros usados por reflexión; añade reglas keep cuando una biblioteca lo requiera. Si conoces el tipo en compilación, prefiere interfaces, genéricos o reified antes que reflexión.

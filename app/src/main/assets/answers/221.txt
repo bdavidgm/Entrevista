@@ -6,5 +6,8 @@ Sirve como mapa, no como lista cerrada: se consolida con proyectos reales por fa
 Ejemplo:
 Plan trimestral: (1) lista con Compose+Room → (2) capa red+Hilt → (3) tests de ViewModel+UI → (4) release en pista interna.
 
+ExplicaciónKotlin:
+El ejemplo es un plan de aprendizaje, no código ejecutable, pero cada fase apunta a construcciones Kotlin concretas del ecosistema Android moderno. Compose usa funciones `@Composable` y estado con `remember`, `mutableStateOf` y recomposición, todo en Kotlin puro sin XML de layouts. Room genera DAOs y entidades Kotlin con anotaciones `@Entity`, `@Dao` y `@Query`, aprovechando corrutinas con funciones `suspend`. Hilt se integra con `@HiltViewModel`, `@Inject` y módulos `@Module` escritos en Kotlin para inyectar Retrofit o repositorios. Los tests de ViewModel suelen usar `runTest`, `StandardTestDispatcher` y bibliotecas como Turbine para Flow. La pista interna de Play se alcanza tras `./gradlew bundleRelease` configurado en Kotlin DSL. En entrevista, traducir el roadmap a archivos `.kt` reales demuestra que no memorizas títulos, sino que sabes qué sintaxis y patrones aplicar en cada capa.
+
 Consejo:
 En entrevista enlaza cada tema con algo que hayas construido o medido (Profiler, Vitals). Profundiza donde el puesto lo exija (performance, modularización, seguridad).

@@ -38,5 +38,9 @@ supportFragmentManager.commit {
     addToBackStack("detail")
 }
 
+
+ExplicaciónKotlin:
+`navController.navigate(R.id.home) { popUpTo(R.id.login) { inclusive = true }; launchSingleTop = true }` — lambda trailing de `NavOptionsBuilder`: `popUpTo` elimina destinos hasta login inclusive; `launchSingleTop = true` reutiliza instancia superior si existe. `R.id.home` e `R.id.login` son IDs generados del grafo Navigation. Fragment snippet: `supportFragmentManager.commit { replace(R.id.container, DetailFragment()); addToBackStack("detail") }` usa KTX `commit` lambda DSL; `DetailFragment()` constructor Kotlin/Java; `addToBackStack` con string tag. Son APIs Android de navegación invocadas desde Kotlin con lambdas y named arguments en NavOptions.
+
 Consejo para entrevista:
 Dibuja la pila A -> B -> C y qué pasa con Back. Diferencia task del sistema vs NavController back stack. Menciona popUpTo tras autenticación como caso clásico.

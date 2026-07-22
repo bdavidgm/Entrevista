@@ -11,5 +11,8 @@ var View.isVisibleNow: Boolean
     get() = visibility == View.VISIBLE
     set(value) { visibility = if (value) View.VISIBLE else View.GONE }
 
+ExplicaciónKotlin:
+`val View.isVisibleNow: Boolean` con solo `get()` define una extension property de solo lectura: no hay backing field; cada acceso ejecuta `visibility == View.VISIBLE`, comparando la propiedad Java/Kotlin `visibility` del receptor `View`. La variante con `var` añade un setter personalizado: `set(value)` recibe el nuevo booleano y asigna `View.VISIBLE` o `View.GONE` según el resultado de la expresión `if`. Las extension properties se compilan como funciones estáticas `getValue`/`setValue` sin almacenar estado por instancia. El receptor `View` queda implícito dentro de getter y setter. Este patrón expone semántica de dominio (`isVisibleNow`) sobre APIs de plataforma (`visibility`) sin crear subclases ni wrappers.
+
 Consejo:
 Respuesta clave: "no tienen campo, solo get/set". Si necesitas estado por instancia, usa un delegated property dentro de la clase, no una extension.

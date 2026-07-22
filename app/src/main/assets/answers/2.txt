@@ -8,5 +8,8 @@ val name = user?.name ?: "Anónimo"
 val id = bundle?.getString("id") ?: return
 val token = prefs.getToken() ?: throw IllegalStateException("Sin sesión")
 
+ExplicaciónKotlin:
+Cada línea declara una propiedad local con `val` (referencia inmutable) y combina el safe call `?.` con Elvis `?:`. En `user?.name ?: "Anónimo"`, si `user` o `name` son null, el resultado es el literal `"Anónimo"`; Kotlin infiere `String` no anulable. La segunda línea muestra el patrón `?: return`: si `bundle?.getString("id")` devuelve null, la función contenedora termina de inmediato; el tipo de retorno de `throw` y `return` es `Nothing`, que hace que el compilador acepte la expresión como válida en contextos que esperan un valor concreto. La tercera usa `?: throw IllegalStateException(...)`, otro caso de `Nothing`: o bien obtienes el token no nulo o la ejecución aborta con excepción. Estos tres usos demuestran que Elvis no solo asigna defaults, sino que también expresa control de flujo de forma declarativa.
+
 Consejo:
 Diferéncialo del safe call (?.). Menciona el patrón "?: return" para salir temprano y mantener el código plano.

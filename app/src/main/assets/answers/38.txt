@@ -15,5 +15,8 @@ cursor?.use {
     }
 }
 
+ExplicaciónKotlin:
+`contentResolver.query(...)` invoca la API de ContentProvider del framework; los argumentos `null` son parámetros opcionales de selección/orden que aquí no se usan. `arrayOf(...)` crea un arreglo Kotlin de proyección de tipos (`Array<String>`) para las columnas proyectadas. `cursor?.use { ... }` combina safe call con la función de extensión estándar `use`: si `query` devuelve null, no entra al bloque; si hay cursor, lo cierra automáticamente al salir (como try-with-resources). Dentro del lambda, `it` es el `Cursor`; `while (it.moveToNext())` itera filas. `it.getString(0)` accede a la columna por índice. `Log.d(TAG, ...)` registra cada nombre. Este patrón es idiomático en Kotlin para recursos que implementan `Closeable`, evitando fugas de cursores.
+
 Consejo:
 "Para compartir datos entre apps; dentro de la app, Room". Necesario para integrarse con APIs del sistema como MediaStore y SAF.

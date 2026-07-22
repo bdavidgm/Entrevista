@@ -11,5 +11,9 @@ fused.lastLocation.addOnSuccessListener { loc ->
 val request = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 10_000).build()
 fused.requestLocationUpdates(request, callback, Looper.getMainLooper())
 
+
+ExplicaciónKotlin:
+`fused.lastLocation.addOnSuccessListener { loc -> ... }` registra callback Java con lambda Kotlin SAM-conversion; parámetro `loc` es `Location?` nullable. `loc?.let { println("${it.latitude},${it.longitude}") }` ejecuta bloque solo con fix válido; template string interpola coordenadas. `LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 10_000).build()` usa builder con prioridad enum y intervalo Long con separador `_`. `fused.requestLocationUpdates(request, callback, Looper.getMainLooper())` pasa callback y looper explícito del hilo principal. `println` es función estándar para demo. Las APIs Play Services son Java-first; Kotlin las consume con lambdas y safe calls.
+
 Consejo:
 Menciona justificación en UI, intervalos de muestreo y Foreground Service + tipo location si rastreas en background. Alternativa sin GMS: LocationManager.

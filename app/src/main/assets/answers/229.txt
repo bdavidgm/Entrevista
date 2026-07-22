@@ -6,5 +6,8 @@ Verified boot (AVB) comprueba la cadena de firma en cada arranque.
 Ejemplo:
 fastboot oem unlock  // nombre varía por fabricante
 
+ExplicaciónKotlin:
+El comando fastboot ilustra el arranque verificado antes de que se ejecute cualquier bytecode Kotlin en ART. Locked bootloader solo acepta imágenes firmadas por el OEM; desbloquearlo cambia el estado que apps Kotlin pueden consultar indirectamente vía Play Integrity API. No existe API Kotlin pública para unlock; es operación de firmware. `Verified Boot` y `AVB` garantizan integridad de particiones que contienen el framework donde corren tus clases `.dex`. En desarrollo, el emulador Android Studio evita fastboot para la mayoría de casos: instalas con Gradle y depuras Kotlin directamente. Si pruebas en dispositivo desbloqueado, comportamientos de permisos, keystore hardware y DRM pueden diferir de usuarios finales. Documentar esto en entrevista muestra que separas desarrollo de app (Kotlin/JVM) de modificación de sistema (fastboot). Los comentarios `// nombre varía por fabricante` reflejan que fastboot es texto de shell, no sintaxis Kotlin.
+
 Consejo:
 Apps bancarias (Play Integrity) pueden detectar bootloader desbloqueado. Para soporte avanzado documenta cómo volver a stock y re-bloquear si el OEM lo permite.

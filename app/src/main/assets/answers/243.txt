@@ -10,5 +10,8 @@ class User(val id: String, val name: String) {
     constructor(id: String) : this(id, "Sin nombre")
 }
 
+ExplicaciónKotlin:
+`class User(val id: String, val name: String)` declara constructor primario con propiedades en la cabecera; ambas `val` generan getters y backing fields. `init { require(id.isNotBlank()) { "id requerido" } }` es bloque de inicialización ejecutado tras construir propiedades del primario; `require` lanza `IllegalArgumentException` con lambda de mensaje lazy si falla. `constructor(id: String) : this(id, "Sin nombre")` es constructor secundario que debe delegar al primario con `this(...)`, regla del compilador Kotlin. El secundario ofrece valor por defecto `"Sin nombre"` sin usar parámetro default en primario. Orden de ejecución: primario → propiedades → `init` blocks en orden → cuerpo del secundario. Kotlin prefiere parámetros con default `name: String = "Sin nombre"` o factory `companion object fun guest(id: String)` antes que secundarios. Los secundarios son útiles cuando necesitas lógica distinta o múltiples caminos de construcción en clases Java interop.
+
 Consejo:
 Prefiere un constructor primario con valores por defecto o factories. Usa secundarios cuando necesites otra forma real de construir la instancia.

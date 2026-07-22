@@ -42,5 +42,9 @@ fun ProfileScreen(viewModel: ProfileViewModel = hiltViewModel()) {
     Text(text = user?.name ?: "Cargando...")
 }
 
+
+ExplicaciónKotlin:
+`class UserRepository` encapsula fuente de datos. `private val _user = MutableStateFlow<User?>(null)` crea StateFlow mutable privado con valor inicial nullable `null`. `val user: StateFlow<User?> = _user.asStateFlow()` expone lectura readonly mediante función de extensión que envuelve sin copiar. `suspend fun refresh()` es función suspendida callable desde corrutina. `_user.value = api.fetchUser()` asigna directamente al `MutableStateFlow` (set síncrono thread-safe); dispara collectors. `@Composable fun ProfileScreen(viewModel: ProfileViewModel = hiltViewModel())` usa parámetro default con composable de Hilt Navigation. `val user by viewModel.user.collectAsState()` delega estado Compose: `by` sobre `State<T>` devuelto por `collectAsState()`. `user?.name ?: "Cargando..."` encadena safe call y Elvis para placeholder.
+
 Consejo para entrevista:
 Empieza con la definición genérica Subject/Observer y luego mapea a LiveData, Flow y Compose. Menciona observación lifecycle-aware y cancelación de suscripciones para evitar fugas.

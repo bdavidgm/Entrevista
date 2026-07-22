@@ -17,5 +17,8 @@ NavHost(navController, startDestination = "home") {
     }
 }
 
+ExplicaciónKotlin:
+val navController = rememberNavController() crea y recuerda un NavController en Compose. NavHost(navController, startDestination = "home") { ... } usa trailing lambda con NavGraphBuilder DSL. composable("home") { HomeScreen(onUser = { id -> navController.navigate("user/$id") }) } registra ruta string; la lambda interna pasa onUser como lambda (id) -> Unit que interpola id en template string "user/$id" y llama navigate. composable(route = "user/{id}", arguments = listOf(navArgument("id") { type = NavType.StringType })) define argumento tipado; navArgument("id") { type = NavType.StringType } es lambda con receiver sobre NavArgumentBuilder. { backStackEntry -> UserScreen(id = backStackEntry.arguments!!.getString("id")!!) } usa doble operador !! (not-null assertion) sobre arguments y getString, forzando no-null en runtime con riesgo de NPE si falta el argumento. UserScreen(id = ...) usa parámetro nombrado.
+
 Consejo:
 "Single Activity + NavHost". Para argumentos prefiere tipos seguros (sealed routes o la nueva API type-safe). Maneja deep links registrándolos en composable(deepLinks = ...).

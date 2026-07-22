@@ -12,5 +12,8 @@ class MainActivity : AppCompatActivity() {
     }
 }
 
+ExplicaciónKotlin:
+El comentario `// Anti-patrón ilustrativo` documenta intención sin afectar compilación. `class MainActivity : AppCompatActivity()` hereda de la Activity AndroidX base. `override fun onCreate(b: Bundle?)` redefine el callback del ciclo de vida; el parámetro se abrevia `b` y es `Bundle?` anulable. `super.onCreate(b)` delega en la implementación padre antes de lógica propia — aquí el orden es convencional aunque el ejemplo ilustra mala práctica. `Thread { val data = api.fetch() /* ... */ }.start()` crea un hilo Java con lambda Kotlin como `Runnable`: el bloque captura `api` del ámbito exterior (closure) y declara `val data` inmutable dentro del hilo. `.start()` lanza ejecución paralela fuera del main thread, pero sin lifecycle awareness ni corrutinas. Este patrón mezcla Controller y networking en la Activity; en Kotlin idiomático usarías `lifecycleScope.launch(Dispatchers.IO) { ... }` y un ViewModel.
+
 Consejo:
 En entrevista explica por qué separar: testabilidad, ciclo de vida y estado. "MVC Android informal" suele criticarse; ofrece MVVM como evolución.

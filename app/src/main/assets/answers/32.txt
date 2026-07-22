@@ -12,5 +12,8 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
     }
 }
 
+ExplicaciónKotlin:
+`class ProfileFragment : Fragment(R.layout.fragment_profile)` usa el constructor de conveniencia de AndroidX que acepta el ID del layout como argumento del constructor primario, reduciendo boilerplate de `onCreateView`. `override fun onViewCreated(view: View, savedInstanceState: Bundle?)` recibe la vista ya inflada; `view` es no nulo aquí. `viewLifecycleOwner.lifecycleScope.launch { ... }` accede a la extension property `lifecycleScope` ligada al ciclo de vida de la vista (no al del Fragment), evitando fugas tras `onDestroyView`. `launch` inicia una coroutine en el dispatcher Main. `viewModel.state.collect { render(it) }` es una función suspend que consume un `Flow`; el lambda `it` recibe cada estado emitido. `render(it)` invoca una función de UI dentro del collector. Este patrón conecta programación reactiva con corrutinas de forma idiomática en Kotlin Android.
+
 Consejo:
 Distingue Fragment lifecycle del View lifecycle. Hoy el patrón habitual es single-activity + varios Fragments o pantallas Compose con Navigation.

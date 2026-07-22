@@ -13,5 +13,8 @@ LazyColumn(
     }
 }
 
+ExplicaciónKotlin:
+LazyColumn invoca un trailing lambda que define un LazyListScope DSL: dentro se llama items(users, key = { it.id }) { user -> ... }. items es una función de extensión sobre LazyListScope con dos lambdas: key selecciona un identificador estable por elemento (it.id accede a la propiedad id del tipo inferido de users), y el lambda final recibe cada user tipado implícitamente. contentPadding y verticalArrangement son parámetros nombrados con valores PaddingValues(16.dp) y Arrangement.spacedBy(8.dp). UserCard(user) delega el renderizado a otro composable. La lista users debe ser Iterable o List con elementos que expongan id; el genérico de items se infiere del tipo de la colección. Este patrón evita componer todos los ítems a la vez, a diferencia de users.forEach { } dentro de Column.
+
 Consejo:
 "Solo compone los ítems visibles" + "siempre pon key estable". No los anides en Column con verticalScroll (rompe el reciclaje).

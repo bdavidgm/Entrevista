@@ -7,5 +7,8 @@ Ejemplo:
 val am = AccountManager.get(this)
 val accounts = am.getAccountsByType("com.google")
 
+ExplicaciónKotlin:
+`AccountManager.get(this)` es una llamada estática Java que recibe un `Context` (`this` de Activity/Application) y devuelve el singleton del gestor de cuentas, asignado a `val am`. `getAccountsByType("com.google")` filtra por tipo de cuenta y devuelve un array Java `Array<Account>` que Kotlin expone como arreglo con índice y `.size`, iterable con `for (account in accounts)`. El literal `"com.google"` es `String` no anulable. No hay lambdas, corrutinas ni null safety explícita en el snippet: asume permisos concedidos y cuentas existentes. En Kotlin moderno este patrón suele envolverse en funciones suspend o repositorios que manejen permisos y cuentas vacías con tipos como `List<Account>` mediante `.toList()` sobre el array devuelto.
+
 Consejo:
 GET_ACCOUNTS y flujos legacy cambiaron mucho con permisos y scoped access. Para identidad moderna menciona Credential Manager / Sign in with Google.

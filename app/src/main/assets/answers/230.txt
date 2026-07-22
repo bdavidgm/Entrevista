@@ -6,5 +6,8 @@ Conlleva riesgo de seguridad, actualizaciones OTA complicadas y posible bloqueo 
 Ejemplo:
 adb sideload magisk_patched_boot.img tras desbloquear bootloader y parchear imagen oficial.
 
+ExplicaciónKotlin:
+Rootear con Magisk modifica la imagen de boot antes del arranque de Android; tu código Kotlin posterior se ejecuta en un entorno con uid 0 disponible para apps con permisos root, fuera del sandbox normal. `adb sideload` transfiere la imagen desde recovery; no hay llamada Kotlin equivalente en SDK público. En emulador, `adb root` basta para depuración y permite inspeccionar `/data/data/<package>` de tu app Kotlin sin Magisk. Apps Kotlin que usan `Runtime.exec("su")` o bibliotecas root dependen de APIs no portables y rompen en Play Store. El desarrollo estándar usa permisos declarados en manifest y runtime permissions, no escalada a superusuario. Tras root, SafetyNet/Play Integrity pueden fallar y bloquear SDKs bancarios aunque tu Kotlin sea correcto. Para entrevistas de desarrollo Android, enfatiza que root es escenario de usuario avanzado, no arquitectura de app. El ejemplo mezcla comandos shell con un flujo que ocurre antes de que corra tu APK.
+
 Consejo:
 Para desarrollo, el emulador con adb root basta. En dispositivo real, root rompe supuestos de sandbox de muchas apps de productividad/pago.

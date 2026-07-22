@@ -13,5 +13,8 @@ DisposableEffect(systemUiController, useDark) {
     onDispose { /* limpieza si hace falta */ }
 }
 
+ExplicaciónKotlin:
+SideEffect { analytics.set("isPremium", user.isPremium) } ejecuta el lambda después de cada recomposición exitosa; accede a user.isPremium como propiedad de un objeto user del scope composable externo. No devuelve valor útil (Unit) y no admite onDispose. DisposableEffect(systemUiController, useDark) recibe keys: si cualquiera cambia, ejecuta dispose del efecto anterior y vuelve a entrar. El bloque recibe systemUiController y useDark del scope; if (useDark) Color.Black else Color.White es expresión if de Kotlin que devuelve Color. onDispose { /* limpieza */ } es una lambda especial del DSL DisposableEffect que Compose invoca al salir o al cambiar keys. Ambos constructos son funciones composables de orden superior que reciben lambdas; SideEffect no es suspend, DisposableEffect tampoco en el bloque principal (salvo APIs internas).
+
 Consejo:
 "SideEffect = tras recomposición, sin limpieza"; "DisposableEffect = entrar/salir con onDispose". LaunchedEffect, para trabajo suspendido.

@@ -12,5 +12,9 @@ class StringProducer : Producer<String> { override fun produce() = "hola" }
 
 val producer: Producer<Any> = StringProducer() // OK gracias a out
 
+
+ExplicaciónKotlin:
+`interface Producer<out T> { fun produce(): T }` — type parameter marcado `out` (covariante): `T` solo aparece en posición de salida (return type), nunca en parámetros de entrada. Permite subtipado: `Producer<String>` es subtipo de `Producer<Any>`. `class StringProducer : Producer<String> { override fun produce() = "hola" }` — expresión única `= "hola"` devuelve String sin llaves. `val producer: Producer<Any> = StringProducer()` asignación legal por covarianza de `out T`. Sin `out`, la asignación no compilaría (invarianza). `out` en declaración es contrato de solo-producer, análogo PECS "extends" en Java.
+
 Consejo:
 "out = covariante = producer". Si necesitas leer y escribir, no puedes usar out; usa invariante o star projection según el caso.

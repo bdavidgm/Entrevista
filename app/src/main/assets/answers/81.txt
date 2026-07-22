@@ -39,5 +39,8 @@ lifecycleScope.launch {
     }
 }
 
+ExplicaciónKotlin:
+class MyViewModel : ViewModel() { fun save() = viewModelScope.launch { repository.save() } } usa expresión = con launch: save() devuelve Job implícito del launch (Unit en practice si no se captura). viewModelScope.launch { repository.save() } ejecuta save suspend en scope del ViewModel. lifecycleScope.launch { repeatOnLifecycle(Lifecycle.State.STARTED) { viewModel.uiState.collect { render(it) } } } anida launch en Activity/Fragment con repeatOnLifecycle suspend que reinicia collect cuando lifecycle >= STARTED. collect { render(it) } es terminal Flow operator con lambda it del uiState emitido. Contrasta scope de ViewModel (sobrevive rotación) con lifecycleScope (ligado a LifecycleOwner). render(it) method call en lambda.
+
 Consejo para entrevista:
 Lista scopes Android y cuándo se cancelan. Pregunta viewModelScope vs lifecycleScope: ViewModel sobrevive rotación; lifecycleScope no para la misma Activity recreada igual... ViewModel persiste datos, lifecycleScope recolecta UI.

@@ -13,5 +13,9 @@ class MyApp : Application() {
     }
 }
 
+
+ExplicaciónKotlin:
+`@HiltAndroidApp class MyApp : Application()` — anotación Hilt genera componente Application y clases DI base; debe existir una sola en app. `: Application()` hereda clase Android del proceso. `override fun onCreate()` callback de arranque del proceso, antes de cualquier Activity. `super.onCreate()` delegación obligatoria al framework. `Timber.plant(Timber.DebugTree())` configura logging; `Stetho.initializeWithDefaults(this)` pasa `this` (Application Context) a Facebook Stetho. `this` en Application es Application Context válido globalmente. Inicializaciones aquí bloquean cold start; deben ser ligeras o diferidas.
+
 Consejo:
 "onCreate del Application es global y bloqueante en el arranque": evita trabajo pesado, considera App Startup library para inicialización ordenada y diferida.

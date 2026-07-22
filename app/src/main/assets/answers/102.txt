@@ -48,5 +48,9 @@ android {
     }
 }
 
+
+ExplicaciónKotlin:
+Las líneas `-keep` pertenecen a ProGuard/R8 rules (texto), no Kotlin. El bloque `android { buildTypes { release { ... } } }` es Gradle Kotlin DSL. `isMinifyEnabled = true` activa shrinking. `proguardFiles(...)` recibe `getDefaultProguardFile("proguard-android-optimize.txt")` (función AGP) y ruta string `"proguard-rules.pro"`. `getDefaultProguardFile` devuelve `File`. En Kotlin DSL, `release` dentro de `buildTypes` configura la variante. La regla `-keepclassmembers class * { @com.google.gson.annotations.SerializedName <fields>; }` preserva campos anotados para reflexión Gson en runtime tras ofuscación. El ejemplo mezcla configuración build script Kotlin con sintaxis de reglas ProGuard.
+
 Consejo para entrevista:
 R8 reemplaza ProGuard; shrink + obfuscate. Menciona mapping.txt. No confundas con Baseline Profile.

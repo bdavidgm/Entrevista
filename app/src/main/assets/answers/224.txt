@@ -18,5 +18,8 @@ class SyncService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 }
 
+ExplicaciónKotlin:
+`SyncService` extiende `Service()` y declara `private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)`, combinando un `Job` supervisor (los fallos de hijos no cancelan hermanos) con el dispatcher de I/O mediante el operador `+` de corrutinas. `onCreate()` llama a `super.onCreate()` para mantener el contrato del ciclo de vida. En `onStartCommand`, `scope.launch { repository.sync() }` lanza trabajo asíncrono sin bloquear el hilo principal; `repository` sería una dependencia inyectada o lazy en Kotlin. `return START_NOT_STICKY` indica al sistema que no reintente el servicio si lo mata. `onDestroy()` ejecuta `scope.cancel()` antes del `super`, cancelando corrutinas pendientes y evitando leaks. `onBind` retorna `null` con expresión body, señal de servicio purely started. Los parámetros `intent: Intent?`, `flags: Int` y `startId: Int` son la firma estándar de `onStartCommand`. Este patrón es idiomático en Kotlin moderno: Service como punto de entrada del sistema y corrutinas para concurrencia estructurada.
+
 Consejo:
 Distinguir flags de retorno y aclarar que Service no es un hilo: hay que crear uno propio para no bloquear el Main.

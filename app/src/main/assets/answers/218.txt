@@ -6,5 +6,8 @@ Bundletool genera splits localmente para pruebas.
 Ejemplo:
 ./gradlew bundleRelease → app-release.aab → Play Console.
 
+ExplicaciónKotlin:
+`bundleRelease` es una tarea del Android Gradle Plugin generada para la variante `release`, definida en `build.gradle.kts` con bloques `android { buildTypes { release { ... } } }`. Kotlin DSL usa funciones de extensión como `release { isMinifyEnabled = true }`, donde `isMinifyEnabled` es una propiedad booleana del tipo `BuildType`. La convención de nombres `bundle` + nombre de variante capitalizado es automática: no escribes la tarea a mano, el plugin la crea al declarar flavors y build types. El artefacto `app-release.aab` aparece bajo `build/outputs/bundle/release/` como resultado de esa tarea encadenada con compilación, empaquetado y firma. Si usas `signingConfigs`, Kotlin permite referenciar configuraciones con `signingConfig = signingConfigs.getByName("release")`. Los dynamic feature modules se declaran con `dynamicFeatures += setOf(":feature")`, sintaxis de colección propia de Kotlin. Entender el DSL ayuda a depurar builds fallidos y a parametrizar variantes sin duplicar lógica imperativa.
+
 Consejo:
 Dynamic feature modules y asset packs solo funcionan con AAB. Guarda el keystore y usa Play App Signing para recuperación de claves.

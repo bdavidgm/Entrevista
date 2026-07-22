@@ -11,5 +11,8 @@ val values = ContentValues().apply {
 val uri = contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
 contentResolver.openOutputStream(uri!!)?.use { /* escribir JPEG */ }
 
+ExplicaciónKotlin:
+`ContentValues()` instancia el contenedor clave-valor Java con el constructor por defecto; el bloque `.apply { ... }` es una función de ámbito estándar de Kotlin que configura el receptor y devuelve el mismo objeto, evitando una variable temporal intermedia. Dentro del `apply`, `put(...)` encadena dos entradas: `DISPLAY_NAME` con interpolación de string `"foto_${System.currentTimeMillis()}.jpg"` — aquí `${...}` inserta el valor numérico del timestamp en el literal — y `MIME_TYPE` con el literal `"image/jpeg"`. `contentResolver.insert(...)` devuelve `Uri?`; la asignación a `val uri` conserva la nullabilidad. El operador `!!` en `uri!!` fuerza el valor no nulo para pasarlo a `openOutputStream`, con el riesgo de `KotlinNullPointerException` si el insert falló; en código de producción conviene `uri?.let { ... }`. La cadena `openOutputStream(...)?.use { ... }` combina safe call (`?.`) con la función de extensión `use` de Kotlin sobre `Closeable`, que cierra el stream automáticamente al salir del bloque lambda incluso si hay excepción.
+
 Consejo:
 Usa Photo Picker cuando baste con selección de medios sin permisos amplios. Relaciona con SAF para carpetas arbitrarias.

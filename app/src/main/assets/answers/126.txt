@@ -14,5 +14,9 @@ val anyConsumer: Consumer<Any> = object : Consumer<Any> {
 
 val stringConsumer: Consumer<String> = anyConsumer // OK gracias a in
 
+
+ExplicaciónKotlin:
+`interface Consumer<in T> { fun consume(value: T) }` — `in` marca contravarianza: `T` solo en posición de entrada (parámetro), nunca en return. `val anyConsumer: Consumer<Any> = object : Consumer<Any> { override fun consume(value: Any) = println(value) }` — object expression anónimo implementa interfaz; `override fun consume(value: Any) = println(value)` expresión única. `val stringConsumer: Consumer<String> = anyConsumer` — válido porque `Consumer<Any>` es subtipo de `Consumer<String>` por `in`: puede consumir cualquier String al aceptar Any. Contravarianza invierte relación de subtipado respecto a covarianza. Regla mnemotécnica: `in` = consumer = contravariante.
+
 Consejo:
 "in = contravariante = consumer". Regla mnemotécnica PECS: producer-extends, consumer-super (out / in en Kotlin).

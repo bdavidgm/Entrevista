@@ -6,5 +6,8 @@ SingleTask/singleInstance cambian qué Activity recibe nuevos intents.
 Ejemplo:
 A → B → C (stack [A,B,C]); al pulsar back, C.finish() y vuelves a B.
 
+ExplicaciónKotlin:
+El ejemplo describe el back stack de Activities en notación simbólica, sin snippet Kotlin ejecutable. En código Kotlin, navegar de A a B sería `startActivity(Intent(this, B::class.java))` o el equivalente con Activity Result API; `C.finish()` es una llamada de instancia Java/Kotlin que destruye la Activity superior. La lista `[A,B,C]` representa la pila LIFO gestionada por el sistema; Kotlin no modela el stack directamente, pero Compose Navigation expone `NavController.backQueue` como abstracción similar. `finish()` se invoca sobre `this` dentro de `Activity` C, normalmente en respuesta a `onBackPressed` o gesto del sistema. El ciclo de vida (`onCreate`, `onDestroy`) de cada Activity Kotlin se dispara al apilar y desapilar. Entender este flujo es clave al combinar single-Activity en Kotlin con `NavHost` interno.
+
 Consejo:
 En Compose Navigation el back stack es del NavController, pero el task sigue siendo el contenedor de la Activity. Deep links pueden reordenar stacks.

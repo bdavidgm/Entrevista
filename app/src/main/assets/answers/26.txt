@@ -16,5 +16,8 @@ val html = buildHtml {
     append("</h1>")
 }
 
+ExplicaciónKotlin:
+`fun buildHtml(block: StringBuilder.() -> Unit): String` declara un parámetro `block` de tipo lambda con receptor: `StringBuilder.() -> Unit` significa que dentro del bloque `this` será un `StringBuilder`. La función crea `val sb = StringBuilder()`, invoca `sb.block()` (sintaxis para ejecutar una lambda with receiver) y devuelve `sb.toString()`. La llamada `buildHtml { append("<h1>"); ... }` usa trailing lambda: el último argumento lambda puede ir fuera de paréntesis; dentro, `append` se resuelve sobre el `StringBuilder` receptor sin escribir `this.`. Este mecanismo es la base de DSLs en Kotlin (Gradle, HTML builders, Compose modifiers). Contrasta con `(StringBuilder) -> Unit`, donde el receptor sería un parámetro nombrado, no `this`.
+
 Consejo:
 Distinguir T.() -> R (receptor) de (T) -> R (parámetro). Mencionar DSLs y Compose como casos paradigmáticos.

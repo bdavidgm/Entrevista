@@ -10,5 +10,8 @@ val wakeLock = powerManager.newWakeLock(
 wakeLock.acquire(10_000L)
 try { sync() } finally { if (wakeLock.isHeld) wakeLock.release() }
 
+ExplicaciónKotlin:
+`powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "MyApp::SyncTag")` crea un wake lock con flags y tag de depuración; `"MyApp::SyncTag"` es literal `String` recomendado por Google. `val wakeLock` fija la referencia al objeto `WakeLock`. `wakeLock.acquire(10_000L)` usa un literal long con separador de miles (`10_000L`) para timeout en milisegundos — sintaxis Kotlin que mejora legibilidad frente a `10000L`. El bloque `try { sync() } finally { ... }` es control de flujo estándar: `sync()` se asume función del ámbito; `finally` garantiza liberación. Dentro, `if (wakeLock.isHeld) wakeLock.release()` combina propiedad booleana Java (`isHeld`) con llamada condicional; evita `release()` doble. No hay lambdas ni corrutinas; el patrón es imperativo con gestión explícita de recursos del sistema, complementario al `use` de Kotlin para `Closeable`.
+
 Consejo:
 Prefiere WorkManager + constraints antes que PARTIAL_WAKE_LOCK. Para mantener pantalla encendida en video, FLAG_KEEP_SCREEN_ON en la ventana es más claro.

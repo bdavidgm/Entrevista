@@ -32,5 +32,9 @@ dependencies {
 
 // Módulo :baselineprofile con test que recorre flujo crítico y genera perfil
 
+
+ExplicaciónKotlin:
+El bloque `dependencies { }` es DSL de Gradle Kotlin, no Kotlin de runtime, pero usa funciones de extensión y invocación lambda. `implementation(libs.androidx.profileinstaller)` declara dependencia runtime con acceso type-safe al version catalog (`libs` generado desde TOML). `baselineProfile(project(":baselineprofile"))` usa notación de proyecto Gradle para módulo generador de perfiles. La sintaxis `implementation(...)` es función del receiver `DependencyHandlerScope`. Los comentarios indican módulo separado con test Macrobenchmark. En Kotlin DSL, las dependencias se resuelven en fase de configuración; no hay tipos Kotlin de aplicación aquí, solo declaración declarativa de artifacts.
+
 Consejo para entrevista:
 Explica qué problema (cold start, jank) y cómo se genera. Menciona Macrobenchmark. No digas que es ProGuard.

@@ -35,5 +35,9 @@ fun `loads products`() = runTest {
     assertEquals(1, vm.uiState.value.items.size)
 }
 
+
+ExplicaciónKotlin:
+`@Test` y `fun \`loads products\`() = runTest { }` combinan JUnit con el scope de prueba de corrutinas: el cuerpo puede llamar funciones `suspend` y controlar el scheduler. `mockk<ProductRepository>()` crea un mock con la librería MockK, idiomática en Kotlin por soporte de funciones de orden superior y objetos finales. `coEvery { repo.getProducts() } returns listOf(...)` stubea la función suspend: `coEvery` es el equivalente de `every` para corrutinas. `listOf(Product("1", "A"))` construye una `List` inmutable con un `Product`, presumiblemente `data class` con constructor posicional. `ProductListViewModel(repo)` instancia el ViewModel inyectando el mock manualmente (sin Hilt en unit test). `vm.load()` lanza la lógica bajo prueba; `vm.uiState.value.items.size` accede al valor actual del `StateFlow`/`MutableStateFlow` sin colectar, y `assertEquals(1, ...)` verifica el tamaño de la lista.
+
 Consejo para entrevista:
 MockK para Kotlin, Mockito en legacy Java. Menciona fake vs mock trade-off. coEvery para suspend.

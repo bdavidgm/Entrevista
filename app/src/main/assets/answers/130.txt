@@ -15,5 +15,9 @@ class MainActivity : AppCompatActivity() {
     }
 }
 
+
+ExplicaciónKotlin:
+`MainActivity` hereda de `AppCompatActivity` y sobrescribe `onCreate`, recibiendo un `Bundle?` nullable que Kotlin trata con seguridad de tipos. La llamada a `super.onCreate` delega en la clase base antes de registrar trabajo asíncrono. `lifecycleScope` es una propiedad de extensión de `LifecycleOwner` que expone un `CoroutineScope` ligado al ciclo de vida; `launch` inicia una corrutina hija sin bloquear el hilo principal. Dentro, `repeatOnLifecycle(Lifecycle.State.STARTED)` es una función suspendida que reinicia el bloque lambda cada vez que el estado alcanza STARTED y lo cancela al bajar, evitando collectors activos en background. `viewModel.events.collect(::handleEvent)` usa una referencia a función (`::handleEvent`) como lambda de un solo parámetro, equivalente a `{ event -> handleEvent(event) }`. El operador `::` enlaza el método de instancia y encaja con la firma `(LoginEvent) -> Unit` que espera `collect`.
+
 Consejo:
 "En Fragments, viewLifecycleOwner.lifecycleScope". Mezclar con repeatOnLifecycle es la receta estándar para colectar Flows en UI.

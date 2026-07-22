@@ -10,5 +10,8 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() { binding = null; super.onDestroy() }
 }
 
+ExplicaciónKotlin:
+`class MainActivity : AppCompatActivity()` hereda de la Activity de AndroidX. Cada callback usa `override fun` para sobrescribir métodos del ciclo de vida. En `onStart`, `super.onStart()` se invoca antes del registro del sensor: convención de llamar al super primero al entrar en un estado. En `onStop`, el orden se invierte: `sensor.unregister()` antes de `super.onStop()` para liberar recursos mientras la Activity aún es válida. `onDestroy` asigna `binding = null`, lo que implica que `binding` es probablemente `lateinit var` o nullable, liberando la referencia a la vista; luego llama a `super.onDestroy()`. Las llaves compactas en una línea son estilo kotliniano para callbacks cortos. El ejemplo muestra cómo Kotlin expresa orden de operaciones en lifecycle con código conciso.
+
 Consejo:
 Visualiza la pirámide: create-start-resume al subir, pause-stop-destroy al bajar. Diferencia onPause (parcialmente cubierta) de onStop (totalmente oculta).

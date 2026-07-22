@@ -35,5 +35,9 @@ dependencies {
     implementation(libs.androidx.material3)
 }
 
+
+ExplicaciónKotlin:
+En TOML, `[plugins] kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }` vincula plugin Compose al compilador Kotlin 2.0+. En `build.gradle.kts`, `plugins { alias(libs.plugins.kotlin.compose) }` lo aplica al módulo. `android { buildFeatures { compose = true } }` activa flag AGP para tooling Compose. `dependencies { implementation(platform(...)); implementation(libs.androidx.material3) }` combina BOM y artifact sin versión suelta. El plugin Kotlin procesa `@Composable` en compilación; sin él, funciones composables no compilan. Separación clara: AGP habilita feature Android; plugin Kotlin habilita compiler transform.
+
 Consejo para entrevista:
 Distingue AGP (application plugin), Kotlin Android plugin y Kotlin Compose plugin. Con Kotlin 2.0 reduces desalineación Kotlin/Compose que causaba crashes sutiles en runtime.

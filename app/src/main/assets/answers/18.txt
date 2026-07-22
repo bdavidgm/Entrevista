@@ -12,5 +12,8 @@ response.body()?.let { body ->
 
 val length = "hola".let(::println).let { it.length }
 
+ExplicaciónKotlin:
+`user?.email?.let { it.trim().lowercase() }` usa safe call seguido de `let`: dentro del bloque, `it` es el `email` no nulo y se transforma con funciones de `String`; el resultado final es `String?` porque la cadena puede cortocircuitarse en null. El segundo ejemplo usa lambda con parámetro nombrado `body` en lugar de `it`, lo que mejora legibilidad en bloques largos; `let` devuelve el resultado del bloque (probablemente `Unit` de `save`). La tercera línea encadena `let`: `"hola".let(::println)` pasa la referencia a función `::println` como lambda `(String) -> Unit`; `println` devuelve `Unit`, y el segundo `.let { it.length }` opera sobre `Unit` (ejemplo didáctico de encadenamiento). En general, `let` recibe el objeto como argumento (no como `this`), ideal para transformaciones que producen otro valor.
+
 Consejo:
 "let para transformar y para nullable-safe blocks". Útil cuando it se va a usar pocas veces; si lo usas mucho, considera with/run.

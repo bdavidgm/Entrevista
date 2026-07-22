@@ -35,5 +35,8 @@ viewModelScope.launch {
     _uiState.update { it.copy(items = items) }
 }
 
+ExplicaciónKotlin:
+suspend fun fetchAndMap(): List<Item> = withContext(Dispatchers.IO) { api.getItems().map { it.toDomain() } } declara función suspend de nivel superior o miembro con retorno List<Item>. withContext(Dispatchers.IO) { ... } ejecuta bloque en IO y devuelve último valor del lambda (resultado de map). api.getItems() presumiblemente suspend; .map { it.toDomain() } transforma lista con lambda y extensión toDomain(). viewModelScope.launch { val items = fetchAndMap(); _uiState.update { it.copy(items = items) } } secuencia: launch, llamada suspend fetchAndMap(), update con copy nombrado items = items. Separar fetchAndMap permite reuso y test unitario de función suspend pura.
+
 Consejo para entrevista:
 Contrasta withContext vs launch anidado. Menciona que es suspend y devuelve valor. No confundas con flowOn (para Flow).

@@ -6,5 +6,8 @@ No confundir con desarrollo de apps: se solapan ADB y conocimiento del sistema.
 Ejemplo:
 Bucle de boot: intentar recovery wipe cache → flashear firmware oficial con herramienta OEM → revisar eMMC UFS en casos graves.
 
+ExplicaciónKotlin:
+Este ejemplo describe diagnóstico de taller, no código Kotlin, pero un desarrollador Android usa ADB (`logcat`, `bugreport`) para correlacionar crashes Kotlin con reinicios del sistema. Un bootloop puede impedir ejecutar tu app, pero `adb logcat -b all` captura stack traces de `Fatal Exception` antes del reinicio si USB debug persiste. Wipe cache en recovery no borra datos de usuario donde Room/DataStore guardan estado Kotlin. Flashear firmware OEM restaura particiones del sistema sin recompilar tu proyecto Gradle. FRP bloquea setup tras wipe si no hay credenciales Google; no se resuelve en Kotlin de la app. En entrevista dev, distingue soporte hardware (taller) de depuración de código (`try/catch`, Crashlytics, ProGuard mapping). Si reproduces bugs, `adb install -r` reinstala tu APK debug Kotlin tras reparación. El flujo mezcla procedimientos físicos con herramientas que también usan al depurar corrutinas o memory leaks.
+
 Consejo:
 FRP (Factory Reset Protection) requiere credenciales legítimas; explicar bypass no ético no es objetivo de entrevista dev, pero conocer FRP evita “reparaciones” ilegales.

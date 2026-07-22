@@ -41,5 +41,9 @@ fun CartScreen(viewModel: CartViewModel) {
     }
 }
 
+
+ExplicaciónKotlin:
+`data class CartUiState(...)` genera `copy`, `equals`, `hashCode`; parámetros con defaults `emptyList()`, `Money.ZERO`, `false`. `fun CartViewModel.addItem(item: CartItem)` muta estado vía `_uiState.update { state -> state.copy(items = state.items + item) }`: lambda recibe estado actual, `+` en listas crea nueva lista inmutable (no muta original). `@Composable fun CartScreen(viewModel: CartViewModel)` recibe ViewModel. `val state by viewModel.uiState.collectAsState()` observa flujo como State Compose. `LazyColumn { items(state.items, key = { it.id }) { item -> CartRow(item) } }` usa DSL: `items` overload con `key` lambda `{ it.id }` estabiliza identidad para recomposición eficiente; `{ item -> CartRow(item) }` lambda con parámetro explícito.
+
 Consejo para entrevista:
 Relaciona inmutabilidad con thread-safety, Compose (estabilidad de parámetros) y testing. Aclara que variables locales mutables en un algoritmo están bien; el estado compartido de la app debe ser inmutable o muy bien encapsulado.

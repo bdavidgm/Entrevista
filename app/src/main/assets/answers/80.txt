@@ -34,5 +34,8 @@ viewModelScope.launch {
     _uiState.value = HomeUiState(profile.await(), orders.await())
 }
 
+ExplicaciónKotlin:
+viewModelScope.launch { val profile = async(Dispatchers.IO) { userRepo.profile() }; val orders = async(Dispatchers.IO) { orderRepo.recent() }; _uiState.value = HomeUiState(profile.await(), orders.await()) } lanza coroutine padre y dos async hijos en paralelo en IO. async devuelve Deferred<T>; await() es suspend que espera resultado. profile y orders se ejecutan concurrentemente hasta await. _uiState.value = HomeUiState(...) asigna data class HomeUiState con dos resultados; si _uiState es MutableStateFlow, .value es setter. HomeUiState(profile.await(), orders.await()) invoca constructor posicional. Structured concurrency: si el scope padre cancela, los async hijos también. Dispatchers.IO se pasa explícitamente a cada async.
+
 Consejo para entrevista:
 launch vs async = sin vs con Deferred. Menciona await y cancelación. Trampa: async en GlobalScope sin await.

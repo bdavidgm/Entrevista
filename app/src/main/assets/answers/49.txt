@@ -11,5 +11,8 @@ fun NameInput() {
     Text("Hola, $name")
 }
 
+ExplicaciónKotlin:
+NameInput demuestra el patrón básico de estado en Compose. var name by remember { mutableStateOf("") } inicializa un State<String> vacío; el tipo String es no nullable. TextField(value = name, onValueChange = { name = it }) enlaza el campo: value es lectura del estado actual y onValueChange recibe una lambda con parámetro it (el nuevo String), asignándolo a name mediante el setter delegado. Text("Hola, $name") recompone cuando name cambia gracias al sistema de snapshot de Compose. Las funciones composables TextField y Text provienen de Material; sus parámetros nombrados mejoran la legibilidad frente al orden posicional. El genérico implícito de mutableStateOf("") es String por inferencia del literal. Este ejemplo no usa coroutines ni nullability explícita, pero sí lambdas, delegación de propiedad y funciones de orden superior.
+
 Consejo:
 "mutableStateOf = State observable de Compose; combínalo con remember o rememberSaveable". Para Int/Float, prefiere mutableIntStateOf y compañía.

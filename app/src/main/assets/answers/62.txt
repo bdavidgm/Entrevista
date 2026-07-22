@@ -16,5 +16,8 @@ fun HomeScreen(vm: HomeViewModel = hiltViewModel()) {
     HomeContent(state)
 }
 
+ExplicaciónKotlin:
+HomeViewModel(repo: Repository) : ViewModel() recibe Repository por constructor sin anotaciones DI en este ejemplo simplificado. repo.users().map(HomeState::Success).stateIn(...) replica el patrón Flow → StateFlow con method reference HomeState::Success. HomeScreen(vm: HomeViewModel = hiltViewModel()) resuelve el ViewModel; hiltViewModel() es extensión composable. val state by vm.state.collectAsStateWithLifecycle() usa delegación para suscribirse con lifecycle awareness. HomeContent(state) renderiza según HomeState sellado o data class. MVVM aquí se expresa en Kotlin mediante propiedades val inmutables expuestas, funciones composables sin estado propio y property delegates (by, hiltViewModel, collectAsStateWithLifecycle).
+
 Consejo:
 MVVM en Android suele combinarse con Repository, UDF y, opcionalmente, Use Cases. Comparte conceptos con MVI: la diferencia clave es cómo se modela el "intent".

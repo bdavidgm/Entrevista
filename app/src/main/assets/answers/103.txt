@@ -37,5 +37,9 @@ keyGenerator.init(
         .build()
 )
 
+
+ExplicaciónKotlin:
+`KeyGenerator.getInstance(...)` obtiene instancia de factory criptográfica con algoritmo `"AES"` y provider `"AndroidKeyStore"`. `keyGenerator.init(...)` recibe `KeyGenParameterSpec` construido con builder. `KeyGenParameterSpec.Builder("app_master_key", KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT)` usa nombre alias string y flags combinados con `or` a nivel de bits sobre constantes enteras. `.setBlockModes(KeyProperties.BLOCK_MODE_GCM)` y `.setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)` configuran parámetros AES-GCM. `.build()` produce spec inmutable pasado a `init`. No hay corrutinas; APIs java.security desde Kotlin con interop Java directo. Variables `val keyGenerator` con inferencia de tipo.
+
 Consejo para entrevista:
 Hardware-backed, no exportable. Contrasta con guardar AES key en prefs (inseguro). Seguimiento: EncryptedSharedPreferences.

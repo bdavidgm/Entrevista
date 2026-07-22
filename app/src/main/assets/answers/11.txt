@@ -12,5 +12,8 @@ fun describe(value: Any): String = when (value) {
     else -> "Otro"
 }
 
+ExplicaciónKotlin:
+`fun describe(value: Any): String = when (value) { ... }` declara una función cuyo cuerpo es una expresión `when` que devuelve `String` (no hace falta `return` explícito). Cada rama es una condición: `is Int` comprueba el tipo y hace smart cast de `value` a `Int` dentro de la rama, permitiendo interpolar `$value` en la plantilla. `in 1..9` usa un range inclusivo para comprobar pertenencia. `"hola" ->` compara igualdad estructural con un literal. `null ->` maneja explícitamente el caso anulable de `Any?` implícito cuando el argumento puede ser null (aunque aquí el parámetro es `Any`, la rama null es válida si el tipo fuera `Any?`). `else ->` cubre el resto cuando `when` no es exhaustivo sobre un tipo abierto como `Any`. El smart cast tras `is` evita casts manuales dentro de cada rama.
+
 Consejo:
 Subraya when como expresión exhaustiva con sealed/enum (sin else). Compáralo con switch de Java y menciona el smart cast tras is.

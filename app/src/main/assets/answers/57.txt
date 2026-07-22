@@ -19,5 +19,8 @@ AndroidView(
     update = { it.onResume() }
 )
 
+ExplicaciónKotlin:
+El bloque XML (<androidx.compose.ui.platform.ComposeView .../>) no es Kotlin; en código Kotlin, binding.composeView.setContent { MyAppTheme { HomeScreen() } } usa una lambda trailing sobre setContent, anidando MyAppTheme { HomeScreen() } como composición raíz. MyAppTheme es presumiblemente un @Composable que aplica tema. AndroidView(factory = { ctx -> MapView(ctx) }, update = { it.onResume() }) integra Views clásicas: factory es lambda (Context) -> MapView que recibe ctx tipado implícitamente y construye MapView(ctx). update recibe it referenciando la View creada y llama it.onResume(). Las lambdas factory y update son parámetros nombrados de AndroidView. Este puente muestra interoperabilidad: Kotlin lambdas conectan APIs imperativas (MapView, binding) con el runtime declarativo de Compose.
+
 Consejo:
 "ComposeView dentro de XML; AndroidView dentro de Compose". Migra de hojas a raíz (single Activity al final) y comparte ViewModels para no duplicar estado.

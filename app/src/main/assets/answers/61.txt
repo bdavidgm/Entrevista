@@ -19,5 +19,8 @@ fun HomeScreen(vm: HomeViewModel = hiltViewModel()) {
     HomeContent(state)
 }
 
+ExplicaciónKotlin:
+@HiltViewModel class HomeViewModel @Inject constructor(private val repo: HomeRepository) : ViewModel() sigue el patrón DI estándar. repo.observe().map(HomeUiState::Success) encadena Flow con map y method reference HomeUiState::Success, equivalente a { HomeUiState.Success(it) } si Success es constructor o función de un solo argumento. stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeUiState.Loading) convierte a StateFlow con valor inicial Loading. HomeScreen(vm: HomeViewModel = hiltViewModel()) permite inyectar o usar default. val state by vm.state.collectAsStateWithLifecycle() observa el StateFlow. HomeContent(state) es composable puro que recibe el estado como parámetro, separando lógica de presentación. El genérico HomeUiState aparece en StateFlow y en el valor inicial de stateIn.
+
 Consejo:
 "State down, events up". Usa collectAsStateWithLifecycle para colectar con conciencia del ciclo de vida; evita lógica en el Composable.

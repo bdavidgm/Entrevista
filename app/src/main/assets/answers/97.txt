@@ -34,5 +34,9 @@ if (BuildConfig.DEBUG) {
     )
 }
 
+
+ExplicaciónKotlin:
+`if (BuildConfig.DEBUG)` es condición compilada: `BuildConfig` es clase generada por Gradle con constantes del build type. Solo en debug se configura StrictMode. `StrictMode.setThreadPolicy(...)` recibe política construida con builder encadenado estilo Kotlin/Java interop. `StrictMode.ThreadPolicy.Builder()` crea builder; `.detectDiskReads()`, `.detectNetwork()`, `.penaltyLog()` retornan el mismo builder para fluency API. `.build()` materializa el objeto policy. No hay corrutinas ni delegates: es configuración imperativa en Application o Activity. El bloque demuestra uso de propiedades booleanas generadas y APIs estáticas de Android desde Kotlin sin necesidad de punto y coma.
+
 Consejo para entrevista:
 Solo debug, detecta disk/network en main. No confundas con ProGuard ni Lint.

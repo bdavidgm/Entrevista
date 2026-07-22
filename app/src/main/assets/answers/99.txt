@@ -34,5 +34,9 @@ android {
     }
 }
 
+
+ExplicaciónKotlin:
+El bloque `android { }` es extensión AGP en Gradle Kotlin. `bundle { language { enableSplit = true } }` activa splits de idioma en App Bundle mediante propiedades asignadas con `=`. `buildTypes { release { ... } }` configura variante release. `isMinifyEnabled = true` y `isShrinkResources = true` son propiedades booleanas del DSL que activan R8 y eliminación de recursos huérfanos. No hay código Kotlin de app: es script de build compilado como `.gradle.kts`. La sintaxis usa asignación Kotlin (`=`) en lugar de Groovy. `release` es objeto de configuración tipado; el IDE autocompleta propiedades.
+
 Consejo para entrevista:
 AAB + R8 + recursos + dependencias. Menciona APK Analyzer. Seguimiento: ¿Qué es dex? Métodos multidex si >64K.

@@ -8,5 +8,8 @@ val alarmMgr = getSystemService(AlarmManager::class.java)
 val pi = PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_IMMUTABLE)
 alarmMgr.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pi)
 
+ExplicaciónKotlin:
+`getSystemService(AlarmManager::class.java)` obtiene el servicio del sistema mediante la clase reificada de Kotlin, evitando el cast genérico antiguo. `PendingIntent.getBroadcast` es una llamada estática Java a la que Kotlin pasa `context`, un `requestCode` entero (`0`), el `intent` destino y la flag `PendingIntent.FLAG_IMMUTABLE`, requerida en versiones recientes para intents inmutables. Las tres variables se declaran con `val`, lo que impide reasignar referencias pero no mutar el contenido de los objetos. `triggerAtMillis` se asume definido previamente como `Long`. La invocación encadenada `alarmMgr.setAndAllowWhileIdle(...)` usa el objeto obtenido como receptor implícito de la llamada de instancia Java. No hay lambdas ni corrutinas aquí: es código imperativo síncrono típico de configuración en `onCreate` o en un helper de scheduling.
+
 Consejo:
 Prefiere setWindow/setInexactRepeating cuando la exactitud al segundo no importa; respeta ahorro de batería y políticas de background.

@@ -14,5 +14,8 @@ Box(
     Text("Hola", color = Color.White)
 }
 
+ExplicaciónKotlin:
+Box es un contenedor composable cuyo modifier encadena llamadas gracias a que Modifier es una interfaz inmutable: cada .fillMaxWidth(), .padding(), .background() y .clickable() devuelve un nuevo Modifier. El orden importa porque cada capa envuelve a la anterior. .clickable { onClick() } usa lambda sin parámetros; onClick() invoca una función externa al scope (presumiblemente definida en el composable padre). Color.Blue y Color.White son constantes del objeto Color. Text("Hola", color = Color.White) usa parámetro nombrado color dentro del composable hijo. 16.dp es sintaxis de extensión Int.dp del paquete androidx.compose.ui.unit. Este snippet ilustra el estilo fluente de Kotlin con encadenamiento de funciones y trailing lambdas, sin clases propias ni generics explícitos.
+
 Consejo:
 "El orden importa": padding antes o después de background cambia el resultado. Recibe Modifier en composables reutilizables (parámetro modifier: Modifier = Modifier).

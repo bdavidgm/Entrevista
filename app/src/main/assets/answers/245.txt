@@ -13,5 +13,8 @@ class Person(firstName: String, val lastName: String) {
         get() = "$firstName $lastName"
 }
 
+ExplicaciónKotlin:
+`class Person(firstName: String, val lastName: String)` mezcla parámetro de constructor sin propiedad (`firstName`) y propiedad pública (`lastName`). `var firstName: String = firstName` sombrea el parámetro con propiedad mutable del mismo nombre, legal porque el parámetro queda en scope del init/setter. `set(value) { require(value.isNotBlank()); field = value.trim() }` define setter custom; `field` referencia el backing field generado por el compilador. `trim()` es extensión Kotlin en `String`. `val fullName: String get() = "$firstName $lastName"` es propiedad calculada sin backing field: cada lectura concatena con template string. No hay `set` en `fullName`, por lo que es inmutable desde fuera. Los accessors custom permiten invariantes (no blank) sin exponer lógica en cada asignación externa. Kotlin unifica propiedad y métodos getter/setter en sintaxis uniforme. `lastName` como `val` en cabecera evita duplicar declaración.
+
 Consejo:
 Usa propiedades calculadas para datos derivados y evita duplicar estado que podría quedar inconsistente.

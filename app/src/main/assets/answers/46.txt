@@ -14,5 +14,8 @@ fun GreetingCard(name: String, onDismiss: () -> Unit) {
     }
 }
 
+ExplicaciónKotlin:
+@Composable es una anotación del compilador de Compose que transforma la función para que solo pueda invocarse en contexto composable. fun GreetingCard(name: String, onDismiss: () -> Unit) declara parámetros inmutables: un String y una función lambda sin argumentos que devuelve Unit (equivalente a void). Card(Modifier.padding(16.dp)) muestra composición anidada y el uso de 16.dp como propiedad de extensión sobre Int para Density-independent pixels. Column y Text son funciones composables con trailing lambda: el bloque { } es el último parámetro fuera de paréntesis, estilo idiomático Kotlin. La interpolación "Hola, $name" inserta el parámetro name en el String. MaterialTheme.typography.titleLarge accede a propiedades del tema Material mediante object singleton. TextButton(onClick = onDismiss) pasa la referencia de función onDismiss directamente porque coincide con la firma () -> Unit.
+
 Consejo:
 Distingue stateless vs stateful composables. Recuerda usar remember para estado interno y nunca hagas IO ni HTTP en el cuerpo del Composable.

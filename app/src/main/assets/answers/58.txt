@@ -16,5 +16,8 @@ val saver = listSaver<MyState, Any>(
     restore = { MyState(it[0] as String, it[1] as String) }
 )
 
+ExplicaciónKotlin:
+Counter usa rememberSaveable { mutableStateOf(0) } para persistir el Int en el Bundle de saved state. var count by delegación permite count++ en el onClick del Button. El bloque comentado // Tipo custom con Saver muestra listSaver<MyState, Any>, una función inline que recibe dos lambdas nombradas save y restore con sintaxis = { ... }. save = { listOf(it.id, it.name) } retorna List<Any> serializable; it es MyState dentro del lambda. restore = { MyState(it[0] as String, it[1] as String) } usa casts explícitos as String porque it es List<Any> sin tipo concreto en índice. MyState(it[0] as String, it[1] as String) invoca el constructor de data class o clase con dos parámetros. listSaver es genérico con dos parámetros de tipo MyState y Any. El Saver se pasa típicamente a rememberSaveable(stateSaver = saver) aunque aquí solo se declara val saver.
+
 Consejo:
 Limita rememberSaveable a UI pequeña y serializable. Para estado grande o de dominio, mejor el ViewModel con StateFlow.

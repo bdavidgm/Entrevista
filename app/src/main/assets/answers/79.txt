@@ -41,5 +41,8 @@ suspend fun loadUser(id: Long): User = withContext(Dispatchers.IO) {
     api.getUser(id).toDomain()
 }
 
+ExplicaciónKotlin:
+interface ApiService declara contrato Retrofit. @GET("users/{id}") suspend fun getUser(@Path("id") id: Long): UserDto anota suspend fun: Retrofit genera implementación que pausa coroutine en red. @Path("id") vincula parámetro id: Long Long no nullable. suspend fun loadUser(id: Long): User = withContext(Dispatchers.IO) { api.getUser(id).toDomain() } usa expresión body: withContext cambia a IO, api.getUser(id) llama suspend de Retrofit, .toDomain() extensión convierte DTO a dominio User. El modificador suspend en loadUser permite llamarla solo desde coroutine; el compilador transforma en continuación. Contrasta función suspend de interfaz (generada) con función suspend propia que orquesta contexto.
+
 Consejo para entrevista:
 Define suspend como pausable, no como async automático en otro hilo (el dispatcher decide). Pregunta: ¿puedo llamar suspend desde onClick directo? No, necesitas scope.launch.

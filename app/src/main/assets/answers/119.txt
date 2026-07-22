@@ -36,12 +36,17 @@ Ejemplo:
           android:pathPrefix="/product" />
 </intent-filter>
 
-// Activity
-override fun onCreate(savedInstanceState: Bundle?) {
-    super.onCreate(savedInstanceState)
-    setContent { App(navController) }
-    navController.handleDeepLink(intent)
+class MainActivity : AppCompatActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContent { App(navController) }
+        navController.handleDeepLink(intent)
+    }
 }
+
+
+ExplicaciónKotlin:
+El XML del manifest no es Kotlin; define intent-filter para App Links. `class MainActivity : AppCompatActivity()` en Kotlin hereda Activity. `override fun onCreate(savedInstanceState: Bundle?)` — `Bundle?` nullable. `setContent { App(navController) }` usa Compose Activity API: lambda `@Composable` configura UI; `navController` parámetro de grafo. `navController.handleDeepLink(intent)` procesa URI del Intent entrante (cold start o `onNewIntent`). `intent` es propiedad de Activity. El flujo combina interoperabilidad XML manifest + Kotlin Activity + Navigation Compose; `handleDeepLink` es extensión o método del NavController que parsea URI y navega al destino con argumentos.
 
 Consejo para entrevista:
 Diferencia deep link custom vs App Links verificados. Menciona handleDeepLink, cold start y prueba con adb. Si hablas de notificaciones, enlaza con PendingIntent que lleva el URI.

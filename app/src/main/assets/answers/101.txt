@@ -40,5 +40,9 @@ val securePrefs = EncryptedSharedPreferences.create(
     EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
 )
 
+
+ExplicaciónKotlin:
+`val masterKey = MasterKey.Builder(context)` crea builder de AndroidX Security; `context` es `Context` Android requerido. Encadenamiento `.setKeyScheme(MasterKey.KeyScheme.AES256_GCM).build()` selecciona algoritmo y construye clave maestra en Keystore. `EncryptedSharedPreferences.create(...)` es función estática con múltiples parámetros posicionales: `context`, nombre del archivo, `masterKey`, y dos enums de esquema de cifrado para claves y valores. `val securePrefs` infiere tipo `SharedPreferences` cifrado. No hay corrutinas: operación síncrona de setup. Los enums `PrefKeyEncryptionScheme` y `PrefValueEncryptionScheme` son tipos Kotlin/Java interop. El resultado se usa como `SharedPreferences` normal con `edit { putString(...) }` (extensión KTX opcional).
+
 Consejo para entrevista:
 Keystore + encrypted prefs + no logs + no hardcode. OWASP Mobile mención breve. Root bypass: defensa en profundidad, no absoluta.

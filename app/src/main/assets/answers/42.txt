@@ -9,5 +9,8 @@ ProcessLifecycleOwner.get().lifecycle.addObserver(object : DefaultLifecycleObser
     override fun onStop(owner: LifecycleOwner)  { wsClient.disconnect() }
 })
 
+ExplicaciónKotlin:
+`ProcessLifecycleOwner.get().lifecycle.addObserver(...)` encadena llamadas: `get()` devuelve el singleton del owner de proceso; `.lifecycle` expone el `Lifecycle`; `.addObserver` registra un observador. `object : DefaultLifecycleObserver { ... }` es un object expression anónimo que implementa la interfaz `DefaultLifecycleObserver` (API con métodos default vacíos, solo sobrescribes los necesarios). `override fun onStart(owner: LifecycleOwner)` y `onStop` reciben el owner como parámetro nombrado. Las funciones de cuerpo único con llaves contienen llamadas a `wsClient.connect()` y `disconnect()`. No hay corrutinas ni lambdas con receptor: es el patrón Observer clásico expresado con sintaxis Kotlin concisa. El object expression evita crear una clase nombrada separada para lógica de una sola instancia.
+
 Consejo:
 "Foreground/background a nivel de proceso", no de Activity. Útil para sesiones, analytics y conexiones persistentes.

@@ -18,5 +18,8 @@ suspend fun notify(sender: NotificationSender) {
     sender.send("Pedido enviado")
 }
 
+ExplicaciónKotlin:
+`interface NotificationSender { suspend fun send(message: String) }` define contrato asíncrono; `suspend` transforma la función en continuación compatible con corrutinas. `class PushSender : NotificationSender` e `EmailSender` ofrecen implementaciones distintas sin modificar código cliente. `override suspend fun send(message: String) { /* FCM */ }` debe marcar `suspend` al override si el padre lo es. `suspend fun notify(sender: NotificationSender)` depende del contrato, no de clases concretas (inyección/polimorfismo). `sender.send("Pedido enviado")` requiere contexto de corrutina (`launch`, `viewModelScope`, etc.). Kotlin resuelve en runtime la implementación concreta (virtual dispatch JVM). Comentarios `/* FCM */` y `/* SMTP/API */` marcan cuerpos omitidos. Este patrón es base de repositorios, datasources y estrategias en arquitectura Android limpia.
+
 Consejo:
 Depender del contrato, no de la clase concreta, permite cambiar implementaciones y probar con fakes.

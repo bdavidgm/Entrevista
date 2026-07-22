@@ -41,5 +41,9 @@ dependencies {
     androidTestImplementation(platform(libs.compose.bom))
 }
 
+
+ExplicaciónKotlin:
+El TOML declara `[versions]`, `[libraries]` con referencias `version.ref` — no es Kotlin. En `build.gradle.kts`, `implementation(platform(libs.compose.bom))` usa `platform()` para dependencia BOM que alinea versiones transitivas sin declarar versión en cada artifact. `implementation(libs.compose.ui)` y `implementation(libs.compose.material3)` omiten versión porque BOM la fija. `androidTestImplementation(platform(...))` repite BOM en scope de test instrumentado para coherencia. `libs.compose.bom` es propiedad generada por Gradle desde alias TOML. Patrón Kotlin DSL: funciones `implementation` con receiver, accessors type-safe, y composición de catálogo centralizado.
+
 Consejo para entrevista:
 Explica platform() y una versión BOM. Menciona alinear compiler plugin. No mezclar versiones manuales sueltas sin BOM.

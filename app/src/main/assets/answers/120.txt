@@ -43,5 +43,9 @@ android {
 }
 // Terminal: ./gradlew :app:bundleRelease
 
+
+ExplicaciónKotlin:
+Bloque `android { defaultConfig { ... }; buildTypes { release { isMinifyEnabled = true; proguardFiles(getDefaultProguardFile(...), "proguard-rules.pro") } } }` es Gradle Kotlin DSL para empaquetado AAB. `getDefaultProguardFile` retorna reglas optimizadas por defecto. `proguardFiles` vararg de paths. Comentario terminal `./gradlew :app:bundleRelease` es invocación Gradle, no Kotlin. Propiedades `isMinifyEnabled` activan R8 antes de generar bundle. No hay tipos Kotlin de aplicación; script define variante release que produce `.aab` en outputs. Sintaxis `release { }` lambda configura solo build type release.
+
 Consejo para entrevista:
 Explica que AAB no es el APK que instala el usuario; Play lo divide. Menciona tamaño, Play Signing y diferencia con APK universal. No confundas con Android Instant (deprecated) salvo que pregunten histórico.

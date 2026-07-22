@@ -8,5 +8,9 @@ val provider = ProcessCameraProvider.getInstance(this).get()
 val preview = Preview.Builder().build().also { it.setSurfaceProvider(previewView.surfaceProvider) }
 provider.bindToLifecycle(this, CameraSelector.DEFAULT_BACK_CAMERA, preview)
 
+
+ExplicaciónKotlin:
+`ProcessCameraProvider.getInstance(this).get()` obtiene future/listenable y bloquea con `.get()` — patrón CameraX Java; en producción se usa listener async. `Preview.Builder().build().also { it.setSurfaceProvider(previewView.surfaceProvider) }` construye preview y configura provider en scope `also`, que retorna el mismo objeto. `provider.bindToLifecycle(this, CameraSelector.DEFAULT_BACK_CAMERA, preview)` enlaza ciclo de vida Activity/Fragment como `LifecycleOwner`, selector enum y use case. `this` actúa como owner y contexto. `also` diferencia de `apply`: retorna objeto original tras side effect. CameraSelector.DEFAULT_BACK_CAMERA es constante estática.
+
 Consejo:
 Para permisos runtime usa ActivityResultContracts.RequestPermission. Comprueba flash, rotación y threading en ImageAnalysis (no bloquees el analyzer).

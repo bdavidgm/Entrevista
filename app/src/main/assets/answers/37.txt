@@ -15,5 +15,8 @@ class ChargeReceiver : BroadcastReceiver() {
 val filter = IntentFilter(Intent.ACTION_POWER_CONNECTED)
 ContextCompat.registerReceiver(this, ChargeReceiver(), filter, ContextCompat.RECEIVER_NOT_EXPORTED)
 
+ExplicaciónKotlin:
+`class ChargeReceiver : BroadcastReceiver()` define un receiver como subclase; `: BroadcastReceiver()` invoca el constructor de la superclase. `override fun onReceive(context: Context, intent: Intent)` implementa el callback: `context` e `intent` son no nulos según la firma AndroidX. `intent.action == Intent.ACTION_POWER_CONNECTED` compara la acción del broadcast con una constante String. `Log.d(TAG, "Cargando")` es llamada estática Java interop desde Kotlin. `IntentFilter(Intent.ACTION_POWER_CONNECTED)` construye el filtro. `ContextCompat.registerReceiver(this, ChargeReceiver(), filter, ContextCompat.RECEIVER_NOT_EXPORTED)` registra dinámicamente una nueva instancia de `ChargeReceiver()` (constructor sin argumentos); el flag `RECEIVER_NOT_EXPORTED` es constante de Android 13+ para seguridad. Kotlin instancia el receiver con sintaxis de llamada a constructor igual que cualquier clase.
+
 Consejo:
 onReceive es corto: no hagas IO ni esperes coroutines. Para reaccionar a eventos del sistema en runtime, usa receivers dinámicos o WorkManager con constraints.

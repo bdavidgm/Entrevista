@@ -40,5 +40,9 @@ class ProductAdapter : ListAdapter<Product, ProductVH>(DIFF) {
         holder.bind(getItem(position))
 }
 
+
+ExplicaciónKotlin:
+`class ProductVH(private val binding: ItemProductBinding) : RecyclerView.ViewHolder(binding.root)` define ViewHolder con constructor primario: `private val binding` queda como propiedad inmutable del holder. `binding.root` pasa la raíz del ViewBinding al superconstructor. `fun bind(item: Product)` recibe `Product`, presumiblemente `data class`; `binding.title.text = item.name` accede a propiedad generada del binding y asigna `text` del TextView. `ProductAdapter : ListAdapter<Product, ProductVH>(DIFF)` hereda adapter con DiffUtil; `DIFF` es `DiffUtil.ItemCallback` companion. `onCreateViewHolder` usa expresión única con `=`; `ItemProductBinding.inflate(LayoutInflater.from(parent.context), parent, false)` es API ViewBinding estática. `onBindViewHolder` llama `holder.bind(getItem(position))`; `getItem` proviene de `ListAdapter`. `override` marca implementación de métodos abstractos.
+
 Consejo para entrevista:
 Explica reciclaje y DiffUtil. Pregunta: ¿cuántas inflaciones? Una por tipo visible aproximadamente, no una por ítem de datos.

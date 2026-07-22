@@ -10,5 +10,9 @@ repository.observeUsers()
     }
     .onEach { /* ... */ }
 
+
+ExplicaciónKotlin:
+`repository.observeUsers()` devuelve `Flow` sobre el cual encadenas `.catch { e -> emit(emptyList()) }`: `catch` es operador inline que recibe lambda `(Throwable) -> Unit` con capacidad de emitir valores alternativos. `e` es parámetro implícito nombrado del throwable capturado del upstream. `emit(emptyList())` dentro de `catch` requiere que el tipo coincida con el flujo (`List<User>`); `emptyList()` infiere genérico por contexto. `.onEach { /* ... */ }` continúa la cadena con side effect por elemento sin transformar. Los operadores devuelven `Flow` encadenable (fluent API). `catch` solo atrapa excepciones lanzadas en operadores anteriores, no en el lambda del collector. El comentario en `onEach` indica placeholder de lógica UI.
+
 Consejo:
 Si necesitas manejar errores también en el collector, combina catch upstream con try/catch en collect o usa Result.

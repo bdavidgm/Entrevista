@@ -15,5 +15,8 @@ value class Email(val raw: String) {
 fun load(id: UserId) { /* ... */ }
 load(UserId("42"))
 
+ExplicaciónKotlin:
+`@JvmInline value class UserId(val raw: String)` declara una value class (inline class): en runtime, cuando es posible, el valor se representa directamente como `String` sin wrapper, pero en compile-time es un tipo distinto que evita confusiones. `@JvmInline` es necesaria para interoperabilidad JVM. `value class Email(val raw: String)` incluye un bloque `init { require("@" in raw) }` que valida en construcción; `"@" in raw` usa el operador `in` sobre String. `fun load(id: UserId)` fuerza que no pases un `String` crudo ni un `Email` por error. `load(UserId("42"))` requiere envolver el literal en el constructor de la value class. Las value classes no pueden tener múltiples propiedades almacenadas ni herencia de clases, pero pueden implementar interfaces.
+
 Consejo:
 "@JvmInline value class = primitivo tipado sin coste". Hay restricciones (no herencia, una sola propiedad val). Útil para evitar primitive obsession.

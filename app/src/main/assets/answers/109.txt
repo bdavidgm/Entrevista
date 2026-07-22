@@ -40,5 +40,9 @@ dependencies {
     implementation(libs.androidx.core.ktx)
 }
 
+
+ExplicaciónKotlin:
+`plugins { }` bloque Gradle Kotlin aplica plugins con `alias(libs.plugins.android.application)`: acceso type-safe al catalog sin strings sueltos. `android { }` extensión AGP: `namespace = "com.example.entrevista"` define package R y BuildConfig; `compileSdk = 35` entero. `defaultConfig { minSdk = 24; targetSdk = 35 }` usa punto y coma Kotlin para múltiples statements en lambda DSL (estilo compacto). `dependencies { implementation(libs.androidx.core.ktx) }` declara dependencia KTX sin versión explícita si está en catalog/BOM. Todo es script Kotlin compilado, no código runtime. `libs.androidx.core.ktx` es accessor generado desde TOML.
+
 Consejo para entrevista:
 AGP, módulos, variantes, implementation vs api. Menciona catalog y kts. No confundas Gradle con Git.

@@ -16,5 +16,8 @@ class UserRepository(
     }
 }
 
+ExplicaciónKotlin:
+UserRepository es una clase Kotlin con constructor primario que declara private val api: UserApi y private val dao: UserDao como dependencias inyectables manualmente. fun users(): Flow<List<User>> = dao.getAll() usa expresión de cuerpo único (=) devolviendo Flow genérico anidado List<User>. suspend fun refresh() marca función suspendible solo invocable desde coroutine o otra suspend. val remote = api.fetchUsers() asigna resultado de llamada suspend. dao.insertAll(remote.map { it.toEntity() }) aplica map sobre la lista: lambda { it.toEntity() } transforma cada elemento con extensión o método toEntity(). insertAll es suspend del DAO. El patrón combina programación funcional (map) con corrutinas (suspend) sin bloquear hilos.
+
 Consejo:
 "Single source of truth": para offline-first el DAO emite y la red solo refresca. Devuelve tipos del dominio, no DTOs.

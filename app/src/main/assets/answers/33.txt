@@ -15,5 +15,8 @@ val shareIntent = Intent(Intent.ACTION_SEND).apply {
 }
 startActivity(Intent.createChooser(shareIntent, null))
 
+ExplicaciónKotlin:
+`Intent(this, DetailActivity::class.java)` construye un intent explícito: `this` es el `Context` (Activity), y `DetailActivity::class.java` obtiene la clase destino vía reflexión Kotlin. `.apply { putExtra("userId", "42") }` configura extras con scope function; `putExtra` es API Java del Intent. `Intent(Intent.ACTION_SEND).apply { ... }` crea un intent implícito por acción; asignación a `type` y `putExtra` con constantes de `Intent`. `Intent.createChooser(shareIntent, null)` envuelve el intent para mostrar selector de apps; el segundo parámetro es título `CharSequence?`. `startActivity(...)` lanza la navegación. Las extensiones y scope functions de Kotlin reducen el ruido respecto a Java, pero las APIs subyacentes siguen siendo las del framework Android.
+
 Consejo:
 Distinguir explícito vs implícito y conocer PendingIntent para notificaciones/alarmas. En Android 12+ los intents implícitos requieren atención por las restricciones de exported.

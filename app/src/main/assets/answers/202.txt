@@ -12,5 +12,8 @@ Ejemplo:
         android:layout_marginBottom="24dp"/>
 </androidx.constraintlayout.widget.ConstraintLayout>
 
+ExplicaciónKotlin:
+El layout es XML de ConstraintLayout; Kotlin lo consume mediante inflado o View Binding generado (`FragmentXxxBinding`). En Compose, el equivalente sería `Box`/`Column` con `Modifier.constrainAs` del plugin ConstraintLayout Compose. Programáticamente en Kotlin clásico se usaría `ConstraintSet` o `ConstraintLayout.LayoutParams` con `topToBottomOf`, `startToStartOf`, etc. El namespace `app:layout_constraint*` son atributos custom del library AndroidX; en Kotlin se acceden vía data binding o manipulación de `LayoutParams`. `android:layout_marginBottom="24dp"` se convierte a `TypedValue` o dimensión en `R.dimen` referenciada desde Kotlin. ConstraintLayout reduce anidamiento respecto a Linear/Relative, lo que beneficia rendimiento cuando Kotlin actualiza vistas en `onBindViewHolder`. La clase completa del widget en XML refleja el paquete Java/Kotlin de la librería.
+
 Consejo:
 Menciona barriers para alinear con el texto más largo y chains para distribuir espacio. Editor visual + código es el flujo habitual.

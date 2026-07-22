@@ -12,5 +12,9 @@ class SearchViewModel @Inject constructor(
     fun onQueryChange(value: String) { savedState["query"] = value }
 }
 
+
+ExplicaciónKotlin:
+`@HiltViewModel class SearchViewModel @Inject constructor(...)` combina anotaciones de Hilt: la primera marca el ViewModel inyectable y `@Inject constructor` indica constructor generado por DI. `private val savedState: SavedStateHandle` almacena handle inmutable de referencia. `savedState.getStateFlow("query", "")` devuelve `StateFlow<String>` con valor inicial `""` si la clave no existe; la clave es string literal. `fun onQueryChange(value: String)` es función normal que usa operador de indexación `savedState["query"] = value` sobrecargado en `SavedStateHandle` para escribir en el mapa persistente. La propiedad `query` expone flujo de solo lectura sin setter público. `@Inject constructor` permite que Hilt provea `SavedStateHandle` automáticamente sin factory manual.
+
 Consejo:
 Solo guarda valores pequeños y serializables. Para datos grandes (lista cargada de red), recárgalos en onCreate; SavedState no es un cache.

@@ -13,5 +13,8 @@ a === b  // false (objetos distintos)
 data class Point(val x: Int, val y: Int)
 Point(1, 2) == Point(1, 2) // true
 
+ExplicaciónKotlin:
+Las variables `a` y `b` son de tipo `String`; `String(a.toCharArray())` crea una nueva instancia con el mismo contenido que `a`. `a == b` invoca `equals` (equivalencia estructural): para `String`, compara caracteres y devuelve `true`. `a === b` compara identidad referencial (mismo objeto en memoria) y devuelve `false` porque son instancias distintas. La `data class Point(val x: Int, val y: Int)` genera un `equals` basado en los componentes del constructor primario, por eso `Point(1, 2) == Point(1, 2)` es true aunque sean objetos diferentes; `===` entre dos `Point` distintos sería false. En Kotlin conviene recordar que `==` nunca es comparación de referencias salvo en tipos sin `equals` personalizado.
+
 Consejo:
 "== es equals; === es ==", al revés que Java. Útil para optimizaciones (chequeo rápido de identidad antes de equals costoso).

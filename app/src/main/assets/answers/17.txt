@@ -9,5 +9,8 @@ val name = user?.name ?: "Anónimo"
 
 user?.let { sendWelcome(it) }
 
+ExplicaciónKotlin:
+`user?.address?.street?.length` encadena safe calls: si cualquier eslabón es null, toda la expresión devuelve null sin excepción; el tipo inferido de `length` es `Int?`. `user?.name ?: "Anónimo"` combina safe call con Elvis para obtener un `String` no anulable. `user?.let { sendWelcome(it) }` aplica `?.` a la scope function `let`: solo si `user` no es null se ejecuta el bloque lambda con `it` como alias del receptor; si es null, no se llama a `sendWelcome` y el resultado es null. `let` devuelve el resultado del bloque (aquí probablemente `Unit` de `sendWelcome`). Este patrón sustituye `if (user != null) sendWelcome(user)` con una expresión más compacta y composable con otras operaciones funcionales.
+
 Consejo:
 "?. cortocircuita en null". Distinguirlo de !!: ?. devuelve null sin crash, !! lo asume.

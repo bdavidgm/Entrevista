@@ -16,5 +16,9 @@ fun printSize(list: List<Int>?) {
     }
 }
 
+
+ExplicaciónKotlin:
+`fun describe(x: Any)` recibe cualquier tipo. `if (x is String)` — type check que habilita smart cast: dentro del bloque `x` se trata como `String` sin cast manual, el compilador infiere por flujo de control. `x.length` accede a propiedad String. `fun printSize(list: List<Int>?)` acepta lista nullable de enteros. `if (list != null)` — null check smart cast: dentro del bloque `list` es `List<Int>` non-null. `list.size` es propiedad de colección. Smart cast falla si `list` es `var` mutable compartida o propiedad open con getter custom; aquí parámetro val local es seguro. No se usa `as` explícito gracias al análisis de flujo del compilador Kotlin.
+
 Consejo:
 Conoce los casos en que NO aplica: var públicas, open properties, custom getters. En esos casos, asigna a una val local: val current = property y opera sobre ella.

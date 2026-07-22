@@ -14,5 +14,8 @@ val listener = object : View.OnClickListener {
     override fun onClick(v: View?) { /* ... */ }
 }
 
+ExplicaciónKotlin:
+`object Analytics { ... }` es una object declaration: el compilador genera una clase singleton con instancia única y acceso directo vía `Analytics.log(...)`. La función `log` usa expresión de cuerpo único (`=`) y plantilla de cadena `"EVENT: $event"` para interpolar el parámetro. El segundo fragmento es un object expression: `object : View.OnClickListener { ... }` crea una instancia anónima que implementa la interfaz Java (SAM) `OnClickListener`. La sintaxis `: View.OnClickListener` declara la superinterfaz; `override fun onClick(v: View?)` sobrescribe el método de la interfaz, con `v` tipado como `View?` porque la API Android lo permite anulable. Este patrón sustituye las anonymous inner classes de Java y se compila de forma eficiente cuando la interfaz es funcional.
+
 Consejo:
 Diferencia object declaration vs companion object. Menciona que es thread-safe sin doble check manual y compárate con el patrón Singleton clásico de Java.

@@ -10,5 +10,8 @@ val versionName = info.versionName
 
 val canHandle = pm.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY) != null
 
+ExplicaciónKotlin:
+`packageManager` es una propiedad de extensión o miembro del `Context`/`Activity` que devuelve el `PackageManager` del proceso actual. `val pm` fija la referencia localmente. `getPackageInfo` recibe `packageName` (propiedad del contexto) y `PackageManager.PackageInfoFlags.of(0)`, una factory estática Java que encapsula flags de consulta en API moderna. `info.versionName` accede a una propiedad Java que en Kotlin puede ser anulable (`String?`) según la versión del SDK. La segunda línea asigna a `canHandle` el resultado de comparar con `null`: `resolveActivity` devuelve un `ResolveInfo?`, y la expresión `!= null` produce un `Boolean` no anulable mediante el operador de comparación estándar. La variable `intent` se asume ya construida en el ámbito; Kotlin no exige tipo explícito gracias a la inferencia. Todo el ejemplo usa la interop directa con APIs Android sin wrappers adicionales.
+
 Consejo:
 Si resolveActivity devuelve null, ofrece fallback o mensaje. Declara queries explícitas para evitar listas vacías en Android 11+.

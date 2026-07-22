@@ -12,5 +12,8 @@ val request = OneTimeWorkRequestBuilder<SyncWorker>()
     ).build()
 WorkManager.getInstance(context).enqueue(request)
 
+ExplicaciónKotlin:
+`OneTimeWorkRequestBuilder<SyncWorker>()` es un builder genérico de WorkManager; el tipo `SyncWorker` debe extender `CoroutineWorker` o `Worker` en Kotlin. `.setConstraints(...)` recibe un `Constraints` construido con otro builder encadenado: `Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build()`. Los builders usan el patrón fluente común en APIs AndroidX. `NetworkType.CONNECTED` es una enum de WorkManager que exige cualquier conexión de red. `WorkManager.getInstance(context)` es un singleton; `context` debe ser `Application` o `Context` con alcance adecuado para evitar leaks si guardas Activity. `.enqueue(request)` encola el trabajo de forma persistente y compatible con Doze. En Kotlin, `SyncWorker` implementaría `override suspend fun doWork(): Result` si es `CoroutineWorker`, usando `suspend` en lugar de threads manuales. Este snippet sustituye `startService` clásico por APIs declarativas alineadas con restricciones de background desde API 26+. La sintaxis encadenada y los genéricos son rasgos Kotlin aplicados a bibliotecas Java/Kotlin interop.
+
 Consejo:
 "Para trabajo diferible, WorkManager; para tareas visibles, foreground service". Conocer Doze, App Standby y restricciones por versión.

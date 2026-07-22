@@ -16,5 +16,8 @@ fun render(state: UiState<User>) = when (state) {
     is UiState.Error -> showError(state.message)
 }
 
+ExplicaciónKotlin:
+`sealed interface UiState<out T>` declara una jerarquía cerrada con variante covariante `out T`: solo subtipos conocidos en compilación pueden implementarla. `data object Loading : UiState<Nothing>` es un singleton inmutable generado por el compilador (desde Kotlin 1.9) que implementa `UiState<Nothing>`. `data class Success<T>(val data: T) : UiState<T>` combina data class con genérico propio. `data class Error(...) : UiState<Nothing>` lleva un mensaje y fija la covarianza en `Nothing` para el parámetro superior. La función `render` usa `when` como expresión: `is UiState.Success` smart-castea `state` y expone `state.data` tipado como `User`; `UiState.Loading` compara el object singleton; no hace falta `else` porque el compilador verifica exhaustividad sobre la sealed hierarchy. Este modelado es idiomático para estados de UI en MVI/ViewModel.
+
 Consejo:
 Sealed vs enum: enum si son valores fijos sin datos; sealed si cada caso lleva datos distintos. Resalta la exhaustividad y comparte con Result<T> y MVI.

@@ -9,5 +9,8 @@ val length = name!!.length // crash si name es null
 
 val safe = name ?: return  // alternativa preferida
 
+ExplicaciónKotlin:
+`val name: String?` declara una variable con anotación de tipo explícita anulable, coherente con el retorno de `bundle.getString("name")` (platform type de Java). `name!!.length` aplica el operador postfix `!!`: convierte `String?` a `String` para acceder a `.length`, pero si `name` es null en runtime lanza `NullPointerException` (sin mensaje personalizado). Es una aserción al compilador, no una comprobación. La línea alternativa `name ?: return` usa Elvis con `return` como expresión de tipo `Nothing`: si `name` es null, la función termina inmediatamente; si no, el flujo continúa y el compilador podría smart-castear `name` a no nulo en código posterior. Contrasta el anti-patrón `!!` con el control de flujo seguro mediante early return.
+
 Consejo:
 Cuando preguntan por !!, responde con sus alternativas: ?., ?:, requireNotNull(value, lazyMessage) o checkNotNull. Úsalo solo si puedes justificar el invariante.

@@ -13,5 +13,9 @@ class UserRepository(private val api: UserApi) {
     suspend fun get(id: String): User = api.fetch(id).toDomain()
 }
 
+
+ExplicaciónKotlin:
+`data class UserDto(...)` y `data class User(...)` generan automáticamente `equals`, `hashCode`, `copy` y `componentN`. `fun UserDto.toDomain() = User(id, "$first $last")` es función de extensión sobre `UserDto` que retorna tipo de dominio; el string template concatena propiedades con espacio. `class UserRepository(private val api: UserApi)` declara dependencia privada inyectada manualmente. `suspend fun get(id: String): User = api.fetch(id).toDomain()` encadena llamada suspend con mapper en expresión única: primero DTO, luego extensión `.toDomain()`. El tipo de retorno explícito `User` documenta la capa expuesta. Las extensiones no modifican la clase original; viven en el mismo paquete o archivo de mappers.
+
 Consejo:
 "Una capa, un modelo, un mapper". Evita exponer DTOs en el ViewModel; eso filtra detalles de la red por toda la app.
