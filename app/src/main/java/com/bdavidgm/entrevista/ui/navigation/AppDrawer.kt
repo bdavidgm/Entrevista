@@ -29,6 +29,7 @@ sealed interface MainDestination {
     data object QuestionList : MainDestination
 }
 
+/** Drawer lateral (Continuar / Guardado / Todas); se usa desde [com.bdavidgm.entrevista.ui.EntrevistaApp] vía MainDrawerShell. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppNavigationDrawer(
@@ -58,6 +59,7 @@ fun AppNavigationDrawer(
     )
 }
 
+/** Ítems del menú del drawer; se usa dentro de [AppNavigationDrawer]. */
 @Composable
 private fun AppDrawerContent(
     currentDestination: MainDestination,

@@ -49,6 +49,7 @@ import com.bdavidgm.entrevista.data.InterviewRepository
 import com.bdavidgm.entrevista.data.SummaryPagingSource
 import com.bdavidgm.entrevista.ui.components.QuestionCard
 
+/** Lista de todas las preguntas (búsqueda y categorías); se usa en [com.bdavidgm.entrevista.ui.EntrevistaApp]. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QuestionListScreen(
@@ -177,6 +178,7 @@ fun QuestionListScreen(
     }
 }
 
+/** Chips de filtro por categoría; se usan en [QuestionListScreen]. */
 @Composable
 private fun CategoryChips(
     selectedCategory: Category?,

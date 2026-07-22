@@ -61,6 +61,7 @@ private val DarkColorScheme = darkColorScheme(
     outlineVariant = DarkOutlineVariant,
 )
 
+/** Tema Material 3 de la app; se usa en [com.bdavidgm.entrevista.MainActivity] envolviendo [com.bdavidgm.entrevista.ui.EntrevistaApp]. */
 @Composable
 fun EntrevistaTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),

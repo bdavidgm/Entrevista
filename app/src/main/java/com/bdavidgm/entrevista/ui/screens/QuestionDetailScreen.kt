@@ -45,6 +45,7 @@ import com.bdavidgm.entrevista.data.QuestionSummary
 import com.bdavidgm.entrevista.ui.components.InterviewAnswerBody
 import com.bdavidgm.entrevista.ui.util.copyTextToClipboard
 
+/** Pantalla de detalle de una pregunta; se usa desde [DetailRoute]. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QuestionDetailScreen(

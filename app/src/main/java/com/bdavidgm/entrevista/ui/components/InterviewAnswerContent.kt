@@ -210,6 +210,7 @@ internal object InterviewAnswerParser {
     }
 }
 
+/** Renderiza la respuesta (prosa + código); se usa en [com.bdavidgm.entrevista.ui.screens.QuestionDetailScreen]. */
 @Composable
 internal fun InterviewAnswerBody(
     answer: String,
@@ -277,6 +278,7 @@ internal fun InterviewAnswerBody(
     }
 }
 
+/** Diálogo con la ExplicaciónKotlin; se abre desde el ícono de info de [AnswerCodeBlock] en [InterviewAnswerBody]. */
 @Composable
 private fun KotlinExplanationDialog(
     explanation: String,
@@ -336,6 +338,7 @@ private fun KotlinExplanationDialog(
     )
 }
 
+/** Texto con copia por pulsación larga; se usa en [InterviewAnswerBody] para la prosa de la respuesta. */
 @Composable
 private fun CopyableText(
     text: String,
@@ -364,6 +367,7 @@ private fun CopyableText(
     )
 }
 
+/** Bloque de código con cabecera Kotlin; se usa en [InterviewAnswerBody] y en [KotlinExplanationDialog]. */
 @Composable
 private fun AnswerCodeBlock(
     code: String,

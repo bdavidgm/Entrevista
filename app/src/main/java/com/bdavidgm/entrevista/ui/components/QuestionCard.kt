@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.bdavidgm.entrevista.data.QuestionSummary
 
+/** Tarjeta de una pregunta; se usa en [com.bdavidgm.entrevista.ui.screens.QuestionListScreen] y [com.bdavidgm.entrevista.ui.screens.SavedScreen]. */
 @Composable
 fun QuestionCard(
     summary: QuestionSummary,

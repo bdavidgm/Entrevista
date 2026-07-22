@@ -24,6 +24,7 @@ import com.bdavidgm.entrevista.R
 import com.bdavidgm.entrevista.data.QuestionSummary
 import com.bdavidgm.entrevista.ui.components.QuestionCard
 
+/** Pantalla de preguntas guardadas; se usa desde [SavedRoute]. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SavedScreen(
