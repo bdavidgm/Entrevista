@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.outlined.EditNote
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -60,6 +61,7 @@ fun QuestionDetailScreen(
     onNext: () -> Unit,
     onBack: () -> Unit,
     onQuestionLinkClick: (Int) -> Unit = {},
+    onOpenNotes: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -79,6 +81,14 @@ fun QuestionDetailScreen(
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Volver"
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(onClick = onOpenNotes) {
+                        Icon(
+                            Icons.Outlined.EditNote,
+                            contentDescription = stringResource(R.string.notes_title)
                         )
                     }
                 },
@@ -216,6 +226,7 @@ fun QuestionDetailScreen(
                         InterviewAnswerBody(
                             answer = answer,
                             onQuestionLinkClick = onQuestionLinkClick,
+                            onOpenNotes = onOpenNotes,
                             modifier = Modifier.padding(16.dp)
                         )
                     }

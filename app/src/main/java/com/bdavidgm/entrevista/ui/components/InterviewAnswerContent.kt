@@ -218,6 +218,7 @@ internal fun InterviewAnswerBody(
     answer: String,
     modifier: Modifier = Modifier,
     onQuestionLinkClick: ((Int) -> Unit)? = null,
+    onOpenNotes: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val parsed = remember(answer) { InterviewAnswerParser.parse(answer) }
@@ -277,6 +278,7 @@ internal fun InterviewAnswerBody(
                 ?: stringResource(R.string.kotlin_explanation_missing),
             onDismiss = { showKotlinExplanation = false },
             onQuestionLinkClick = onQuestionLinkClick,
+            onOpenNotes = onOpenNotes,
         )
     }
 }
@@ -287,6 +289,7 @@ private fun KotlinExplanationDialog(
     explanation: String,
     onDismiss: () -> Unit,
     onQuestionLinkClick: ((Int) -> Unit)? = null,
+    onOpenNotes: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val segments = remember(explanation) {
@@ -340,6 +343,13 @@ private fun KotlinExplanationDialog(
         confirmButton = {
             TextButton(onClick = onDismiss) {
                 Text(text = stringResource(R.string.kotlin_explanation_close))
+            }
+        },
+        dismissButton = onOpenNotes?.let { openNotes ->
+            {
+                TextButton(onClick = openNotes) {
+                    Text(text = stringResource(R.string.notes_trigger))
+                }
             }
         },
     )

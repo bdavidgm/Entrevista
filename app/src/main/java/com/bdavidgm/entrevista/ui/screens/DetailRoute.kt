@@ -23,9 +23,13 @@ internal fun DetailRoute(
     modifier: Modifier = Modifier,
 ) {
     val savedIds by userPreferences.savedQuestionIds.collectAsState()
+    val notes by userPreferences.notes.collectAsState()
+    var showNotes by remember { mutableStateOf(false) }
     val summary = remember(questionId) { InterviewRepository.summaryById(questionId) }
     var answer by remember(questionId) { mutableStateOf<String?>(null) }
     var isLoadingAnswer by remember(questionId) { mutableStateOf(true) }
+    /** Pila de conceptos abiertos por enlace; el último es el diálogo visible. */
+    var conceptStack by remember(questionId) { mutableStateOf<List<Int>>(emptyList()) }
 
     if (summary == null) {
         LaunchedEffect(Unit) { onBack() }
@@ -40,6 +44,18 @@ internal fun DetailRoute(
         isLoadingAnswer = false
     }
 
+    fun openConcept(linkedId: Int) {
+        if (linkedId == questionId) return
+        if (conceptStack.lastOrNull() == linkedId) return
+        conceptStack = conceptStack + linkedId
+    }
+
+    fun popConcept() {
+        if (conceptStack.isNotEmpty()) {
+            conceptStack = conceptStack.dropLast(1)
+        }
+    }
+
     QuestionDetailScreen(
         summary = summary,
         answer = answer,
@@ -51,7 +67,27 @@ internal fun DetailRoute(
         onViewLater = { userPreferences.toggleSaved(questionId) },
         onNext = { InterviewRepository.nextQuestionId(questionId)?.let(onNavigateToQuestion) },
         onBack = onBack,
-        onQuestionLinkClick = onNavigateToQuestion,
+        onQuestionLinkClick = ::openConcept,
+        onOpenNotes = { showNotes = true },
         modifier = modifier,
     )
+
+    val topConceptId = conceptStack.lastOrNull()
+    if (topConceptId != null) {
+        ConceptQuestionDialog(
+            questionId = topConceptId,
+            onQuestionLinkClick = ::openConcept,
+            onDismiss = ::popConcept,
+            onOpenNotes = { showNotes = true },
+        )
+    }
+
+    if (showNotes) {
+        UserNotesDialog(
+            notes = notes,
+            onAddNote = userPreferences::addNote,
+            onDeleteNote = userPreferences::deleteNote,
+            onDismiss = { showNotes = false },
+        )
+    }
 }

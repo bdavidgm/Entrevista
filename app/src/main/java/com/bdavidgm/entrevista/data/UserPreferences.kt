@@ -15,6 +15,9 @@ class UserPreferences(context: Context) {
     private val _savedQuestionIds = MutableStateFlow(readSavedQuestionIds())
     val savedQuestionIds: StateFlow<Set<Int>> = _savedQuestionIds.asStateFlow()
 
+    private val _notes = MutableStateFlow(readNotes())
+    val notes: StateFlow<List<UserNote>> = _notes.asStateFlow()
+
     fun setLastQuestionId(id: Int) {
         prefs.edit().putInt(KEY_LAST_QUESTION_ID, id).apply()
         _lastQuestionId.value = id
@@ -29,6 +32,37 @@ class UserPreferences(context: Context) {
             .putStringSet(KEY_SAVED_QUESTION_IDS, updated.map { it.toString() }.toSet())
             .apply()
         _savedQuestionIds.value = updated
+    }
+
+    fun addNote(text: String) {
+        val clean = text.trim().replace(RECORD_SEPARATOR, ' ').replace(FIELD_SEPARATOR, ' ')
+        if (clean.isEmpty()) return
+        val note = UserNote(id = System.currentTimeMillis(), text = clean)
+        val updated = listOf(note) + _notes.value
+        persistNotes(updated)
+    }
+
+    fun deleteNote(id: Long) {
+        val updated = _notes.value.filterNot { it.id == id }
+        persistNotes(updated)
+    }
+
+    private fun persistNotes(notes: List<UserNote>) {
+        val serialized = notes.joinToString(RECORD_SEPARATOR.toString()) { "${it.id}$FIELD_SEPARATOR${it.text}" }
+        prefs.edit().putString(KEY_NOTES, serialized).apply()
+        _notes.value = notes
+    }
+
+    private fun readNotes(): List<UserNote> {
+        val raw = prefs.getString(KEY_NOTES, null).orEmpty()
+        if (raw.isEmpty()) return emptyList()
+        return raw.split(RECORD_SEPARATOR)
+            .mapNotNull { record ->
+                val parts = record.split(FIELD_SEPARATOR, limit = 2)
+                if (parts.size != 2) return@mapNotNull null
+                val id = parts[0].toLongOrNull() ?: return@mapNotNull null
+                UserNote(id = id, text = parts[1])
+            }
     }
 
     private fun readLastQuestionId(): Int? {
@@ -46,5 +80,8 @@ class UserPreferences(context: Context) {
         const val PREFS_NAME = "user_preferences"
         const val KEY_LAST_QUESTION_ID = "last_question_id"
         const val KEY_SAVED_QUESTION_IDS = "saved_question_ids"
+        const val KEY_NOTES = "user_notes"
+        const val RECORD_SEPARATOR = '\u001E'
+        const val FIELD_SEPARATOR = '\u001F'
     }
 }

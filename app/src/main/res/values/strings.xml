@@ -25,4 +25,16 @@
     <string name="kotlin_explanation_title">Explicación del ejemplo (Kotlin)</string>
     <string name="kotlin_explanation_close">Cerrar</string>
     <string name="kotlin_explanation_missing">Aún no hay una explicación detallada de este ejemplo.</string>
+    <string name="concept_dialog_close">Cerrar</string>
+    <string name="concept_dialog_missing">No se encontró la respuesta de este concepto.</string>
+    <string name="notes_title">Notas</string>
+    <string name="notes_trigger">Notas</string>
+    <string name="notes_add">Agregar nota</string>
+    <string name="notes_empty">Aún no has agregado ninguna nota.</string>
+    <string name="notes_hint">Escribe tu nota…</string>
+    <string name="notes_save">Guardar</string>
+    <string name="notes_cancel">Cancelar</string>
+    <string name="notes_close">Cerrar</string>
+    <string name="notes_delete">Eliminar nota</string>
+    <string name="notes_detail_title">Nota</string>
 </resources>
