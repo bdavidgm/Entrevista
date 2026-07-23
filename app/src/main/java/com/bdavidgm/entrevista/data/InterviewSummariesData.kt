@@ -279,6 +279,22 @@ internal object InterviewSummariesData {
         QuestionSummary(273, Category.COMPOSE, "¿Qué son produceState y snapshotFlow?"),
         QuestionSummary(274, Category.ANDROID_API, "¿Qué son App Widgets y Jetpack Glance?"),
         QuestionSummary(275, Category.TESTING, "¿Qué es Chucker?"),
+        QuestionSummary(276, Category.COMPOSE, "¿Qué es el composable Text?"),
+        QuestionSummary(277, Category.COMPOSE, "¿Qué es Button y sus variantes?"),
+        QuestionSummary(278, Category.COMPOSE, "¿Qué es TextField / OutlinedTextField?"),
+        QuestionSummary(279, Category.COMPOSE, "¿Qué es Row?"),
+        QuestionSummary(280, Category.COMPOSE, "¿Qué es Column?"),
+        QuestionSummary(281, Category.COMPOSE, "¿Qué es Box?"),
+        QuestionSummary(282, Category.COMPOSE, "¿Qué es el composable Image?"),
+        QuestionSummary(283, Category.COMPOSE, "¿Qué es el composable Icon?"),
+        QuestionSummary(284, Category.COMPOSE, "¿Qué es Card?"),
+        QuestionSummary(285, Category.COMPOSE, "¿Qué es Spacer?"),
+        QuestionSummary(286, Category.COMPOSE, "¿Qué es DropdownMenu (menú de opciones)?"),
+        QuestionSummary(287, Category.COMPOSE, "¿Qué son Checkbox, Switch y RadioButton?"),
+        QuestionSummary(288, Category.COMPOSE, "¿Qué es Slider?"),
+        QuestionSummary(289, Category.COMPOSE, "¿Qué es TopAppBar?"),
+        QuestionSummary(290, Category.COMPOSE, "¿Qué es FloatingActionButton (FAB)?"),
+        QuestionSummary(291, Category.COMPOSE, "¿Qué es AlertDialog / Dialog?"),
         )
     }
 }
