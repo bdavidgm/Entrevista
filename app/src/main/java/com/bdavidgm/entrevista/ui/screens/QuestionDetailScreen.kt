@@ -59,6 +59,7 @@ fun QuestionDetailScreen(
     onViewLater: () -> Unit,
     onNext: () -> Unit,
     onBack: () -> Unit,
+    onQuestionLinkClick: (Int) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -214,6 +215,7 @@ fun QuestionDetailScreen(
                     answer != null -> {
                         InterviewAnswerBody(
                             answer = answer,
+                            onQuestionLinkClick = onQuestionLinkClick,
                             modifier = Modifier.padding(16.dp)
                         )
                     }

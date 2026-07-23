@@ -51,6 +51,7 @@ internal fun DetailRoute(
         onViewLater = { userPreferences.toggleSaved(questionId) },
         onNext = { InterviewRepository.nextQuestionId(questionId)?.let(onNavigateToQuestion) },
         onBack = onBack,
+        onQuestionLinkClick = onNavigateToQuestion,
         modifier = modifier,
     )
 }

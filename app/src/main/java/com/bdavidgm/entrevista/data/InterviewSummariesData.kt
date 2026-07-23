@@ -262,6 +262,23 @@ internal object InterviewSummariesData {
         QuestionSummary(256, Category.KOTLIN_ADVANCED, "¿Qué devuelve Tipo::class y qué es KClass?"),
         QuestionSummary(257, Category.KOTLIN_ADVANCED, "¿Diferencia entre Tipo::class, objeto::class y Tipo::class.java?"),
         QuestionSummary(258, Category.KOTLIN_ADVANCED, "¿Cómo se usa la reflexión con KClass y qué costes tiene?"),
+        QuestionSummary(259, Category.RUTA_ANDROID, "¿Qué es Coil y cómo se usa para cargar imágenes?"),
+        QuestionSummary(260, Category.RUTA_ANDROID, "¿Qué es Glide?"),
+        QuestionSummary(261, Category.RUTA_ANDROID, "¿Qué es Gson?"),
+        QuestionSummary(262, Category.RUTA_ANDROID, "¿Qué es Moshi?"),
+        QuestionSummary(263, Category.KOTLIN_ADVANCED, "¿Qué es kotlinx.serialization?"),
+        QuestionSummary(264, Category.TESTING, "¿Qué es LeakCanary?"),
+        QuestionSummary(265, Category.RUTA_ANDROID, "¿Qué es Timber?"),
+        QuestionSummary(266, Category.TESTING, "¿Qué es Robolectric?"),
+        QuestionSummary(267, Category.TESTING, "¿Qué son los tests de UI en Jetpack Compose?"),
+        QuestionSummary(268, Category.ANDROID_API, "¿Qué es WebView en Android?"),
+        QuestionSummary(269, Category.JETPACK, "¿Qué es Dagger 2 y cómo se relaciona con Hilt?"),
+        QuestionSummary(270, Category.RUTA_ANDROID, "¿Qué es Ktor Client en Android?"),
+        QuestionSummary(271, Category.COMPOSE, "¿Qué son WindowInsets y el edge-to-edge?"),
+        QuestionSummary(272, Category.JETPACK, "¿Qué es SQLDelight?"),
+        QuestionSummary(273, Category.COMPOSE, "¿Qué son produceState y snapshotFlow?"),
+        QuestionSummary(274, Category.ANDROID_API, "¿Qué son App Widgets y Jetpack Glance?"),
+        QuestionSummary(275, Category.TESTING, "¿Qué es Chucker?"),
         )
     }
 }

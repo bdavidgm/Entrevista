@@ -217,6 +217,7 @@ internal object InterviewAnswerParser {
 internal fun InterviewAnswerBody(
     answer: String,
     modifier: Modifier = Modifier,
+    onQuestionLinkClick: ((Int) -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val parsed = remember(answer) { InterviewAnswerParser.parse(answer) }
@@ -231,6 +232,7 @@ internal fun InterviewAnswerBody(
                 style = bodyStyle,
                 clipboardLabel = "answer",
                 toastMessageRes = R.string.answer_copied_to_clipboard,
+                onQuestionLinkClick = onQuestionLinkClick,
             )
         } else {
             if (parsed.proseBeforeCode.isNotBlank()) {
@@ -239,6 +241,7 @@ internal fun InterviewAnswerBody(
                     style = bodyStyle,
                     clipboardLabel = "answer",
                     toastMessageRes = R.string.answer_copied_to_clipboard,
+                    onQuestionLinkClick = onQuestionLinkClick,
                 )
             }
             Spacer(modifier = Modifier.height(10.dp))
@@ -262,6 +265,7 @@ internal fun InterviewAnswerBody(
                     style = bodyStyle,
                     clipboardLabel = "answer",
                     toastMessageRes = R.string.answer_copied_to_clipboard,
+                    onQuestionLinkClick = onQuestionLinkClick,
                 )
             }
         }
@@ -272,6 +276,7 @@ internal fun InterviewAnswerBody(
             explanation = parsed.kotlinExplanation
                 ?: stringResource(R.string.kotlin_explanation_missing),
             onDismiss = { showKotlinExplanation = false },
+            onQuestionLinkClick = onQuestionLinkClick,
         )
     }
 }
@@ -281,6 +286,7 @@ internal fun InterviewAnswerBody(
 private fun KotlinExplanationDialog(
     explanation: String,
     onDismiss: () -> Unit,
+    onQuestionLinkClick: ((Int) -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val segments = remember(explanation) {
@@ -310,6 +316,7 @@ private fun KotlinExplanationDialog(
                                 style = proseStyle,
                                 clipboardLabel = "explanation",
                                 toastMessageRes = R.string.answer_copied_to_clipboard,
+                                onQuestionLinkClick = onQuestionLinkClick,
                             )
                         }
                         is ExplanationSegment.Code -> {
@@ -341,6 +348,7 @@ private fun KotlinExplanationDialog(
 /**
  * Prosa Markdown (negritas, tablas, imágenes, etc.); se usa en [InterviewAnswerBody]
  * y en [KotlinExplanationDialog]. El código de ejemplo sigue en [AnswerCodeBlock].
+ * Enlaces `pregunta:{id}` navegan a esa pregunta vía [onQuestionLinkClick].
  */
 @Composable
 private fun AnswerMarkdown(
@@ -349,6 +357,7 @@ private fun AnswerMarkdown(
     clipboardLabel: String,
     toastMessageRes: Int,
     modifier: Modifier = Modifier,
+    onQuestionLinkClick: ((Int) -> Unit)? = null,
 ) {
     val context = LocalContext.current
     MarkdownText(
@@ -356,6 +365,12 @@ private fun AnswerMarkdown(
         style = style.copy(color = MaterialTheme.colorScheme.onSurface),
         linkColor = MaterialTheme.colorScheme.primary,
         isTextSelectable = true,
+        onLinkClicked = { url ->
+            val id = parseQuestionLinkId(url)
+            if (id != null && onQuestionLinkClick != null) {
+                onQuestionLinkClick(id)
+            }
+        },
         modifier = modifier
             .fillMaxWidth()
             .pointerInput(markdown) {
@@ -370,6 +385,12 @@ private fun AnswerMarkdown(
                 )
             },
     )
+}
+
+private fun parseQuestionLinkId(url: String): Int? {
+    val prefix = "pregunta:"
+    if (!url.startsWith(prefix)) return null
+    return url.removePrefix(prefix).trim().toIntOrNull()
 }
 
 /** Bloque de código con cabecera Kotlin; se usa en [InterviewAnswerBody] y en [KotlinExplanationDialog]. */
