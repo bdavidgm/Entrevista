@@ -14,7 +14,7 @@ internal object InterviewAnswersData {
 
     fun getAnswer(id: Int): String? = runCatching {
         requireInitialized()
-        appContext.assets.open("answers/$id.txt").bufferedReader().use { it.readText() }
+        appContext.assets.open("answers/$id.md").bufferedReader().use { it.readText() }
     }.getOrNull()
 
     suspend fun searchIdsMatching(queryLower: String): List<Int> = withContext(Dispatchers.IO) {

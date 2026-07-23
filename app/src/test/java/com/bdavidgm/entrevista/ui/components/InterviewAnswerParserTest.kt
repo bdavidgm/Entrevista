@@ -11,7 +11,7 @@ class InterviewAnswerParserTest {
     @Test
     fun parse_extractsCodeKotlinExplanationAndConsejo() {
         val raw = """
-            Concepto:
+            ## Concepto
             Texto previo.
 
             Ejemplo:
@@ -26,16 +26,16 @@ class InterviewAnswerParserTest {
 
         val parsed = InterviewAnswerParser.parse(raw)
 
-        assertEquals("Concepto:\nTexto previo.", parsed.proseBeforeCode)
+        assertEquals("## Concepto\nTexto previo.", parsed.proseBeforeCode)
         assertEquals("fun hello() = \"hola\"", parsed.code)
         assertEquals("fun declara una función.", parsed.kotlinExplanation)
-        assertEquals("Consejo:\nMenciona tipos inferidos.", parsed.proseAfterCode)
+        assertEquals("## Consejo\n\nMenciona tipos inferidos.", parsed.proseAfterCode)
     }
 
     @Test
     fun parse_supportsConsejoParaEntrevista() {
         val raw = """
-            Concepto:
+            ## Concepto
             Texto.
 
             Ejemplo:
@@ -49,7 +49,7 @@ class InterviewAnswerParserTest {
 
         assertEquals("val x = 1", parsed.code)
         assertNull(parsed.kotlinExplanation)
-        assertEquals("Consejo para entrevista:\nTip.", parsed.proseAfterCode)
+        assertEquals("## Consejo para entrevista\n\nTip.", parsed.proseAfterCode)
     }
 
     @Test
@@ -71,9 +71,9 @@ class InterviewAnswerParserTest {
         val code = segments[0] as ExplanationSegment.Code
         assertEquals("class UserFragment : Fragment()", code.code)
         val prose = segments[1] as ExplanationSegment.Prose
-        assertTrue(prose.text.text.contains("hereda de"))
-        assertTrue(prose.text.text.contains("Fragment"))
-        assertTrue(prose.text.text.contains("companion object"))
+        assertTrue(prose.markdown.contains("hereda de"))
+        assertTrue(prose.markdown.contains("`Fragment`"))
+        assertTrue(prose.markdown.contains("`companion object`"))
     }
 
     @Test
@@ -81,7 +81,7 @@ class InterviewAnswerParserTest {
         val explanation = "Texto sin snippets de código."
         val segments = InterviewAnswerParser.parseExplanationSegments(explanation)
         assertEquals(1, segments.size)
-        assertEquals(explanation, (segments[0] as ExplanationSegment.Prose).text.text)
+        assertEquals(explanation, (segments[0] as ExplanationSegment.Prose).markdown)
     }
 
     @Test

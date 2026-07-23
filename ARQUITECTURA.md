@@ -47,7 +47,7 @@ MainActivity
         │
         ├─ List  → filtra QuestionSummary + Paging
         ├─ Saved → IDs guardados → summaries
-        └─ Detail → summary + answers/{id}.txt
+        └─ Detail → summary + answers/{id}.md
                       └─ InterviewAnswerParser
                             └─ InterviewAnswerBody
                                   ├─ texto + AnswerCodeBlock
@@ -85,13 +85,13 @@ Hay **dos mundos** de información, bien separados:
 | Qué | Dónde | Cómo se identifica |
 |-----|--------|--------------------|
 | Metadatos de pregunta (id, categoría, enunciado) | Código Kotlin: `InterviewSummariesData` | Lista en memoria, IDs **1…258** |
-| Cuerpo de la respuesta | Assets: `app/src/main/assets/answers/{id}.txt` | Un archivo por ID (`1.txt` … `258.txt`) |
+| Cuerpo de la respuesta | Assets: `app/src/main/assets/answers/{id}.md` | Un archivo por ID (`1.md` … `258.md`) |
 
 - Las preguntas **no** viven en assets: solo las respuestas.
 - El repositorio (`InterviewRepository`) es la fachada: summaries, `getAnswer(id)`, prev/next, búsqueda y filtrado.
 - Constante clave: `MAX_QUESTION_ID = 258`, `PAGE_SIZE = 30`.
 
-**Carga de una respuesta:** se abre `assets/answers/{id}.txt` y se lee el texto completo. No hay JSON ni base de datos de contenido.
+**Carga de una respuesta:** se abre `assets/answers/{id}.md` y se lee el texto completo. No hay JSON ni base de datos de contenido.
 
 **Búsqueda:** primero filtra por enunciado/categoría en summaries; además escanea los textos de respuesta en assets (en un dispatcher de IO/Default) y une los IDs coincidentes.
 
@@ -110,7 +110,7 @@ Se expone con `StateFlow`. Abrir una pregunta desde **Guardados** no actualiza l
 
 ## 6. Formato de las respuestas (el “contrato” del contenido)
 
-Cada archivo `answers/{id}.txt` es texto plano con secciones marcadas por **líneas cabecera**. El parser solo reconoce de forma especial tres marcadores; el resto del texto (p. ej. `Concepto:`) se queda en el bloque de prosa anterior al código.
+Cada archivo `answers/{id}.md` es Markdown con secciones marcadas por **líneas cabecera**. El parser solo reconoce de forma especial tres marcadores; el resto (p. ej. `## Concepto`) es prosa Markdown renderizada con `compose-markdown` (jeziellago). El ejemplo de código sigue en `AnswerCodeBlock`.
 
 ### 6.1 Marcadores que entiende la UI
 
@@ -208,12 +208,12 @@ En `scripts/` hay generadores **offline** usados al **crear o regenerar** archiv
 | `generate_answers_56_110.py` | Generar respuestas españolas en un rango de IDs (plantilla con Concepto / Explicación detallada / Cuándo usarlo / Ejemplo / Consejo para entrevista) |
 | `generate_answers_223_236.py` | Igual para otro rango de IDs |
 
-Escriben (o escribían) directamente en `app/src/main/assets/answers/{id}.txt`.
+Escriben (o escribían) directamente en `app/src/main/assets/answers/{id}.md`.
 
 ### Importante sobre el estado actual
 
 - Estos scripts son **herramientas de contenido legacy**. La plantilla que generan **no incluye** `ExplicaciónKotlin:` (esa sección se añadió después en los assets).
-- Pueden estar incompletos o desfasados respecto al mapa real ID ↔ tema (el catálogo vivo está en `InterviewSummariesData` + los `.txt` actuales).
+- Pueden estar incompletos o desfasados respecto al mapa real ID ↔ tema (el catálogo vivo está en `InterviewSummariesData` + los `.md` actuales).
 - **Fuente de verdad del producto:** assets actuales + summaries en Kotlin. Los scripts sirven para entender el historial de generación o para ediciones masivas futuras, no para “cómo corre la app”.
 
 ---
@@ -230,7 +230,7 @@ El filtrado por categoría es local sobre la lista de summaries.
 
 | Algoritmo | Dónde conceptualmente | Entrada → salida |
 |-----------|----------------------|------------------|
-| Parseo de respuesta | Parser de respuestas | Texto del `.txt` → prosa / código / explicación / consejo |
+| Parseo de respuesta | Parser de respuestas | Texto del `.md` → prosa / código / explicación / consejo |
 | Segmentación de explicación | Mismo módulo UI | Texto de `ExplicaciónKotlin` → lista de prosa anotada + bloques de código |
 | Clasificación backtick | Heurística `isCodeLineSnippet` | Snippet → bloque visual vs monoespaciado inline |
 | Filtrado + búsqueda | Repositorio | Query + categoría → lista de `QuestionSummary` |
@@ -271,7 +271,7 @@ No hay suite grande de UI Compose tests.
 | `.../data/InterviewAnswersData.kt` | Lectura de assets |
 | `.../data/UserPreferences.kt` | Continuar + guardados |
 | `.../ui/components/InterviewAnswerContent.kt` | Parser + UI de respuesta/código/diálogo |
-| `app/src/main/assets/answers/*.txt` | Contenido de las respuestas |
+| `app/src/main/assets/answers/*.md` | Contenido de las respuestas |
 | `scripts/*.py` | Generación masiva histórica de respuestas |
 | `app/src/test/.../InterviewAnswerParserTest.kt` | Contrato del parser |
 | `gradle/libs.versions.toml` | Versiones de dependencias |
@@ -284,10 +284,10 @@ Para **añadir una pregunta nueva** sin romper la arquitectura:
 
 1. Asignar el siguiente ID (`259` si el máximo sigue siendo 258) y actualizar `MAX_QUESTION_ID`.
 2. Añadir el `QuestionSummary` correspondiente en `InterviewSummariesData`.
-3. Crear `app/src/main/assets/answers/{id}.txt` respetando el contrato de secciones (`Concepto` / `Ejemplo` / `ExplicaciónKotlin` / `Consejo`).
+3. Crear `app/src/main/assets/answers/{id}.md` respetando el contrato de secciones (`Concepto` / `Ejemplo` / `ExplicaciónKotlin` / `Consejo`).
 4. En la explicación Kotlin, envolver en backticks los fragmentos que deban verse como código; usar backticks también para tokens cortos que deban ir en monoespaciado.
 
-Para **regenerar muchas respuestas**, se puede escribir o adaptar un script en `scripts/` que escriba los `.txt`, teniendo en cuenta el marcador `ExplicaciónKotlin:` que la UI actual espera.
+Para **regenerar muchas respuestas**, se puede escribir o adaptar un script en `scripts/` que escriba los `.md`, teniendo en cuenta el marcador `ExplicaciónKotlin:` que la UI actual espera.
 
 ---
 

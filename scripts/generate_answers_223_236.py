@@ -11,9 +11,9 @@ BASE = os.path.join(
 
 def fmt(concepto, detalle, cuando, ejemplo, consejo):
     return (
-        f"Concepto:\n{concepto}\n\n"
-        f"Explicación detallada:\n{detalle}\n\n"
-        f"Cuándo usarlo:\n{cuando}\n\n"
+        f"## Concepto\n{concepto}\n\n"
+        f"## Explicación detallada\n{detalle}\n\n"
+        f"## Cuándo usarlo\n{cuando}\n\n"
         f"Ejemplo:\n{ejemplo}\n\n"
         f"Consejo para entrevista:\n{consejo}\n"
     )
@@ -212,7 +212,7 @@ AppOps puede revocar permisos en runtime aunque el usuario aceptó antes (modo �
 
 os.makedirs(BASE, exist_ok=True)
 for qid, text in ANSWERS.items():
-    path = os.path.join(BASE, f"{qid}.txt")
+    path = os.path.join(BASE, f"{qid}.md")
     with open(path, "w", encoding="utf-8") as f:
         f.write(text)
     print(f"Wrote {path}")

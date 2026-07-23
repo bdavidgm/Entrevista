@@ -11,9 +11,9 @@ BASE = os.path.join(
 
 def fmt(concepto, detalle, cuando, ejemplo, consejo):
     return (
-        f"Concepto:\n{concepto}\n\n"
-        f"Explicación detallada:\n{detalle}\n\n"
-        f"Cuándo usarlo:\n{cuando}\n\n"
+        f"## Concepto\n{concepto}\n\n"
+        f"## Explicación detallada\n{detalle}\n\n"
+        f"## Cuándo usarlo\n{cuando}\n\n"
         f"Ejemplo:\n{ejemplo}\n\n"
         f"Consejo para entrevista:\n{consejo}\n"
     )

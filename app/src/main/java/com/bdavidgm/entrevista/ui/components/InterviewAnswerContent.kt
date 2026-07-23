@@ -36,16 +36,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.bdavidgm.entrevista.R
 import com.bdavidgm.entrevista.ui.util.copyTextToClipboard
+import dev.jeziellago.compose.markdowntext.MarkdownText
 
 internal data class ParsedInterviewAnswer(
     val proseBeforeCode: String,
@@ -55,7 +52,8 @@ internal data class ParsedInterviewAnswer(
 )
 
 internal sealed interface ExplanationSegment {
-    data class Prose(val text: AnnotatedString) : ExplanationSegment
+    /** Markdown prose (inline tokens already wrapped in backticks when needed). */
+    data class Prose(val markdown: String) : ExplanationSegment
     data class Code(val code: String) : ExplanationSegment
 }
 
@@ -99,6 +97,7 @@ internal object InterviewAnswerParser {
         val proseAfter = if (consejoMatch != null) {
             afterEjemplo.substring(consejoMatch.range.first).trimStart()
                 .takeUnless { it.isBlank() }
+                ?.let { consejoSectionToMarkdown(it) }
         } else {
             null
         }
@@ -114,33 +113,23 @@ internal object InterviewAnswerParser {
     /**
      * Splits an ExplicaciónKotlin body into prose and code segments.
      * Backtick-wrapped snippets that look like code lines become [ExplanationSegment.Code];
-     * short identifiers stay as monospace spans inside [ExplanationSegment.Prose].
+     * short identifiers stay as Markdown inline code inside [ExplanationSegment.Prose].
      */
     fun parseExplanationSegments(explanation: String): List<ExplanationSegment> {
         if (explanation.isEmpty()) return emptyList()
         if ('`' !in explanation) {
-            return listOf(ExplanationSegment.Prose(AnnotatedString(explanation)))
+            return listOf(ExplanationSegment.Prose(explanation))
         }
 
         val parts = explanation.split('`')
         val segments = mutableListOf<ExplanationSegment>()
-        val proseChunks = mutableListOf<Pair<String, Boolean>>() // text to isMonospace
+        val proseChunks = mutableListOf<String>()
 
         fun flushProse() {
             if (proseChunks.isEmpty()) return
-            val annotated = buildAnnotatedString {
-                for ((chunk, mono) in proseChunks) {
-                    if (mono) {
-                        withStyle(SpanStyle(fontFamily = FontFamily.Monospace)) {
-                            append(chunk)
-                        }
-                    } else {
-                        append(chunk)
-                    }
-                }
-            }
-            if (annotated.text.isNotBlank()) {
-                segments.add(ExplanationSegment.Prose(annotated))
+            val markdown = proseChunks.joinToString("")
+            if (markdown.isNotBlank()) {
+                segments.add(ExplanationSegment.Prose(markdown))
             }
             proseChunks.clear()
         }
@@ -152,21 +141,21 @@ internal object InterviewAnswerParser {
                 } else {
                     part
                 }
-                if (prose.isNotEmpty()) proseChunks.add(prose to false)
+                if (prose.isNotEmpty()) proseChunks.add(prose)
             } else if (isCodeLineSnippet(part)) {
                 if (proseChunks.isNotEmpty()) {
-                    val (last, mono) = proseChunks.last()
-                    val trimmed = last.trimEnd()
-                    if (trimmed.isEmpty()) {
+                    val last = proseChunks.last().trimEnd()
+                    if (last.isEmpty()) {
                         proseChunks.removeAt(proseChunks.lastIndex)
                     } else {
-                        proseChunks[proseChunks.lastIndex] = trimmed to mono
+                        proseChunks[proseChunks.lastIndex] = last
                     }
                 }
                 flushProse()
                 segments.add(ExplanationSegment.Code(part))
             } else if (part.isNotEmpty()) {
-                proseChunks.add(part to true)
+                // Keep as Markdown inline code so MarkdownText styles it.
+                proseChunks.add("`$part`")
             }
         }
         flushProse()
@@ -201,6 +190,19 @@ internal object InterviewAnswerParser {
         "return", "throw", "import", "package",
     )
 
+    private fun consejoSectionToMarkdown(section: String): String {
+        val lines = section.lines()
+        if (lines.isEmpty()) return section
+        val header = lines.first().trim()
+        val body = lines.drop(1).joinToString("\n").trimStart()
+        val title = when {
+            header.startsWith("Consejo para entrevista") -> "## Consejo para entrevista"
+            header.startsWith("Consejo") -> "## Consejo"
+            else -> return section
+        }
+        return if (body.isBlank()) title else "$title\n\n$body"
+    }
+
     private fun trimBlankMargins(s: String): String {
         val lines = s.lines()
         val first = lines.indexOfFirst { it.isNotBlank() }
@@ -210,7 +212,7 @@ internal object InterviewAnswerParser {
     }
 }
 
-/** Renderiza la respuesta (prosa + código); se usa en [com.bdavidgm.entrevista.ui.screens.QuestionDetailScreen]. */
+/** Renderiza la respuesta (prosa Markdown + código); se usa en [com.bdavidgm.entrevista.ui.screens.QuestionDetailScreen]. */
 @Composable
 internal fun InterviewAnswerBody(
     answer: String,
@@ -219,25 +221,22 @@ internal fun InterviewAnswerBody(
     val context = LocalContext.current
     val parsed = remember(answer) { InterviewAnswerParser.parse(answer) }
     val bodyStyle = MaterialTheme.typography.bodyLarge
-    val bodyColor = MaterialTheme.colorScheme.onSurface
     val codeStyle = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace)
     var showKotlinExplanation by remember { mutableStateOf(false) }
 
     Column(modifier = modifier) {
         if (parsed.code == null) {
-            CopyableText(
-                text = answer,
+            AnswerMarkdown(
+                markdown = answer,
                 style = bodyStyle,
-                color = bodyColor,
                 clipboardLabel = "answer",
                 toastMessageRes = R.string.answer_copied_to_clipboard,
             )
         } else {
             if (parsed.proseBeforeCode.isNotBlank()) {
-                CopyableText(
-                    text = parsed.proseBeforeCode,
+                AnswerMarkdown(
+                    markdown = parsed.proseBeforeCode,
                     style = bodyStyle,
-                    color = bodyColor,
                     clipboardLabel = "answer",
                     toastMessageRes = R.string.answer_copied_to_clipboard,
                 )
@@ -258,10 +257,9 @@ internal fun InterviewAnswerBody(
             )
             if (!parsed.proseAfterCode.isNullOrBlank()) {
                 Spacer(modifier = Modifier.height(12.dp))
-                CopyableText(
-                    text = parsed.proseAfterCode,
+                AnswerMarkdown(
+                    markdown = parsed.proseAfterCode,
                     style = bodyStyle,
-                    color = bodyColor,
                     clipboardLabel = "answer",
                     toastMessageRes = R.string.answer_copied_to_clipboard,
                 )
@@ -289,6 +287,7 @@ private fun KotlinExplanationDialog(
         InterviewAnswerParser.parseExplanationSegments(explanation)
     }
     val codeStyle = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace)
+    val proseStyle = MaterialTheme.typography.bodyMedium
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -306,10 +305,11 @@ private fun KotlinExplanationDialog(
                 segments.forEach { segment ->
                     when (segment) {
                         is ExplanationSegment.Prose -> {
-                            Text(
-                                text = segment.text,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurface,
+                            AnswerMarkdown(
+                                markdown = segment.markdown,
+                                style = proseStyle,
+                                clipboardLabel = "explanation",
+                                toastMessageRes = R.string.answer_copied_to_clipboard,
                             )
                         }
                         is ExplanationSegment.Code -> {
@@ -338,32 +338,37 @@ private fun KotlinExplanationDialog(
     )
 }
 
-/** Texto con copia por pulsación larga; se usa en [InterviewAnswerBody] para la prosa de la respuesta. */
+/**
+ * Prosa Markdown (negritas, tablas, imágenes, etc.); se usa en [InterviewAnswerBody]
+ * y en [KotlinExplanationDialog]. El código de ejemplo sigue en [AnswerCodeBlock].
+ */
 @Composable
-private fun CopyableText(
-    text: String,
+private fun AnswerMarkdown(
+    markdown: String,
     style: TextStyle,
-    color: androidx.compose.ui.graphics.Color,
     clipboardLabel: String,
     toastMessageRes: Int,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
-    Text(
-        text = text,
-        style = style,
-        color = color,
-        modifier = modifier.pointerInput(text) {
-            detectTapGestures(
-                onLongPress = {
-                    context.copyTextToClipboard(
-                        label = clipboardLabel,
-                        text = text,
-                        toastMessageRes = toastMessageRes,
-                    )
-                }
-            )
-        },
+    MarkdownText(
+        markdown = markdown,
+        style = style.copy(color = MaterialTheme.colorScheme.onSurface),
+        linkColor = MaterialTheme.colorScheme.primary,
+        isTextSelectable = true,
+        modifier = modifier
+            .fillMaxWidth()
+            .pointerInput(markdown) {
+                detectTapGestures(
+                    onLongPress = {
+                        context.copyTextToClipboard(
+                            label = clipboardLabel,
+                            text = markdown,
+                            toastMessageRes = toastMessageRes,
+                        )
+                    }
+                )
+            },
     )
 }
 
