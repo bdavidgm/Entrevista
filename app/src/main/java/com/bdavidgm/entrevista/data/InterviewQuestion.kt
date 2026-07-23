@@ -25,5 +25,6 @@ enum class Category(val displayName: String) {
     ANDROID_API("API de Android"),
     RUTA_ANDROID("Ruta Android (roadmap.sh)"),
     ANDROID_TECH("Técnico Android"),
+    LIBRARIES("Librerías Android/Kotlin"),
     GENERAL("General")
 }
